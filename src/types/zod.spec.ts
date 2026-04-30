@@ -33,7 +33,6 @@ import {
     polymarketPositionSortBySchema,
     polymarketSlugSchema,
     polymarketTokenIdSchema,
-    polymarketUserIntervalSchema,
     polymarketUserSortBySchema,
     serverErrorResponseSchema,
     statisticsResponseSchema,
@@ -65,6 +64,7 @@ import {
     tvmTokenResponseSchema,
     tvmTransaction,
     tvmTransactionSchema,
+    userLookbackIntervalSchema,
 } from './zod.js';
 
 describe('Base Validation Schemas', () => {
@@ -1247,15 +1247,15 @@ describe('Polymarket schemas', () => {
         });
 
         it('user interval should transform to minutes', () => {
-            expect(polymarketUserIntervalSchema.parse('1h')).toBe(60);
-            expect(polymarketUserIntervalSchema.parse('1d')).toBe(1440);
-            expect(polymarketUserIntervalSchema.parse('1w')).toBe(10080);
-            expect(polymarketUserIntervalSchema.parse('30d')).toBe(43200);
+            expect(userLookbackIntervalSchema.parse('1h')).toBe(60);
+            expect(userLookbackIntervalSchema.parse('1d')).toBe(1440);
+            expect(userLookbackIntervalSchema.parse('1w')).toBe(10080);
+            expect(userLookbackIntervalSchema.parse('30d')).toBe(43200);
         });
 
         it('user interval should reject invalid values', () => {
-            expect(() => polymarketUserIntervalSchema.parse('4h')).toThrow();
-            expect(() => polymarketUserIntervalSchema.parse('ALL')).toThrow();
+            expect(() => userLookbackIntervalSchema.parse('4h')).toThrow();
+            expect(() => userLookbackIntervalSchema.parse('ALL')).toThrow();
         });
     });
 });

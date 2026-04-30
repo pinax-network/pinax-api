@@ -165,6 +165,11 @@ app.get(
                 { name: 'Polymarket Markets' },
                 { name: 'Polymarket Platform' },
                 { name: 'Polymarket Users' },
+                // Hyperliquid
+                { name: 'Hyperliquid Markets' },
+                { name: 'Hyperliquid Users' },
+                { name: 'Hyperliquid Vaults' },
+                { name: 'Hyperliquid Platform' },
                 // Monitoring
                 { name: 'Monitoring' },
             ],

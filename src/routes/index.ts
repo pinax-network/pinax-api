@@ -35,6 +35,20 @@ import evmHolders from './holders/evm.js';
 import evmHoldersNative from './holders/evm_native.js';
 import svmHolders from './holders/svm.js';
 import svmHoldersNative from './holders/svm_native.js';
+// Hyperliquid
+import hyperliquidDexes from './hyperliquid/dexes.js';
+import hyperliquidMarkets from './hyperliquid/markets.js';
+import hyperliquidMarketsActivity from './hyperliquid/markets_activity.js';
+import hyperliquidMarketsLiquidations from './hyperliquid/markets_liquidations.js';
+import hyperliquidMarketsLiquidationsOhlc from './hyperliquid/markets_liquidations_ohlc.js';
+import hyperliquidMarketsOhlc from './hyperliquid/markets_ohlc.js';
+import hyperliquidMarketsOi from './hyperliquid/markets_oi.js';
+import hyperliquidPlatform from './hyperliquid/platform.js';
+import hyperliquidUsers from './hyperliquid/users.js';
+import hyperliquidUsersActivity from './hyperliquid/users_activity.js';
+import hyperliquidUsersPositions from './hyperliquid/users_positions.js';
+import hyperliquidVaults from './hyperliquid/vaults.js';
+import hyperliquidVaultsDepositors from './hyperliquid/vaults_depositors.js';
 // NFT
 import nftCollections from './nft/collections_evm.js';
 import nftHolders from './nft/holders_evm.js';
@@ -154,6 +168,30 @@ router.route('/v1/tvm/swaps', tvmSwaps);
 router.route('/v1/tvm/pools', tvmPools);
 router.route('/v1/tvm/pools/ohlc', tvmOhlcv);
 router.route('/v1/tvm/dexes', tvmDexes);
+
+// Hyperliquid
+// Selective caching: snapshot / slow-changing endpoints only. Time-series and
+// event-stream routes (ohlc, oi, activity, liquidations, positions, platform)
+// are uncached because the default s-maxage=600 would surface stale 1m candles
+// and real-time data. See project_hyperliquid_scoping.md for the full list.
+router.use('/v1/hyperliquid/dexes', cacheControl());
+router.use('/v1/hyperliquid/markets', cacheControl());
+router.use('/v1/hyperliquid/users', cacheControl());
+router.use('/v1/hyperliquid/vaults', cacheControl());
+router.use('/v1/hyperliquid/vaults/depositors', cacheControl());
+router.route('/v1/hyperliquid/dexes', hyperliquidDexes);
+router.route('/v1/hyperliquid/markets', hyperliquidMarkets);
+router.route('/v1/hyperliquid/markets/ohlc', hyperliquidMarketsOhlc);
+router.route('/v1/hyperliquid/markets/oi', hyperliquidMarketsOi);
+router.route('/v1/hyperliquid/markets/activity', hyperliquidMarketsActivity);
+router.route('/v1/hyperliquid/markets/liquidations', hyperliquidMarketsLiquidations);
+router.route('/v1/hyperliquid/markets/liquidations/ohlc', hyperliquidMarketsLiquidationsOhlc);
+router.route('/v1/hyperliquid/users', hyperliquidUsers);
+router.route('/v1/hyperliquid/users/positions', hyperliquidUsersPositions);
+router.route('/v1/hyperliquid/users/activity', hyperliquidUsersActivity);
+router.route('/v1/hyperliquid/vaults', hyperliquidVaults);
+router.route('/v1/hyperliquid/vaults/depositors', hyperliquidVaultsDepositors);
+router.route('/v1/hyperliquid/platform', hyperliquidPlatform);
 
 // Polymarket
 router.use('/v1/polymarket/*', cacheControl());

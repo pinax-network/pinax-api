@@ -48,3 +48,9 @@ networks:
     cluster: b
     polymarket: polygon:evm-polymarket@v0.1.2
     scraper: polymarket
+
+  # Hyperliquid (HyperCore L1 events)
+  hyperliquid:
+    type: hyperliquid
+    cluster: a
+    hypercore: hypercore:hypercore-events@v0.2.0
