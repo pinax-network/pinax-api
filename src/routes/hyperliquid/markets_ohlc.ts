@@ -42,8 +42,6 @@ const responseSchema = apiUsageResponseSchema.extend({
             close_long_volume: z.number(),
             open_short_volume: z.number(),
             close_short_volume: z.number(),
-            direction_buy_volume: z.number(),
-            direction_sell_volume: z.number(),
             transactions: z.number().int(),
             buys: z.number().int(),
             sells: z.number().int(),
@@ -57,7 +55,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Market OHLCV',
         description:
-            'Returns OHLCV candles for a single coin and interval, derived from regular trade fills. Volume is broken down both by side (`buy_volume`, `ask_volume`) and by directional intent (`open_long_volume`, `close_long_volume`, `open_short_volume`, `close_short_volume`) — the direction breakdown lets consumers distinguish whether price moves are driven by fresh exposure or position unwinds. Spot pairs populate `direction_buy_volume` and `direction_sell_volume` instead.\n\nFor liquidation-only candles (with mark-price OHLC), use `/v1/hyperliquid/markets/liquidations/ohlc`.',
+            'Returns OHLCV candles for a single coin and interval, derived from regular trade fills. Volume is broken down both by side (`buy_volume`, `ask_volume`) and — on perpetuals — by directional intent (`open_long_volume`, `close_long_volume`, `open_short_volume`, `close_short_volume`) so consumers can distinguish whether price moves are driven by fresh exposure or position unwinds. On spot markets the directional-intent fields are zero; the side-volume fields carry the buy/sell breakdown directly.\n\nFor liquidation-only candles (with mark-price OHLC), use `/v1/hyperliquid/markets/liquidations/ohlc`.',
         tags: ['Hyperliquid Markets'],
         security: [{ bearerAuth: [] }],
         responses: {
@@ -87,8 +85,6 @@ const openapi = describeRoute(
                                             close_long_volume: 11423420.07,
                                             open_short_volume: 13640171.56,
                                             close_short_volume: 5181222.62,
-                                            direction_buy_volume: 0,
-                                            direction_sell_volume: 0,
                                             transactions: 5544,
                                             buys: 2170,
                                             sells: 3374,
