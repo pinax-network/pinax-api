@@ -14,7 +14,7 @@ SELECT
     sum(oi_transactions) AS oi_transactions,
     toFloat64(sum(total_fee)) / 1000000. AS total_fees,
     sum(fee_count) AS fee_count,
-    if(sum(fee_volume) > 0, toFloat64(sum(total_fee)) / toFloat64(sum(fee_volume)), 0) AS effective_fee_rate
+    if(sum(collateral_volume) > 0, toFloat64(sum(total_fee)) / toFloat64(sum(collateral_volume)), 0) AS effective_fee_rate
 FROM {db_polymarket:Identifier}.state_platform
 WHERE interval_min = {interval:UInt32}
   AND (isNull({start_time:Nullable(UInt64)}) OR timestamp >= toDateTime({start_time:Nullable(UInt64)}))
