@@ -15,45 +15,74 @@ WITH bounds AS (
     )
 )
 SELECT
-    t.timestamp                                                AS timestamp,
-    t.coin                                                     AS coin,
-    dex_from_coin(t.coin)                                      AS dex,
-    t.interval_min                                             AS interval_min,
-    argMinMerge(t.open)                                        AS open,
-    quantilesDeterministicMerge(0.05, 0.95)(t.quantile)[2]     AS high,
-    quantilesDeterministicMerge(0.05, 0.95)(t.quantile)[1]     AS low,
-    argMaxMerge(t.close)                                       AS close,
-    argMinMerge(t.mark_px_open)                                AS mark_price_open,
-    quantilesDeterministicMerge(0.05, 0.95)(t.mark_px_quantile)[2] AS mark_price_high,
-    quantilesDeterministicMerge(0.05, 0.95)(t.mark_px_quantile)[1] AS mark_price_low,
-    argMaxMerge(t.mark_px_close)                               AS mark_price_close,
-    sum(t.side_buy_volume)                                     AS buy_volume,
-    sum(t.side_ask_volume)                                     AS ask_volume,
-    sum(t.side_buy_volume) + sum(t.side_ask_volume)            AS gross_volume,
-    sum(t.side_buy_volume) - sum(t.side_ask_volume)            AS net_volume,
-    sum(t.open_long_volume)                                    AS open_long_volume,
-    sum(t.close_long_volume)                                   AS close_long_volume,
-    sum(t.open_short_volume)                                   AS open_short_volume,
-    sum(t.close_short_volume)                                  AS close_short_volume,
-    sum(t.transactions)                                        AS transactions,
-    sum(t.buy_count)                                           AS buys,
-    sum(t.sell_count)                                          AS sells,
-    coalesce(any(u.uniq_user), 0)                              AS unique_liquidators,
-    coalesce(any(u.uniq_liquidated_user), 0)                   AS unique_liquidated,
-    sum(t.total_fees)                                          AS total_fees
-FROM {db_hypercore:Identifier}.state_ohlcv_liquidation AS t
-LEFT JOIN (
-    SELECT interval_min, coin, timestamp, uniq_user, uniq_liquidated_user
-    FROM {db_hypercore:Identifier}.state_ohlcv_liquidation_uniq_user FINAL
-    WHERE coin = {coin:String}
-      AND interval_min = {interval:UInt32}
-      AND timestamp >= (SELECT start_ts FROM bounds)
-      AND timestamp <= (SELECT end_ts FROM bounds)
-) AS u USING (interval_min, coin, timestamp)
-WHERE t.coin = {coin:String}
-  AND t.interval_min = {interval:UInt32}
-  AND t.timestamp >= (SELECT start_ts FROM bounds)
-  AND t.timestamp <= (SELECT end_ts FROM bounds)
-GROUP BY t.interval_min, t.coin, t.timestamp
-ORDER BY t.timestamp DESC
-SETTINGS optimize_aggregation_in_order = 1
+    timestamp,
+    coin,
+    dex,
+    interval_min,
+    open,
+    greatest(high_quantile, open, close)                       AS high,
+    least(low_quantile, open, close)                           AS low,
+    close,
+    mark_price_open,
+    greatest(mark_price_high_quantile, mark_price_open, mark_price_close) AS mark_price_high,
+    least(mark_price_low_quantile, mark_price_open, mark_price_close)     AS mark_price_low,
+    mark_price_close,
+    buy_volume,
+    ask_volume,
+    gross_volume,
+    net_volume,
+    open_long_volume,
+    close_long_volume,
+    open_short_volume,
+    close_short_volume,
+    transactions,
+    buys,
+    sells,
+    unique_liquidators,
+    unique_liquidated,
+    total_fees
+FROM (
+    SELECT
+        t.timestamp                                                AS timestamp,
+        t.coin                                                     AS coin,
+        dex_from_coin(t.coin)                                      AS dex,
+        t.interval_min                                             AS interval_min,
+        argMinMerge(t.open)                                        AS open,
+        quantilesDeterministicMerge(0.05, 0.95)(t.quantile)[2]     AS high_quantile,
+        quantilesDeterministicMerge(0.05, 0.95)(t.quantile)[1]     AS low_quantile,
+        argMaxMerge(t.close)                                       AS close,
+        argMinMerge(t.mark_px_open)                                AS mark_price_open,
+        quantilesDeterministicMerge(0.05, 0.95)(t.mark_px_quantile)[2] AS mark_price_high_quantile,
+        quantilesDeterministicMerge(0.05, 0.95)(t.mark_px_quantile)[1] AS mark_price_low_quantile,
+        argMaxMerge(t.mark_px_close)                               AS mark_price_close,
+        sum(t.side_buy_volume)                                     AS buy_volume,
+        sum(t.side_ask_volume)                                     AS ask_volume,
+        sum(t.side_buy_volume) + sum(t.side_ask_volume)            AS gross_volume,
+        sum(t.side_buy_volume) - sum(t.side_ask_volume)            AS net_volume,
+        sum(t.open_long_volume)                                    AS open_long_volume,
+        sum(t.close_long_volume)                                   AS close_long_volume,
+        sum(t.open_short_volume)                                   AS open_short_volume,
+        sum(t.close_short_volume)                                  AS close_short_volume,
+        sum(t.transactions)                                        AS transactions,
+        sum(t.buy_count)                                           AS buys,
+        sum(t.sell_count)                                          AS sells,
+        coalesce(any(u.uniq_user), 0)                              AS unique_liquidators,
+        coalesce(any(u.uniq_liquidated_user), 0)                   AS unique_liquidated,
+        sum(t.total_fees)                                          AS total_fees
+    FROM {db_hypercore:Identifier}.state_ohlcv_liquidation AS t
+    LEFT JOIN (
+        SELECT interval_min, coin, timestamp, uniq_user, uniq_liquidated_user
+        FROM {db_hypercore:Identifier}.state_ohlcv_liquidation_uniq_user FINAL
+        WHERE coin = {coin:String}
+          AND interval_min = {interval:UInt32}
+          AND timestamp >= (SELECT start_ts FROM bounds)
+          AND timestamp <= (SELECT end_ts FROM bounds)
+    ) AS u USING (interval_min, coin, timestamp)
+    WHERE t.coin = {coin:String}
+      AND t.interval_min = {interval:UInt32}
+      AND t.timestamp >= (SELECT start_ts FROM bounds)
+      AND t.timestamp <= (SELECT end_ts FROM bounds)
+    GROUP BY t.interval_min, t.coin, t.timestamp
+    SETTINGS optimize_aggregation_in_order = 1
+)
+ORDER BY timestamp DESC
