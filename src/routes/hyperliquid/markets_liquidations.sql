@@ -5,7 +5,8 @@ SELECT
     f.liquidated_user                                 AS liquidated_user,
     f.event_hash                                      AS event_hash,
     f.direction                                       AS direction,
-    replaceRegexpOne(f.direction, '^LIQUIDATED_', '') AS liquidation_kind,
+    if(f.direction = 'AUTO_DELEVERAGING', 'AUTO_DELEVERAGING',
+       replaceRegexpOne(f.direction, '^LIQUIDATED_', '')) AS liquidation_kind,
     count()                                           AS fills,
     sum(f.size)                                       AS total_size,
     sum(f.size * f.price)                             AS notional,
@@ -14,7 +15,7 @@ SELECT
     any(f.liquidation_method)                         AS liquidation_method,
     sum(f.fee)                                        AS total_fees
 FROM {db_hypercore:Identifier}.fills_liquidation AS f
-WHERE f.direction LIKE 'LIQUIDATED_%'
+WHERE (f.direction LIKE 'LIQUIDATED_%' OR f.direction = 'AUTO_DELEVERAGING')
   AND (isNull({coin:Nullable(String)})            OR f.coin = {coin:Nullable(String)})
   AND (isNull({dex:Nullable(String)})             OR dex_from_coin(f.coin) = {dex:Nullable(String)})
   AND (isNull({liquidated_user:Nullable(String)}) OR f.liquidated_user = {liquidated_user:Nullable(String)})
