@@ -16,7 +16,8 @@ import {
 } from '../../types/zod.js';
 import { validatorHook, withErrorResponses } from '../../utils.js';
 
-import baseQuery from './users.sql' with { type: 'text' };
+import byCoinQuery from './users.sql' with { type: 'text' };
+import leaderboardQuery from './users_leaderboard.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
     user: { schema: evmAddressSchema, optional: true },
@@ -111,7 +112,12 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
     }
 
     const sortColumn = SORT_COLUMN_MAP[params.sort_by] ?? 'total_volume';
-    const sql = baseQuery.replace('ORDER BY total_volume DESC', `ORDER BY ${sortColumn} DESC`);
+    // state_user_leaderboard is pre-aggregated across coins/dexes and keyed by
+    // (interval_min, user) — use it whenever the request doesn't scope to a
+    // specific coin or dex. Falls back to state_user_by_coin FINAL otherwise.
+    const usesLeaderboard = !params.coin && !params.dex;
+    const baseSql = usesLeaderboard ? leaderboardQuery : byCoinQuery;
+    const sql = baseSql.replace('ORDER BY total_volume DESC', `ORDER BY ${sortColumn} DESC`);
 
     const response = await makeUsageQueryJson(c, [sql], {
         ...params,
