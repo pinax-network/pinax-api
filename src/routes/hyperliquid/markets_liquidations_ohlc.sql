@@ -1,3 +1,19 @@
+WITH bounds AS (
+    SELECT
+        min(timestamp) AS start_ts,
+        max(timestamp) AS end_ts
+    FROM (
+        SELECT timestamp
+        FROM {db_hypercore:Identifier}.state_ohlcv_liquidation
+        WHERE coin = {coin:String}
+          AND interval_min = {interval:UInt32}
+          AND (isNull({start_time:Nullable(UInt64)}) OR timestamp >= toDateTime({start_time:Nullable(UInt64)}))
+          AND (isNull({end_time:Nullable(UInt64)})   OR timestamp <  toDateTime({end_time:Nullable(UInt64)}))
+        GROUP BY timestamp
+        ORDER BY timestamp DESC
+        LIMIT {limit:UInt64} OFFSET {offset:UInt64}
+    )
+)
 SELECT
     t.timestamp                                                AS timestamp,
     t.coin                                                     AS coin,
@@ -31,15 +47,13 @@ LEFT JOIN (
     FROM {db_hypercore:Identifier}.state_ohlcv_liquidation_uniq_user FINAL
     WHERE coin = {coin:String}
       AND interval_min = {interval:UInt32}
-      AND (isNull({start_time:Nullable(UInt64)}) OR timestamp >= toDateTime({start_time:Nullable(UInt64)}))
-      AND (isNull({end_time:Nullable(UInt64)})   OR timestamp <  toDateTime({end_time:Nullable(UInt64)}))
+      AND timestamp >= (SELECT start_ts FROM bounds)
+      AND timestamp <= (SELECT end_ts FROM bounds)
 ) AS u USING (interval_min, coin, timestamp)
 WHERE t.coin = {coin:String}
   AND t.interval_min = {interval:UInt32}
-  AND (isNull({start_time:Nullable(UInt64)}) OR t.timestamp >= toDateTime({start_time:Nullable(UInt64)}))
-  AND (isNull({end_time:Nullable(UInt64)})   OR t.timestamp <  toDateTime({end_time:Nullable(UInt64)}))
+  AND t.timestamp >= (SELECT start_ts FROM bounds)
+  AND t.timestamp <= (SELECT end_ts FROM bounds)
 GROUP BY t.interval_min, t.coin, t.timestamp
 ORDER BY t.timestamp DESC
-LIMIT {limit:UInt64}
-OFFSET {offset:UInt64}
 SETTINGS optimize_aggregation_in_order = 1
