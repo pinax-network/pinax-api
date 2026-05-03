@@ -75,8 +75,12 @@ const llmsTextOpenapi = describeRoute({
 });
 
 app.get(
-    '/skills.md',
+    '/SKILLS.md',
     skillsMarkdownOpenapi,
+    () => new Response(Bun.file('./public/skills.md'), { headers: { 'Content-Type': 'text/markdown; charset=UTF-8' } })
+);
+app.get(
+    '/skills.md',
     () => new Response(Bun.file('./public/skills.md'), { headers: { 'Content-Type': 'text/markdown; charset=UTF-8' } })
 );
 app.get(

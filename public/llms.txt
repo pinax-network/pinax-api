@@ -13,7 +13,7 @@ Important notes:
 ## Core references
 
 - [OpenAPI specification](https://token-api.thegraph.com/openapi): Authoritative machine-readable API contract.
-- [Agent skills reference](https://token-api.thegraph.com/skills.md): Capability summary, workflows, constraints, and endpoint overview for AI agents.
+- [Agent skills reference](https://token-api.thegraph.com/SKILLS.md): Capability summary, workflows, constraints, and endpoint overview for AI agents.
 - [Token API quick start](https://thegraph.com/docs/en/token-api/quick-start/): Human-readable setup and first requests.
 - [Token API FAQ](https://thegraph.com/docs/en/token-api/faq/): Plan, billing, authentication, and usage notes.
 
