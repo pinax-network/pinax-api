@@ -19,7 +19,7 @@ This document captures stable, tool-agnostic navigation knowledge for the `token
 - `scripts/`: maintenance and analysis scripts (perf, query logs, stablecoins, query breakdown generation).
 - `queries/`: SQL reference breakdowns consumed by script workflows.
 - `reports/`: checked-in analysis/performance reports (documentation artifacts, not runtime code).
-- `public/`: static files served by app (`index.html`, `skills.md`, assets).
+- `public/`: static files served by app (`index.html`, `skills.md`, `llms.txt`, assets).
 - `.github/workflows/`: CI and release automation entrypoints.
 
 ## 2) Architecture mental model (request/data flow)
@@ -61,7 +61,7 @@ This document captures stable, tool-agnostic navigation knowledge for the `token
   - Streaming, stats, query error handling: `src/clickhouse/makeQuery.ts` and `src/handleQuery.ts`.
 
 - Change static docs or landing assets:
-  - Edit `public/index.html`, `public/skills.md`, and media in `public/`.
+  - Edit `public/index.html`, `public/skills.md`, `public/llms.txt`, and media in `public/`.
 
 - Update CI/release behavior:
   - Edit `.github/workflows/*.yml`.

@@ -53,10 +53,36 @@ const skillsMarkdownOpenapi = describeRoute({
     },
 });
 
+const llmsTextOpenapi = describeRoute({
+    operationId: 'getLlmsText',
+    summary: 'LLM Documentation Index',
+    description: 'Returns the public llms.txt documentation index for AI tools discovering Token API.',
+    tags: ['Documentation'],
+    security: [],
+    responses: {
+        200: {
+            description: 'Successful Response',
+            content: {
+                'text/plain': {
+                    schema: {
+                        type: 'string',
+                        example: '# Token API',
+                    },
+                },
+            },
+        },
+    },
+});
+
 app.get(
     '/skills.md',
     skillsMarkdownOpenapi,
     () => new Response(Bun.file('./public/skills.md'), { headers: { 'Content-Type': 'text/markdown; charset=UTF-8' } })
+);
+app.get(
+    '/llms.txt',
+    llmsTextOpenapi,
+    () => new Response(Bun.file('./public/llms.txt'), { headers: { 'Content-Type': 'text/plain; charset=UTF-8' } })
 );
 app.get(
     '/openapi',
