@@ -40,6 +40,16 @@ export const DEFAULT_CACHE_SERVER_MAX_AGE = 600; // s-maxage for shared/proxy ca
 export const DEFAULT_CACHE_MAX_AGE = 60; // max-age for browser caches
 export const DEFAULT_CACHE_STALE_WHILE_REVALIDATE = 30; // RFC 5861 stale-while-revalidate window
 export const DEFAULT_PLANS = '';
+export const DEFAULT_X402_ENABLED = false;
+export const DEFAULT_X402_FACILITATOR_URL = 'https://api.cdp.coinbase.com/platform/v2/x402';
+export const DEFAULT_X402_EVM_NETWORK = 'eip155:8453';
+export const DEFAULT_X402_SVM_NETWORK = 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp';
+export const DEFAULT_X402_EVM_PAY_TO = '0x49D581486438aAD93f4114084Ac5B09A8b7C9685';
+export const DEFAULT_X402_SVM_PAY_TO = 'EpRR35QnB5PfTczy3j5rp9bCw4NKzHkd8S1ubdza4my9';
+export const DEFAULT_X402_PASS_PRICE = '$0.10';
+export const DEFAULT_X402_PASS_DURATION_SECONDS = 3600;
+export const DEFAULT_X402_PLAN = 'pro';
+export const DEFAULT_X402_SYNC_FACILITATOR_ON_START = true;
 
 // GitHub metadata
 const GIT_COMMIT = (process.env.GIT_COMMIT ?? (await $`git rev-parse HEAD`.text())).replace(/\n/, '').slice(0, 7);
@@ -255,6 +265,58 @@ const opts = program
             .env('PLANS')
             .default(DEFAULT_PLANS)
     )
+    .addOption(
+        new Option('--x402-enabled <boolean>', 'Enable x402 access pass payment middleware')
+            .choices(['true', 'false'])
+            .env('X402_ENABLED')
+            .default(DEFAULT_X402_ENABLED)
+    )
+    .addOption(
+        new Option('--x402-facilitator-url <string>', 'x402 facilitator HTTP URL')
+            .env('X402_FACILITATOR_URL')
+            .default(DEFAULT_X402_FACILITATOR_URL)
+    )
+    .addOption(
+        new Option('--x402-evm-network <string>', 'CAIP-2 EVM network accepted for x402 payments')
+            .env('X402_EVM_NETWORK')
+            .default(DEFAULT_X402_EVM_NETWORK)
+    )
+    .addOption(
+        new Option('--x402-svm-network <string>', 'CAIP-2 SVM network accepted for x402 payments')
+            .env('X402_SVM_NETWORK')
+            .default(DEFAULT_X402_SVM_NETWORK)
+    )
+    .addOption(
+        new Option('--x402-evm-pay-to <string>', 'EVM payment recipient for x402 access passes')
+            .env('X402_EVM_PAY_TO')
+            .default(DEFAULT_X402_EVM_PAY_TO)
+    )
+    .addOption(
+        new Option('--x402-svm-pay-to <string>', 'SVM payment recipient for x402 access passes')
+            .env('X402_SVM_PAY_TO')
+            .default(DEFAULT_X402_SVM_PAY_TO)
+    )
+    .addOption(
+        new Option('--x402-pass-price <string>', 'USD-denominated x402 access pass price')
+            .env('X402_PASS_PRICE')
+            .default(DEFAULT_X402_PASS_PRICE)
+    )
+    .addOption(
+        new Option('--x402-pass-duration-seconds <number>', 'x402 access pass duration in seconds')
+            .env('X402_PASS_DURATION_SECONDS')
+            .default(DEFAULT_X402_PASS_DURATION_SECONDS)
+    )
+    .addOption(
+        new Option('--x402-plan <string>', 'Plan applied to requests with valid x402 payment access')
+            .env('X402_PLAN')
+            .default(DEFAULT_X402_PLAN)
+    )
+    .addOption(
+        new Option('--x402-sync-facilitator-on-start <boolean>', 'Sync x402 facilitator support before first request')
+            .choices(['true', 'false'])
+            .env('X402_SYNC_FACILITATOR_ON_START')
+            .default(DEFAULT_X402_SYNC_FACILITATOR_ON_START)
+    )
     .allowUnknownOption()
     .allowExcessArguments()
     .parse()
@@ -294,6 +356,16 @@ const config = z
         cacheMaxAge: z.coerce.number().nonnegative('Cache max-age must be non-negative'),
         cacheStaleWhileRevalidate: z.coerce.number().nonnegative('Cache stale-while-revalidate must be non-negative'),
         plans: z.string().transform(parsePlans),
+        x402Enabled: z.coerce.string().transform((val) => val.toLowerCase() === 'true'),
+        x402FacilitatorUrl: z.string().url({ message: 'Invalid x402 facilitator URL' }),
+        x402EvmNetwork: z.string().min(1, 'x402 EVM network cannot be empty'),
+        x402SvmNetwork: z.string().min(1, 'x402 SVM network cannot be empty'),
+        x402EvmPayTo: z.string().min(1, 'x402 EVM pay-to address cannot be empty'),
+        x402SvmPayTo: z.string().min(1, 'x402 SVM pay-to address cannot be empty'),
+        x402PassPrice: z.string().regex(/^\$\d+(\.\d+)?$/, 'x402 pass price must be a USD amount like $0.10'),
+        x402PassDurationSeconds: z.coerce.number().positive('x402 pass duration must be positive'),
+        x402Plan: z.string().min(1, 'x402 plan cannot be empty'),
+        x402SyncFacilitatorOnStart: z.coerce.string().transform((val) => val.toLowerCase() === 'true'),
     })
     .transform((data) => {
         // Use YAML config as the authoritative source — spread all database maps dynamically

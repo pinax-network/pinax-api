@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cacheControl } from '../middleware/cacheControl.js';
 import { normalizeProtocolQuery } from '../middleware/normalizeProtocolQuery.js';
+import { x402PaymentMiddleware, x402PlanHeaderMiddleware } from '../x402/middleware.js';
 // Balances
 import evmBalances from './balances/evm.js';
 // import tvmBalancesNative from './balances/tvm_native.js';
@@ -78,6 +79,11 @@ const router = new Hono();
 // --- Query normalization middleware ---
 // Normalize request query parameters before validation/route handling.
 router.use('/v1/*', normalizeProtocolQuery);
+
+// --- x402 payment middleware ---
+// Protects paid API routes when enabled; free monitoring/discovery endpoints remain outside x402.
+router.use('/v1/*', x402PlanHeaderMiddleware);
+router.use('/v1/*', x402PaymentMiddleware);
 
 // --- HTTP Cache-Control middleware ---
 // Default: all /v1/* routes get a minimal 1s cache (no SWR).
