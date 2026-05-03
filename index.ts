@@ -1,6 +1,6 @@
 import { type Context, Hono } from 'hono';
 import './src/banner.js';
-import { openAPIRouteHandler } from 'hono-openapi';
+import { describeRoute, openAPIRouteHandler } from 'hono-openapi';
 import { logServerInit } from './src/banner.js';
 import { APP_DESCRIPTION, APP_VERSION, config } from './src/config.js';
 import { logger } from './src/logger.js';
@@ -32,9 +32,61 @@ app.route('/', routes);
 app.get('/', () => new Response(Bun.file('./public/index.html')));
 app.get('/favicon.svg', () => new Response(Bun.file('./public/favicon.svg')));
 app.get('/banner.jpg', () => new Response(Bun.file('./public/banner.jpg')));
+const skillsMarkdownOpenapi = describeRoute({
+    operationId: 'getSkillsMarkdown',
+    summary: 'Agent Skills Reference',
+    description: 'Returns the public Markdown reference for AI agents integrating with Token API.',
+    tags: ['Documentation'],
+    security: [],
+    responses: {
+        200: {
+            description: 'Successful Response',
+            content: {
+                'text/markdown': {
+                    schema: {
+                        type: 'string',
+                        example: '# Token API',
+                    },
+                },
+            },
+        },
+    },
+});
+
+const llmsTextOpenapi = describeRoute({
+    operationId: 'getLlmsText',
+    summary: 'LLM Documentation Index',
+    description: 'Returns the public llms.txt documentation index for AI tools discovering Token API.',
+    tags: ['Documentation'],
+    security: [],
+    responses: {
+        200: {
+            description: 'Successful Response',
+            content: {
+                'text/plain': {
+                    schema: {
+                        type: 'string',
+                        example: '# Token API',
+                    },
+                },
+            },
+        },
+    },
+});
+
+app.get(
+    '/SKILLS.md',
+    skillsMarkdownOpenapi,
+    () => new Response(Bun.file('./public/skills.md'), { headers: { 'Content-Type': 'text/markdown; charset=UTF-8' } })
+);
 app.get(
     '/skills.md',
     () => new Response(Bun.file('./public/skills.md'), { headers: { 'Content-Type': 'text/markdown; charset=UTF-8' } })
+);
+app.get(
+    '/llms.txt',
+    llmsTextOpenapi,
+    () => new Response(Bun.file('./public/llms.txt'), { headers: { 'Content-Type': 'text/plain; charset=UTF-8' } })
 );
 app.get(
     '/openapi',
@@ -49,6 +101,8 @@ app.get(
                 ? [{ url: `http://${config.hostname}:${config.port}`, description: `${APP_DESCRIPTION} - Local` }]
                 : [{ url: config.apiUrl, description: `${APP_DESCRIPTION} - Remote` }],
             tags: [
+                // Documentation
+                { name: 'Documentation' },
                 // SVM
                 { name: 'SVM Tokens' },
                 { name: 'SVM Tokens (Native)' },
@@ -84,6 +138,7 @@ app.get(
                 },
             },
         },
+        excludeStaticFile: false,
     })
 );
 

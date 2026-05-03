@@ -25,6 +25,9 @@ Authorization: Bearer <your-token>
 An `X-Api-Key: <your-api-key>` header is accepted as an alternative.
 
 **Unauthenticated endpoints** (no header required, no usage charge):
+- `GET /llms.txt`
+- `GET /SKILLS.md`
+- `GET /skills.md` (lowercase alias)
 - `GET /v1/health`
 - `GET /v1/version`
 - `GET /v1/networks`
