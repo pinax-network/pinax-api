@@ -179,15 +179,6 @@ export const svmProtocolWithoutAggregatorSchema = z
 
 export const svmProtocolSchema = z.enum(svmProtocols).meta({ description: 'Protocol name', example: 'raydium_amm_v4' });
 
-/**
- * Canonical SVM protocol → ClickHouse-stored value. `meteora_dlmm` is the
- * canonical spelling; rows were indexed under the misspelled `meteora_dllm`.
- */
-export const toSvmProtocolDbValue = <T extends string | null | undefined>(v: T): T | string => {
-    if (v === 'meteora_dlmm') return 'meteora_dllm';
-    return v;
-};
-
 export const tvmProtocolSchema = z
     .enum(['uniswap_v1', 'uniswap_v2', 'uniswap_v3', 'uniswap_v4', 'sunpump'])
     .meta({ description: 'Protocol name', example: 'uniswap_v2' });
