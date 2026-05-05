@@ -324,6 +324,8 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         expect(body.data[0]).toHaveProperty('decimals');
         expect(body.data[0]).not.toHaveProperty('circulating_supply');
         expect(body.data[0]).not.toHaveProperty('holders');
+        expect(body.data[0]).not.toHaveProperty('total_supply');
+        expect(body.data[0]).not.toHaveProperty('total_transfers');
     });
 
     it('GET /v1/evm/tokens/native', async () => {
