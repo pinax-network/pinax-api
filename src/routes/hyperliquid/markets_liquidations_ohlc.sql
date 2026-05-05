@@ -15,32 +15,33 @@ WITH bounds AS (
     )
 )
 SELECT
-    timestamp,
-    coin,
-    dex,
-    interval_min,
-    open,
-    greatest(high_quantile, open, close)                       AS high,
-    least(low_quantile, open, close)                           AS low,
-    close,
-    mark_price_open,
-    greatest(mark_price_high_quantile, mark_price_open, mark_price_close) AS mark_price_high,
-    least(mark_price_low_quantile, mark_price_open, mark_price_close)     AS mark_price_low,
-    mark_price_close,
-    buy_volume,
-    ask_volume,
-    gross_volume,
-    net_volume,
-    open_long_volume,
-    close_long_volume,
-    open_short_volume,
-    close_short_volume,
-    transactions,
-    buys,
-    sells,
-    unique_liquidators,
-    unique_liquidated,
-    total_fees
+    candles.timestamp                                                                AS timestamp,
+    candles.coin                                                                     AS coin,
+    if(empty(n.market_name), candles.coin, n.market_name)                            AS market_name,
+    candles.dex                                                                      AS dex,
+    candles.interval_min                                                             AS interval_min,
+    candles.open                                                                     AS open,
+    greatest(candles.high_quantile, candles.open, candles.close)                     AS high,
+    least(candles.low_quantile, candles.open, candles.close)                         AS low,
+    candles.close                                                                    AS close,
+    candles.mark_price_open                                                          AS mark_price_open,
+    greatest(candles.mark_price_high_quantile, candles.mark_price_open, candles.mark_price_close) AS mark_price_high,
+    least(candles.mark_price_low_quantile, candles.mark_price_open, candles.mark_price_close)     AS mark_price_low,
+    candles.mark_price_close                                                         AS mark_price_close,
+    candles.buy_volume                                                               AS buy_volume,
+    candles.ask_volume                                                               AS ask_volume,
+    candles.gross_volume                                                             AS gross_volume,
+    candles.net_volume                                                               AS net_volume,
+    candles.open_long_volume                                                         AS open_long_volume,
+    candles.close_long_volume                                                        AS close_long_volume,
+    candles.open_short_volume                                                        AS open_short_volume,
+    candles.close_short_volume                                                       AS close_short_volume,
+    candles.transactions                                                             AS transactions,
+    candles.buys                                                                     AS buys,
+    candles.sells                                                                    AS sells,
+    candles.unique_liquidators                                                       AS unique_liquidators,
+    candles.unique_liquidated                                                        AS unique_liquidated,
+    candles.total_fees                                                               AS total_fees
 FROM (
     SELECT
         t.timestamp                                                AS timestamp,
@@ -84,5 +85,6 @@ FROM (
       AND t.timestamp <= (SELECT end_ts FROM bounds)
     GROUP BY t.interval_min, t.coin, t.timestamp
     SETTINGS optimize_aggregation_in_order = 1
-)
-ORDER BY timestamp DESC
+) AS candles
+LEFT JOIN {db_hypercore:Identifier}.state_spot_pair_names AS n FINAL ON n.coin = candles.coin
+ORDER BY candles.timestamp DESC

@@ -32,6 +32,7 @@ const responseSchema = apiUsageResponseSchema.extend({
         z.object({
             timestamp: dateTimeSchema,
             coin: z.string(),
+            market_name: z.string(),
             dex: z.string(),
             liquidated_user: z.string(),
             event_hash: z.string(),
@@ -66,19 +67,20 @@ const openapi = describeRoute(
                                 value: {
                                     data: [
                                         {
-                                            timestamp: '2026-04-08 23:00:40',
-                                            coin: 'FARTCOIN',
+                                            timestamp: '2026-02-06 00:19:53',
+                                            coin: 'BTC',
+                                            market_name: 'BTC',
                                             dex: 'perps',
-                                            liquidated_user: '0xc6cda4ed388719a2d7c119d702ae2ef97c40c406',
+                                            liquidated_user: '0x7ba283114573bde6fd304ad7b188a763e5402a52',
                                             event_hash:
-                                                '0xf9803227bf7df450faf90438b4d3870104004a0d5a7113239d48dd7a7e71ce3b',
+                                                '0x37cd3a3ffeb5bee739460434c180bf000008522599b8ddb9db95e592bdb998d1',
                                             direction: 'LIQUIDATED_CROSS_LONG',
                                             liquidation_kind: 'CROSS_LONG',
                                             fills: 2,
-                                            total_size: 59861909,
-                                            notional: 12966688.11,
-                                            avg_fill_price: 0.21661,
-                                            mark_price: 0.21157,
+                                            total_size: 0.2203,
+                                            notional: 13116.86,
+                                            avg_fill_price: 59540.9,
+                                            mark_price: 60114,
                                             liquidation_method: 'backstop',
                                             total_fees: 0,
                                         },

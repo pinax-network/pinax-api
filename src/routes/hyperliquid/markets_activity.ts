@@ -30,6 +30,7 @@ const responseSchema = apiUsageResponseSchema.extend({
         z.object({
             timestamp: dateTimeSchema,
             coin: z.string(),
+            market_name: z.string(),
             dex: z.string(),
             user: z.string(),
             side: z.string(),
@@ -72,6 +73,7 @@ const openapi = describeRoute(
                                         {
                                             timestamp: '2026-04-30 23:26:59',
                                             coin: 'BTC',
+                                            market_name: 'BTC',
                                             dex: 'perps',
                                             user: '0xd8592afc09c864df215d8012122aed08e4ae453f',
                                             side: 'ASK',

@@ -9,6 +9,7 @@ import {
     createQuerySchema,
     hyperliquidCoinSchema,
     hyperliquidDexIdSchema,
+    hyperliquidTokenSchema,
 } from '../../types/zod.js';
 import { validatorHook, withErrorResponses } from '../../utils.js';
 
@@ -17,12 +18,15 @@ import baseQuery from './markets.sql' with { type: 'text' };
 const querySchema = createQuerySchema({
     coin: { schema: hyperliquidCoinSchema, optional: true },
     dex: { schema: hyperliquidDexIdSchema, optional: true },
+    base_token: { schema: hyperliquidTokenSchema, optional: true },
+    quote_token: { schema: hyperliquidTokenSchema, optional: true },
 });
 
 const responseSchema = apiUsageResponseSchema.extend({
     data: z.array(
         z.object({
             coin: z.string(),
+            market_name: z.string(),
             dex: z.string(),
             price: z.number(),
             price_24h: z.number().nullable(),
@@ -43,7 +47,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Market Lookup',
         description:
-            'Returns the latest snapshot per coin: last trade price, 24h change versus the prior-day close, 24h volume (split by side), trade and unique-user counts, and the most recent open interest and funding rate observed at the last funding snapshot.\n\n`coin` and `dex` compose additively — pass either or both to narrow the scope (a mismatched pair like `coin=cash:TSLA&dex=xyz` returns empty). Omit both for a full listing sorted by 24h volume.',
+            'Returns the latest snapshot per market: last trade price, 24h change versus the prior-day close, 24h volume (split by side), trade and unique-user counts, and the most recent open interest and funding rate observed at the last funding snapshot.\n\nFilters compose additively — pass `coin`, `dex`, `base_token`, and/or `quote_token` to narrow the scope. A mismatched combination (e.g. `coin=cash:TSLA&dex=xyz`) returns empty. Omit all for a full listing sorted by 24h volume.\n\n`base_token` and `quote_token` are spot-discovery filters: `?base_token=HYPE` returns every spot pair where HYPE sits on the base side (HYPE/USDC, HYPE/USDT0, …). Use the `coin` from the result as the identifier on the rest of the `/v1/hyperliquid/*` endpoints.',
         tags: ['Hyperliquid Markets'],
         security: [],
         responses: {
@@ -58,6 +62,7 @@ const openapi = describeRoute(
                                     data: [
                                         {
                                             coin: 'BTC',
+                                            market_name: 'BTC',
                                             dex: 'perps',
                                             price: 75944,
                                             price_24h: 76765,
@@ -70,6 +75,22 @@ const openapi = describeRoute(
                                             open_interest: 27608.56,
                                             funding_rate: 0.0000037749,
                                             funding_snapshot_time: '2026-04-28 15:00:00',
+                                        },
+                                        {
+                                            coin: '@107',
+                                            market_name: 'HYPE/USDC',
+                                            dex: 'spot',
+                                            price: 22.41,
+                                            price_24h: 22.85,
+                                            price_24h_change: -0.01926,
+                                            volume_24h: 18452113.47,
+                                            buy_volume_24h: 9381102.5,
+                                            ask_volume_24h: 9071010.97,
+                                            trades_24h: 28412,
+                                            unique_users_24h: 1267,
+                                            open_interest: null,
+                                            funding_rate: null,
+                                            funding_snapshot_time: null,
                                         },
                                     ],
                                 },

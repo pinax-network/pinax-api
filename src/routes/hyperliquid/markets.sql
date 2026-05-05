@@ -42,6 +42,7 @@ WITH
     )
 SELECT
     cur.coin                                                                 AS coin,
+    if(empty(n.market_name), cur.coin, n.market_name)                        AS market_name,
     cur.dex                                                                  AS dex,
     cur.price                                                                AS price,
     prev.price_24h                                                           AS price_24h,
@@ -57,6 +58,9 @@ SELECT
 FROM day_cur cur
 LEFT JOIN day_prev prev ON prev.coin = cur.coin
 LEFT JOIN oi_latest oi  ON oi.coin  = cur.coin
+LEFT JOIN {db_hypercore:Identifier}.state_spot_pair_names AS n FINAL ON n.coin = cur.coin
+WHERE (isNull({base_token:Nullable(String)})  OR n.base_token  = {base_token:Nullable(String)})
+  AND (isNull({quote_token:Nullable(String)}) OR n.quote_token = {quote_token:Nullable(String)})
 ORDER BY cur.volume_24h DESC
 LIMIT {limit:UInt64}
 OFFSET {offset:UInt64}

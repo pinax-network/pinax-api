@@ -27,6 +27,7 @@ const responseSchema = apiUsageResponseSchema.extend({
         z.object({
             user: z.string(),
             coin: z.string(),
+            market_name: z.string(),
             dex: z.string(),
             position_size: z.number(),
             funding_rate: z.number(),
@@ -55,6 +56,7 @@ const openapi = describeRoute(
                                         {
                                             user: '0xecb63caa47c7c4e77f60f1ce858cf28dc2b82b00',
                                             coin: 'PUMP',
+                                            market_name: 'PUMP',
                                             dex: 'perps',
                                             position_size: -998618146,
                                             funding_rate: 0.0000125,

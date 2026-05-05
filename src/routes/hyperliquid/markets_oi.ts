@@ -28,6 +28,7 @@ const responseSchema = apiUsageResponseSchema.extend({
         z.object({
             timestamp: dateTimeSchema,
             coin: z.string(),
+            market_name: z.string(),
             dex: z.string(),
             interval_min: z.number().int(),
             open_interest: z.number(),
@@ -66,6 +67,7 @@ const openapi = describeRoute(
                                         {
                                             timestamp: '2026-04-30 23:00:00',
                                             coin: 'BTC',
+                                            market_name: 'BTC',
                                             dex: 'perps',
                                             interval_min: 60,
                                             open_interest: 27984.45,
