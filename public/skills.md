@@ -1,11 +1,11 @@
 ---
 name: Token API
-description: Real-time token data across EVM (Ethereum, Base, BSC, Polygon, Arbitrum, ...), SVM (Solana), and TVM (TRON). Query balances, transfers, holders, DEX swaps, liquidity pools with OHLC, NFTs, and Polymarket markets.
+description: Real-time token, balance, transfer, holder, DEX, NFT, and Polymarket data across EVM, SVM, and TVM networks.
 ---
 
 # Token API
 
-> Power your apps & AI agents with real-time token data across EVM, SVM, and TVM blockchains. This file is a quick reference for agents; the full machine-readable contract is at `GET /openapi`.
+> Quick reference for AI agents using Token API. The authoritative machine-readable contract is `GET /openapi`.
 
 - **Base URL:** `https://token-api.thegraph.com`
 - **OpenAPI spec:** `GET /openapi` — authoritative reference, use for schema details
@@ -36,6 +36,34 @@ An `X-Api-Key: <your-api-key>` header is accepted as an alternative.
 - `GET /v1/tvm/dexes`
 - `GET /v1/polymarket/markets`
 
+## Errors
+
+Error responses share a common envelope:
+
+```json
+{
+  "status": 400,
+  "code": "bad_query_input",
+  "message": "Invalid network ID"
+}
+```
+
+Common codes: `bad_query_input` (400), `authentication_failed` (401), `route_not_found` (404), `bad_database_response` (500), `database_connection_failed` (503).
+
+## Capabilities
+
+Map a goal to the relevant endpoint family:
+
+- **Look up a wallet's balances and transfer history** — `/v1/{evm,svm,tvm}/balances`, `/v1/{evm,svm,tvm}/transfers`
+- **Track balance changes over time** — `/v1/evm/balances/historical`, `/v1/evm/balances/historical/native`
+- **Resolve token metadata** — `/v1/{evm,svm,tvm}/tokens`, `/v1/{evm,svm,tvm}/tokens/native`
+- **Find holders of a token** — `/v1/{evm,svm}/holders`, `/v1/evm/holders/native`, `/v1/evm/nft/holders`
+- **Trace DEX swaps and liquidity pools** — `/v1/{evm,svm,tvm}/swaps`, `/v1/{evm,svm,tvm}/pools`, `/v1/{evm,svm,tvm}/dexes`
+- **Get OHLC time-series** — `/v1/{evm,svm,tvm}/pools/ohlc`, `/v1/polymarket/markets/ohlc`
+- **List a wallet's NFT holdings and activity** — `/v1/evm/nft/ownerships`, `/v1/evm/nft/transfers`, `/v1/evm/nft/sales`, `/v1/evm/nft/items`, `/v1/evm/nft/collections`
+- **Discover Polymarket markets, OI, and per-user PNL** — `/v1/polymarket/markets`, `/v1/polymarket/markets/oi`, `/v1/polymarket/markets/activity`, `/v1/polymarket/users`, `/v1/polymarket/users/positions`
+- **Discover supported chains and protocols** (free) — `/v1/networks`, `/v1/{evm,svm,tvm}/dexes`
+
 ## Common patterns
 
 These conventions apply across the data endpoints unless overridden.
@@ -60,7 +88,7 @@ Event and historical endpoints accept either block or time windows:
 
 ### Intervals
 
-Historical and OHLC endpoints use an `interval` enum: `1h`, `4h`, `1d` (default), `1w`.
+Historical and OHLC endpoints use an `interval` enum: `1h`, `4h`, `1d` (default), `1w`. A few endpoints accept additional values (e.g. `/v1/polymarket/users` supports `30d`); the OpenAPI per-endpoint schema is authoritative.
 
 ### Network discovery
 
@@ -269,19 +297,3 @@ Prediction-market data for the Polygon-based Polymarket CTF exchange. Outcome to
 | `GET /v1/polymarket/platform` | — | `interval`, `start_time`, `end_time` |
 
 Aggregate volume, open interest, and fees across all Polymarket markets.
-
----
-
-## Errors
-
-Error responses share a common envelope:
-
-```json
-{
-  "status": 400,
-  "code": "bad_query_input",
-  "message": "Invalid network ID"
-}
-```
-
-Common codes: `bad_query_input` (400), `authentication_failed` (401), `route_not_found` (404), `bad_database_response` (500), `database_connection_failed` (503).
