@@ -1013,12 +1013,15 @@ export const hyperliquidUserSortBySchema = z.enum(hyperliquidUserSortFields).met
     default: 'total_volume',
 });
 
-export const hyperliquidTokenSchema = z.coerce.string().min(1).meta({
-    type: 'string',
-    description:
-        'Spot token symbol (e.g. `HYPE`, `USDC`). Use to discover all spot pairs with this token on a given side via `/v1/hyperliquid/markets?base_token=...` or `?quote_token=...`.',
-    examples: ['HYPE', 'USDC', 'PURR'],
-});
+export const hyperliquidTokenSchema = z.coerce
+    .string()
+    .min(1)
+    .meta({
+        type: 'string',
+        description:
+            'Spot token symbol (e.g. `HYPE`, `USDC`). Use to discover all spot pairs with this token on a given side via `/v1/hyperliquid/markets?base_token=...` or `?quote_token=...`.',
+        examples: ['HYPE', 'USDC', 'PURR'],
+    });
 
 export const hyperliquidCoinSchema = z.coerce.string().min(1).meta({
     type: 'string',
