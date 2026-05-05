@@ -90,6 +90,34 @@ const llmsTextOpenapi = describeRoute({
     },
 });
 
+const openapiSpecOpenapi = describeRoute({
+    operationId: 'getOpenapiSpec',
+    summary: 'OpenAPI Specification',
+    description: 'Returns the public OpenAPI specification for Token API.',
+    tags: ['Documentation'],
+    security: [],
+    responses: {
+        200: {
+            description: 'Successful Response',
+            content: {
+                'application/json': {
+                    schema: {
+                        type: 'object',
+                        example: {
+                            openapi: '3.1.0',
+                            info: {},
+                            servers: [],
+                            paths: {},
+                            components: {},
+                            tags: [],
+                        },
+                    },
+                },
+            },
+        },
+    },
+});
+
 app.get(
     '/SKILLS.md',
     skillsMarkdownOpenapi,
@@ -106,6 +134,7 @@ app.get(
 );
 app.get(
     '/openapi',
+    openapiSpecOpenapi,
     openAPIRouteHandler(app, {
         documentation: {
             info: {
