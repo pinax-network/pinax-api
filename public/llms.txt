@@ -1,35 +1,28 @@
 # Token API
 
-> Token API provides real-time token, balance, transfer, holder, DEX, liquidity pool, NFT, and Polymarket market data across EVM, SVM, and TVM networks.
+> Real-time token, balance, transfer, holder, DEX, NFT, and Polymarket data across EVM, SVM, and TVM networks.
 
-Use this file as a compact documentation index for AI tools. For exact request parameters, response schemas, authentication, and security requirements, prefer the OpenAPI document. For agent-oriented workflows and capability guidance, use the skills reference.
-
-Important notes:
 - Base URL: https://token-api.thegraph.com
-- Most data endpoints require `Authorization: Bearer <token>` from The Graph Market or `X-Api-Key`.
-- Free unauthenticated endpoints include documentation, health/version/network discovery, DEX discovery, and Polymarket market discovery.
-- Runtime network support is configuration-driven; call `GET /v1/networks` before assuming a network is indexed.
+- Most endpoints require `Authorization: Bearer <token>` from The Graph Market, or `X-Api-Key`.
+- Network support is configuration-driven — call `GET /v1/networks` first to see what's indexed.
 
 ## Core references
 
-- [OpenAPI specification](https://token-api.thegraph.com/openapi): Authoritative machine-readable API contract.
-- [Agent skills reference](https://token-api.thegraph.com/SKILLS.md): Capability summary, workflows, constraints, and endpoint overview for AI agents.
-- [Token API quick start](https://thegraph.com/docs/en/token-api/quick-start/): Human-readable setup and first requests.
-- [Token API FAQ](https://thegraph.com/docs/en/token-api/faq/): Plan, billing, authentication, and usage notes.
+- [OpenAPI specification](https://token-api.thegraph.com/openapi): Authoritative machine-readable contract — use for schemas and parameters.
+- [Agent skills reference](https://token-api.thegraph.com/SKILLS.md): Endpoint catalog, conventions, and worked examples for agents.
+- [Quick start](https://thegraph.com/docs/en/token-api/quick-start/): Setup and first requests.
+- [FAQ](https://thegraph.com/docs/en/token-api/faq/): Plans, billing, authentication.
 
 ## Free endpoints
 
-- [Health check](https://token-api.thegraph.com/v1/health): Database connectivity status.
-- [Version](https://token-api.thegraph.com/v1/version): API build version, date, and commit.
-- [Supported networks](https://token-api.thegraph.com/v1/networks): Indexed chains and per-category indexing freshness.
+No authentication required, no usage charge.
+
+- [llms.txt](https://token-api.thegraph.com/llms.txt): This file.
+- [SKILLS.md](https://token-api.thegraph.com/SKILLS.md): Agent skills reference (`/skills.md` lowercase alias also works).
+- [Health](https://token-api.thegraph.com/v1/health): Database connectivity status.
+- [Version](https://token-api.thegraph.com/v1/version): Build version, date, commit.
+- [Networks](https://token-api.thegraph.com/v1/networks): Indexed chains and per-category indexing freshness.
 - [EVM DEXes](https://token-api.thegraph.com/v1/evm/dexes): Supported EVM DEX protocols by network.
 - [SVM DEXes](https://token-api.thegraph.com/v1/svm/dexes): Supported SVM DEX protocols by network.
 - [TVM DEXes](https://token-api.thegraph.com/v1/tvm/dexes): Supported TVM DEX protocols by network.
 - [Polymarket markets](https://token-api.thegraph.com/v1/polymarket/markets): Public Polymarket market discovery.
-
-## API families
-
-- [EVM endpoints](https://token-api.thegraph.com/openapi): ERC-20 tokens, native tokens, balances, transfers, holders, swaps, DEXes, pools, OHLC, and NFTs.
-- [SVM endpoints](https://token-api.thegraph.com/openapi): SPL tokens, native SOL, balances, transfers, holders, swaps, DEXes, pools, OHLC, and account owner lookup.
-- [TVM endpoints](https://token-api.thegraph.com/openapi): TRC-20 tokens, native TRX, transfers, swaps, DEXes, pools, and OHLC.
-- [Polymarket endpoints](https://token-api.thegraph.com/openapi): Markets, OHLC, open interest, activity, platform stats, users, and positions.

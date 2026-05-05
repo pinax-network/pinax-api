@@ -50,12 +50,12 @@ const skillsMarkdownOpenapi = describeRoute({
                         type: 'string',
                         example: `---
 name: Token API
-description: Real-time token data across EVM (Ethereum, Base, BSC, Polygon, Arbitrum, ...), SVM (Solana), and TVM (TRON). Query balances, transfers, holders, DEX swaps, liquidity pools with OHLC, NFTs, and Polymarket markets.
+description: Real-time token, balance, transfer, holder, DEX, NFT, and Polymarket data across EVM, SVM, and TVM networks.
 ---
 
 # Token API
 
-> Power your apps & AI agents with real-time token data across EVM, SVM, and TVM blockchains. This file is a quick reference for agents; the full machine-readable contract is at \`GET /openapi\`.
+> Quick reference for AI agents using Token API. The authoritative machine-readable contract is \`GET /openapi\`.
 
 ...`,
                     },
@@ -80,9 +80,7 @@ const llmsTextOpenapi = describeRoute({
                         type: 'string',
                         example: `# Token API
 
-> Token API provides real-time token, balance, transfer, holder, DEX, liquidity pool, NFT, and Polymarket market data across EVM, SVM, and TVM networks.
-
-Use this file as a compact documentation index for AI tools. For exact request parameters, response schemas, authentication, and security requirements, prefer the OpenAPI document. For agent-oriented workflows and capability guidance, use the skills reference.
+> Real-time token, balance, transfer, holder, DEX, NFT, and Polymarket data across EVM, SVM, and TVM networks.
 
 ...`,
                     },
