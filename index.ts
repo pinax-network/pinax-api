@@ -32,6 +32,9 @@ app.route('/', routes);
 app.get('/', () => new Response(Bun.file('./public/index.html')));
 app.get('/favicon.svg', () => new Response(Bun.file('./public/favicon.svg')));
 app.get('/banner.jpg', () => new Response(Bun.file('./public/banner.jpg')));
+
+const contentTypeMarkdown = 'text/markdown; charset=UTF-8';
+
 const skillsMarkdownOpenapi = describeRoute({
     operationId: 'getSkillsMarkdown',
     summary: 'Agent Skills Reference',
@@ -42,10 +45,19 @@ const skillsMarkdownOpenapi = describeRoute({
         200: {
             description: 'Successful Response',
             content: {
-                'text/markdown': {
+                [contentTypeMarkdown]: {
                     schema: {
                         type: 'string',
-                        example: '# Token API',
+                        example: `---
+name: Token API
+description: Real-time token data across EVM (Ethereum, Base, BSC, Polygon, Arbitrum, ...), SVM (Solana), and TVM (TRON). Query balances, transfers, holders, DEX swaps, liquidity pools with OHLC, NFTs, and Polymarket markets.
+---
+
+# Token API
+
+> Power your apps & AI agents with real-time token data across EVM, SVM, and TVM blockchains. This file is a quick reference for agents; the full machine-readable contract is at \`GET /openapi\`.
+
+...`,
                     },
                 },
             },
@@ -63,10 +75,16 @@ const llmsTextOpenapi = describeRoute({
         200: {
             description: 'Successful Response',
             content: {
-                'text/plain': {
+                [contentTypeMarkdown]: {
                     schema: {
                         type: 'string',
-                        example: '# Token API',
+                        example: `# Token API
+
+> Token API provides real-time token, balance, transfer, holder, DEX, liquidity pool, NFT, and Polymarket market data across EVM, SVM, and TVM networks.
+
+Use this file as a compact documentation index for AI tools. For exact request parameters, response schemas, authentication, and security requirements, prefer the OpenAPI document. For agent-oriented workflows and capability guidance, use the skills reference.
+
+...`,
                     },
                 },
             },
@@ -77,16 +95,16 @@ const llmsTextOpenapi = describeRoute({
 app.get(
     '/SKILLS.md',
     skillsMarkdownOpenapi,
-    () => new Response(Bun.file('./public/skills.md'), { headers: { 'Content-Type': 'text/markdown; charset=UTF-8' } })
+    () => new Response(Bun.file('./public/skills.md'), { headers: { 'Content-Type': contentTypeMarkdown } })
 );
 app.get(
     '/skills.md',
-    () => new Response(Bun.file('./public/skills.md'), { headers: { 'Content-Type': 'text/markdown; charset=UTF-8' } })
+    () => new Response(Bun.file('./public/skills.md'), { headers: { 'Content-Type': contentTypeMarkdown } })
 );
 app.get(
     '/llms.txt',
     llmsTextOpenapi,
-    () => new Response(Bun.file('./public/llms.txt'), { headers: { 'Content-Type': 'text/plain; charset=UTF-8' } })
+    () => new Response(Bun.file('./public/llms.txt'), { headers: { 'Content-Type': contentTypeMarkdown } })
 );
 app.get(
     '/openapi',
