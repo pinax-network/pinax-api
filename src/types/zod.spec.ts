@@ -297,8 +297,30 @@ describe('Protocol Schemas', () => {
 
     describe('svmProtocolSchema', () => {
         it('should accept valid protocols', () => {
-            expect(svmProtocolSchema.parse('raydium_amm_v4')).toBe('raydium_amm_v4');
-            expect(svmProtocolSchema.parse('meteora_dlmm')).toBe('meteora_dlmm');
+            const protocols = [
+                'boop',
+                'darklake',
+                'dumpfun',
+                'jupiter_v4',
+                'jupiter_v6',
+                'meteora_daam',
+                'meteora_dlmm',
+                'orca_whirlpool',
+                'pumpfun',
+                'pumpfun_amm',
+                'raydium_amm_v4',
+                'raydium_clmm',
+                'raydium_cpmm',
+                'raydium_launchpad',
+                'meteora_amm',
+                'byreal',
+                'moonshot',
+                'pancakeswap',
+            ] as const;
+
+            for (const protocol of protocols) {
+                expect(svmProtocolSchema.parse(protocol)).toBe(protocol);
+            }
         });
 
         it('should reject invalid protocols', () => {

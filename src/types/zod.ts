@@ -159,11 +159,16 @@ const svmProtocolsWithoutAggregators = [
     'raydium_clmm',
     'raydium_cpmm',
     'raydium_launchpad',
+    'meteora_daam',
     'meteora_dlmm',
+    'meteora_amm',
     'orca_whirlpool',
     'boop',
+    'byreal',
     'darklake',
     'dumpfun',
+    'moonshot',
+    'pancakeswap',
 ] as const;
 
 const svmProtocols = ['jupiter_v4', 'jupiter_v6', ...svmProtocolsWithoutAggregators] as const;
