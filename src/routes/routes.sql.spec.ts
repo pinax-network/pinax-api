@@ -352,6 +352,10 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         );
         expect(response.status).toBe(200);
         expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('name');
+        expect(body.data[0]).toHaveProperty('symbol');
+        expect(body.data[0]).toHaveProperty('decimals');
         expect(body.data[0]).not.toHaveProperty('circulating_supply');
         expect(body.data[0]).not.toHaveProperty('holders');
     });
