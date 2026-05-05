@@ -44,8 +44,7 @@ SELECT
     /* DEX */
     p.program_id AS program_id,
     program_names(p.program_id) AS program_name,
-    /* map the legacy `meteora_dllm` storage value to the canonical `meteora_dlmm` */
-    if(p.protocol = 'meteora_dllm', 'meteora_dlmm', p.protocol) AS protocol,
+    p.protocol AS protocol,
     p.amm as amm,
     program_names(p.amm) as amm_name,
     p.amm_pool AS amm_pool,

@@ -20,7 +20,6 @@ import {
     svmTokenResponseSchema,
     svmTransactionSchema,
     timestampSchema,
-    toSvmProtocolDbValue,
 } from '../../types/zod.js';
 import { validatorHook, withErrorResponses } from '../../utils.js';
 
@@ -182,7 +181,6 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
 
     const response = await makeUsageQueryJson(c, [query], {
         ...params,
-        protocol: toSvmProtocolDbValue(params.protocol),
         db_dex: dbDex.database,
         db_metadata: dbMetadata.database,
         db_accounts: dbAccounts.database,

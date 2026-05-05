@@ -242,8 +242,8 @@ SELECT
     toString(s.output_amount) AS output_amount,
     if(d2.mint != '', s.output_amount / pow(10, d2.decimals), 0) AS output_value,
 
-    /* prices — map the legacy `meteora_dllm` storage value to the canonical `meteora_dlmm` */
-    if(s.protocol = 'meteora_dllm', 'meteora_dlmm', s.protocol) AS protocol,
+    /* prices */
+    s.protocol AS protocol,
 
 
     /* summary */
@@ -258,7 +258,7 @@ SELECT
         if(m2.mint != '', m2.symbol, s.output_mint),
         arrayStringConcat(
             arrayMap(x -> concat(upper(substring(x, 1, 1)), substring(x, 2)),
-                     splitByChar('_', if(s.protocol = 'meteora_dllm', 'meteora_dlmm', toString(s.protocol)))),
+                     splitByChar('_', toString(s.protocol))),
             ' '
         )
     ) AS summary,
