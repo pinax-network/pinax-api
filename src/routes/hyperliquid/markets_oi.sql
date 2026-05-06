@@ -28,6 +28,7 @@ LEFT JOIN (
 LEFT JOIN {db_hypercore:Identifier}.state_spot_pair_names AS n FINAL ON n.coin = oi.coin
 WHERE oi.coin = {coin:String}
   AND oi.interval_min = {interval:UInt32}
+  AND (isNull({dex:Nullable(String)}) OR dex_from_coin(oi.coin) = {dex:Nullable(String)})
   AND (isNull({start_time:Nullable(UInt64)}) OR oi.timestamp >= toDateTime({start_time:Nullable(UInt64)}))
   AND (isNull({end_time:Nullable(UInt64)})   OR oi.timestamp <  toDateTime({end_time:Nullable(UInt64)}))
 GROUP BY oi.interval_min, oi.coin, oi.timestamp

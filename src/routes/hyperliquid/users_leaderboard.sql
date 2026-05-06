@@ -1,5 +1,8 @@
 SELECT
     user,
+    {coin:Nullable(String)}       AS coin,
+    {dex:Nullable(String)}        AS dex,
+    {interval:Nullable(String)}   AS interval,
     transactions,
     buys,
     sells,

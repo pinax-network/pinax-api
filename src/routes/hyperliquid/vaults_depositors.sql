@@ -29,6 +29,7 @@ WITH
     )
 SELECT
     deposits.user                                       AS user,
+    {vault:String}                                      AS vault,
     deposits.deposits                                   AS deposits,
     deposits.deposit_count                              AS deposit_count,
     coalesce(withdrawals.withdrawals, 0)                AS withdrawals,

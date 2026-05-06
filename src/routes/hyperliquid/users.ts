@@ -31,6 +31,9 @@ const responseSchema = apiUsageResponseSchema.extend({
     data: z.array(
         z.object({
             user: z.string(),
+            coin: z.string().nullable(),
+            dex: z.string().nullable(),
+            interval: z.string().nullable(),
             transactions: z.number().int(),
             buys: z.number().int(),
             sells: z.number().int(),
@@ -71,11 +74,15 @@ const openapi = describeRoute(
                     'application/json': {
                         schema: resolver(responseSchema),
                         examples: {
-                            default: {
+                            leaderboard: {
+                                summary: 'Leaderboard mode (no filter)',
                                 value: {
                                     data: [
                                         {
                                             user: '0x3029df6146509f4bd9bc39d85dd01fc9e9639a2f',
+                                            coin: null,
+                                            dex: null,
+                                            interval: null,
                                             transactions: 969,
                                             buys: 488,
                                             sells: 481,
@@ -87,6 +94,32 @@ const openapi = describeRoute(
                                             total_funding: 0.14,
                                             liquidation_fills: 0,
                                             coins_traded: 6,
+                                            first_trade: '2026-02-22 02:01:26',
+                                            last_trade: '2026-04-30 05:39:27',
+                                        },
+                                    ],
+                                },
+                            },
+                            filtered_by_coin: {
+                                summary: 'Filtered by coin=BTC',
+                                value: {
+                                    data: [
+                                        {
+                                            user: '0x3029df6146509f4bd9bc39d85dd01fc9e9639a2f',
+                                            coin: 'BTC',
+                                            dex: null,
+                                            interval: null,
+                                            transactions: 412,
+                                            buys: 208,
+                                            sells: 204,
+                                            volume_bought: 48173.21,
+                                            volume_sold: 50624.09,
+                                            total_volume: 98797.3,
+                                            total_fees: 5.92,
+                                            realized_pnl: 78.41,
+                                            total_funding: 0.06,
+                                            liquidation_fills: 0,
+                                            coins_traded: 1,
                                             first_trade: '2026-02-22 02:01:26',
                                             last_trade: '2026-04-30 05:39:27',
                                         },

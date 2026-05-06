@@ -24,6 +24,7 @@ const responseSchema = apiUsageResponseSchema.extend({
     data: z.array(
         z.object({
             user: z.string(),
+            vault: evmAddressSchema,
             deposits: z.number(),
             deposit_count: z.number().int(),
             withdrawals: z.number(),
@@ -60,6 +61,7 @@ const openapi = describeRoute(
                                     data: [
                                         {
                                             user: '0xa97d92e993f487d4cdbdb381c77972d4fc3b39dd',
+                                            vault: '0xdfc24b077bc1425ad1dea75bcb6f8158e10df303',
                                             deposits: 1423386.01,
                                             deposit_count: 12,
                                             withdrawals: 885623.07,

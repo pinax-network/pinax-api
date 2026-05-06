@@ -7,6 +7,7 @@ WITH bounds AS (
         FROM {db_hypercore:Identifier}.state_ohlcv_fills
         WHERE coin = {coin:String}
           AND interval_min = {interval:UInt32}
+          AND (isNull({dex:Nullable(String)}) OR dex_from_coin(coin) = {dex:Nullable(String)})
           AND (isNull({start_time:Nullable(UInt64)}) OR timestamp >= toDateTime({start_time:Nullable(UInt64)}))
           AND (isNull({end_time:Nullable(UInt64)})   OR timestamp <  toDateTime({end_time:Nullable(UInt64)}))
         GROUP BY timestamp

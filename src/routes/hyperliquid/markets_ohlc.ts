@@ -10,6 +10,7 @@ import {
     dateTimeSchema,
     evmIntervalSchema,
     hyperliquidCoinSchema,
+    hyperliquidDexIdSchema,
     timestampSchema,
 } from '../../types/zod.js';
 import { validatorHook, withErrorResponses } from '../../utils.js';
@@ -18,6 +19,7 @@ import query from './markets_ohlc.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
     coin: { schema: hyperliquidCoinSchema },
+    dex: { schema: hyperliquidDexIdSchema, optional: true },
     interval: { schema: evmIntervalSchema, prefault: '1d' },
     start_time: { schema: timestampSchema, optional: true },
     end_time: { schema: timestampSchema, optional: true },
