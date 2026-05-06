@@ -7,24 +7,11 @@ interface ClientOptions extends WebClickHouseClientConfigOptions {
 }
 
 function getClusterForNetwork(network: string): { url: string; username?: string; password?: string } | null {
-    // Try to find cluster from any database type for this network
-    const networkDb =
-        config.balancesDatabases[network] ||
-        config.transfersDatabases[network] ||
-        config.nftsDatabases[network] ||
-        config.dexesDatabases[network] ||
-        config.contractsDatabases[network] ||
-        config.polymarketDatabases[network] ||
-        config.scraperDatabases[network];
+    const clusterName = config.networkClusters[network];
+    if (!clusterName) return null;
 
-    if (!networkDb || !networkDb.cluster) {
-        return null;
-    }
-
-    const cluster = config.clusters[networkDb.cluster];
-    if (!cluster) {
-        return null;
-    }
+    const cluster = config.clusters[clusterName];
+    if (!cluster) return null;
 
     return {
         url: cluster.url,

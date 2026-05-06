@@ -11,7 +11,7 @@ const ClusterConfigSchema = z.object({
 
 const NetworkConfigSchema = z
     .object({
-        type: z.enum(['evm', 'svm', 'tvm', 'polymarket']),
+        type: z.enum(['evm', 'svm', 'tvm', 'polymarket', 'hyperliquid']),
         cluster: z.string(),
     })
     .catchall(z.string());
@@ -35,8 +35,12 @@ type DatabaseMap = Record<string, NetworkDatabaseMapping>;
 
 // Known database maps — add new entries here when onboarding new database types.
 // The generic parser populates all of these from YAML `${key}` → `${key}Databases`.
+// `networkClusters` is the canonical network → cluster lookup; it does not
+// depend on any specific database map, so cluster routing keeps working when
+// a new database type is added without touching the routing layer.
 export interface ParsedDbsConfig {
     clusters: Record<string, ClusterConfig>;
+    networkClusters: Record<string, string>;
     balancesDatabases: DatabaseMap;
     transfersDatabases: DatabaseMap;
     accountsDatabases: DatabaseMap;
@@ -46,11 +50,13 @@ export interface ParsedDbsConfig {
     contractsDatabases: DatabaseMap;
     polymarketDatabases: DatabaseMap;
     scraperDatabases: DatabaseMap;
+    hypercoreDatabases: DatabaseMap;
 }
 
 function emptyConfig(): ParsedDbsConfig {
     return {
         clusters: {},
+        networkClusters: {},
         balancesDatabases: {},
         transfersDatabases: {},
         accountsDatabases: {},
@@ -60,6 +66,7 @@ function emptyConfig(): ParsedDbsConfig {
         contractsDatabases: {},
         polymarketDatabases: {},
         scraperDatabases: {},
+        hypercoreDatabases: {},
     };
 }
 
@@ -89,13 +96,13 @@ export function loadDbsConfig(configPath?: string): ParsedDbsConfig {
         }
         const { type, cluster, ...databases } = networkConfig;
         const mapping = { type, cluster };
+        result.networkClusters[networkId] = cluster;
 
         for (const [key, dbName] of Object.entries(databases)) {
             const prop = `${key}Databases` as keyof ParsedDbsConfig;
-            if (prop === 'clusters') continue;
-            const map = result[prop] as DatabaseMap | undefined;
-            if (map) {
-                map[networkId] = { database: dbName, ...mapping };
+            const map = result[prop];
+            if (map && typeof map === 'object' && !Array.isArray(map)) {
+                (map as DatabaseMap)[networkId] = { database: dbName, ...mapping };
             }
         }
     }

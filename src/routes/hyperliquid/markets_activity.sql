@@ -1,0 +1,72 @@
+WITH
+    start_ts AS (
+        SELECT if(
+            isNotNull({start_time:Nullable(UInt64)}),
+            toDateTime({start_time:Nullable(UInt64)}),
+            now() - INTERVAL 24 HOUR
+        ) AS t
+    ),
+    end_ts AS (
+        SELECT if(
+            isNotNull({end_time:Nullable(UInt64)}),
+            toDateTime({end_time:Nullable(UInt64)}),
+            now()
+        ) AS t
+    )
+SELECT
+    page.block_num                                          AS block_num,
+    page.timestamp                                          AS timestamp,
+    page.transaction_hash                                   AS transaction_hash,
+    page.transaction_id                                     AS transaction_id,
+    page.coin                                               AS coin,
+    if(empty(n.market_name), page.coin, n.market_name)      AS market_name,
+    page.dex                                                AS dex,
+    page.user                                               AS user,
+    page.side                                               AS side,
+    page.direction                                          AS direction,
+    page.price                                              AS price,
+    page.size                                               AS size,
+    page.notional                                           AS notional,
+    page.start_position                                     AS start_position,
+    page.closed_pnl                                         AS closed_pnl,
+    page.fee                                                AS fee,
+    page.fee_token                                          AS fee_token,
+    page.order_id                                           AS order_id,
+    page.client_order_id                                    AS client_order_id,
+    page.twap_id                                            AS twap_id,
+    page.crossed                                            AS crossed
+FROM (
+    SELECT
+        timestamp,
+        coin,
+        dex,
+        user,
+        side,
+        direction,
+        price,
+        size,
+        size * price          AS notional,
+        start_position,
+        closed_pnl_num        AS closed_pnl,
+        fee,
+        fee_token,
+        order_id,
+        client_order_id,
+        twap_id,
+        crossed,
+        event_hash            AS transaction_hash,
+        transaction_id,
+        block_num,
+        event_index
+    FROM {db_hypercore:Identifier}.fills
+    WHERE timestamp >= (SELECT t FROM start_ts)
+      AND timestamp <  (SELECT t FROM end_ts)
+      AND (isNull({user:Nullable(String)}) OR user = {user:Nullable(String)})
+      AND (isNull({coin:Nullable(String)}) OR coin = {coin:Nullable(String)})
+      AND (isNull({dex:Nullable(String)})  OR dex  = {dex:Nullable(String)})
+    ORDER BY timestamp DESC, block_num DESC, event_index DESC
+    LIMIT {limit:UInt64}
+    OFFSET {offset:UInt64}
+) AS page
+LEFT JOIN {db_hypercore:Identifier}.state_spot_pair_names AS n FINAL ON n.coin = page.coin
+ORDER BY page.timestamp DESC, page.block_num DESC, page.event_index DESC

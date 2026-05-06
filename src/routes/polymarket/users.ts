@@ -8,8 +8,8 @@ import {
     apiUsageResponseSchema,
     createQuerySchema,
     evmAddress,
-    polymarketUserIntervalSchema,
     polymarketUserSortBySchema,
+    userLookbackIntervalSchema,
 } from '../../types/zod.js';
 import { validatorHook, withErrorResponses } from '../../utils.js';
 
@@ -17,7 +17,7 @@ import baseQuery from './users.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
     user: { schema: evmAddress, optional: true },
-    interval: { schema: polymarketUserIntervalSchema, optional: true },
+    interval: { schema: userLookbackIntervalSchema, optional: true },
     sort_by: { schema: polymarketUserSortBySchema, prefault: 'total_volume' },
 });
 

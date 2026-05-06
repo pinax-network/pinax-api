@@ -932,4 +932,222 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         const { response } = await fetchRoute('/v1/polymarket/markets/oi?interval=1d&limit=1');
         expect(response.status).toBe(400);
     });
+
+    // --- Hyperliquid ---
+    // A user we know is consistently on the leaderboard.
+    const HL_USER = '0xecb63caa47c7c4e77f60f1ce858cf28dc2b82b00';
+    // A vault we know exists.
+    const HL_VAULT = '0x07fd993f0fa3a185f7207adccd29f7a87404689d';
+
+    let hasHyperliquid: boolean;
+
+    it('detect hyperliquid config', async () => {
+        const { config } = await import('../config.js');
+        hasHyperliquid = !!config.hypercoreDatabases?.hyperliquid;
+    });
+
+    it('GET /v1/hyperliquid/dexes (public, no auth)', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute('/v1/hyperliquid/dexes');
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('dex');
+        expect(body.data[0]).toHaveProperty('volume_24h');
+        expect(body.data[0]).toHaveProperty('trades_24h');
+        expect(body.data[0]).toHaveProperty('unique_users_24h');
+        // perps must always show up
+        const dexNames = (body.data as { dex: string }[]).map((d) => d.dex);
+        expect(dexNames).toContain('perps');
+    });
+
+    it('GET /v1/hyperliquid/markets (by coin)', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute('/v1/hyperliquid/markets?coin=BTC');
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBe(1);
+        expect(body.data[0].coin).toBe('BTC');
+        expect(body.data[0].dex).toBe('perps');
+    });
+
+    it('GET /v1/hyperliquid/markets (mismatched coin+dex returns empty)', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute('/v1/hyperliquid/markets?coin=BTC&dex=xyz');
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBe(0);
+    });
+
+    it('GET /v1/hyperliquid/markets/ohlc', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute('/v1/hyperliquid/markets/ohlc?coin=BTC&interval=1d&limit=3');
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('open');
+        expect(body.data[0]).toHaveProperty('high');
+        expect(body.data[0]).toHaveProperty('low');
+        expect(body.data[0]).toHaveProperty('close');
+        expect(body.data[0]).toHaveProperty('open_long_volume');
+        expect(body.data[0].coin).toBe('BTC');
+    });
+
+    it('GET /v1/hyperliquid/markets/oi', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute('/v1/hyperliquid/markets/oi?coin=BTC&interval=1d&limit=3');
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('open_interest');
+        expect(body.data[0]).toHaveProperty('funding_rate');
+        expect(body.data[0]).toHaveProperty('long_size');
+        expect(body.data[0]).toHaveProperty('short_size');
+    });
+
+    it('GET /v1/hyperliquid/markets/activity (by coin)', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute('/v1/hyperliquid/markets/activity?coin=BTC&limit=3');
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0].coin).toBe('BTC');
+        expect(body.data[0]).toHaveProperty('side');
+        expect(body.data[0]).toHaveProperty('direction');
+        expect(body.data[0]).toHaveProperty('notional');
+    });
+
+    it('GET /v1/hyperliquid/markets/activity requires a filter', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute('/v1/hyperliquid/markets/activity');
+        expect(response.status).toBe(400);
+        expect(body.code).toBe('bad_query_input');
+    });
+
+    it('GET /v1/hyperliquid/markets/liquidations', async () => {
+        if (!hasHyperliquid) return;
+        const since = Math.floor(Date.now() / 1000) - 30 * 86400;
+        const { response, body } = await fetchRoute(`/v1/hyperliquid/markets/liquidations?start_time=${since}&limit=3`);
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('liquidated_user');
+        expect(body.data[0]).toHaveProperty('liquidation_kind');
+        expect(body.data[0]).toHaveProperty('mark_price');
+    });
+
+    it('GET /v1/hyperliquid/markets/liquidations/ohlc', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute(
+            '/v1/hyperliquid/markets/liquidations/ohlc?coin=BTC&interval=1d&limit=3'
+        );
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('mark_price_open');
+        expect(body.data[0]).toHaveProperty('mark_price_close');
+        expect(body.data[0]).toHaveProperty('unique_liquidators');
+    });
+
+    it('GET /v1/hyperliquid/users (leaderboard)', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute('/v1/hyperliquid/users?limit=5');
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('user');
+        expect(body.data[0]).toHaveProperty('total_volume');
+        expect(body.data[0]).toHaveProperty('coins_traded');
+    });
+
+    it('GET /v1/hyperliquid/users (profile mode)', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute(`/v1/hyperliquid/users?user=${HL_USER}`);
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBe(1);
+        expect(body.data[0].user).toBe(HL_USER);
+    });
+
+    it('GET /v1/hyperliquid/users/positions', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute(`/v1/hyperliquid/users/positions?user=${HL_USER}&limit=5`);
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('position_size');
+        expect(body.data[0]).toHaveProperty('funding_rate');
+    });
+
+    it('GET /v1/hyperliquid/users/positions requires user', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute('/v1/hyperliquid/users/positions');
+        expect(response.status).toBe(400);
+        expect(body.code).toBe('bad_query_input');
+    });
+
+    it('GET /v1/hyperliquid/users/activity', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute(`/v1/hyperliquid/users/activity?user=${HL_USER}&limit=5`);
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('event_type');
+        expect(body.data[0]).toHaveProperty('amount');
+    });
+
+    it('GET /v1/hyperliquid/vaults', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute('/v1/hyperliquid/vaults?limit=5');
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('vault');
+        expect(body.data[0]).toHaveProperty('lifetime_deposits');
+        expect(body.data[0]).toHaveProperty('depositor_count');
+    });
+
+    it('GET /v1/hyperliquid/vaults/depositors', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute(`/v1/hyperliquid/vaults/depositors?vault=${HL_VAULT}&limit=5`);
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('user');
+        expect(body.data[0]).toHaveProperty('deposits');
+    });
+
+    it('GET /v1/hyperliquid/vaults/depositors requires vault', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute('/v1/hyperliquid/vaults/depositors');
+        expect(response.status).toBe(400);
+        expect(body.code).toBe('bad_query_input');
+    });
+
+    it('GET /v1/hyperliquid/platform', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute('/v1/hyperliquid/platform?interval=1d&limit=3');
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('volume');
+        expect(body.data[0]).toHaveProperty('active_coins');
+        expect(body.data[0]).toHaveProperty('liquidations_volume');
+    });
+
+    it('hyperliquid rejects malformed dex (regex enforced)', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute('/v1/hyperliquid/markets?dex=BAD_DEX');
+        expect(response.status).toBe(400);
+        expect(body.code).toBe('bad_query_input');
+    });
+
+    it('hyperliquid rejects bad event_types value', async () => {
+        if (!hasHyperliquid) return;
+        const { response, body } = await fetchRoute(
+            `/v1/hyperliquid/users/activity?user=${HL_USER}&event_types=garbage`
+        );
+        expect(response.status).toBe(400);
+        expect(body.code).toBe('bad_query_input');
+    });
 });

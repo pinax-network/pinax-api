@@ -921,12 +921,111 @@ export const polymarketUserSortBySchema = z.enum(polymarketUserSortFields).meta(
     default: 'total_volume',
 });
 
-const polymarketUserIntervals = ['1h', '1d', '1w', '30d'] as const;
-export const polymarketUserIntervalSchema = z
-    .enum(polymarketUserIntervals)
+const userLookbackIntervals = ['1h', '1d', '1w', '30d'] as const;
+export const userLookbackIntervalSchema = z
+    .enum(userLookbackIntervals)
     .transform((v) => ({ '1h': 60, '1d': 1440, '1w': 10080, '30d': 43200 })[v])
     .meta({
         type: 'string',
-        enum: polymarketUserIntervals,
+        enum: userLookbackIntervals,
         description: 'Lookback window for user statistics (1 hour, 1 day, 1 week, 30 days). Omit for all-time.',
     });
+
+// ── Hyperliquid Schemas ──
+
+// `dex` values returned by the substreams `dex_from_coin(coin)` UDF.
+// `perps` = unprefixed core perps (BTC, ETH, HYPE, ...). `spot` = `@N`-indexed
+// spot pairs. Named DEXs are builder-deployed perp venues with permissionless
+// onboarding — represented as an open lowercase-alphanumeric string so new
+// builder DEXs work without a release. Discovery is via `/v1/hyperliquid/dexes`.
+const knownHyperliquidDexes = ['perps', 'spot', 'xyz', 'cash', 'km', 'hyna', 'flx', 'vntl', 'para'] as const;
+export const hyperliquidDexIdSchema = z.coerce
+    .string()
+    .min(1)
+    .refine((val) => /^[a-z0-9]+$/.test(val), 'Invalid DEX id (lowercase alphanumeric only)')
+    .meta({
+        type: 'string',
+        description:
+            'DEX identifier. `perps` for core perps, `spot` for `@N` spot pairs, or a builder DEX name (e.g. `xyz`, `cash`). New builder DEXs are added on Hyperliquid permissionlessly — call `/v1/hyperliquid/dexes` for the live set.',
+        examples: knownHyperliquidDexes,
+    });
+
+const hyperliquidLiquidationSortFields = ['notional', 'time'] as const;
+export const hyperliquidLiquidationSortBySchema = z.enum(hyperliquidLiquidationSortFields).meta({
+    type: 'string',
+    enum: hyperliquidLiquidationSortFields,
+    default: 'notional',
+});
+
+const hyperliquidVaultSortFields = [
+    'lifetime_deposits',
+    'lifetime_withdrawals',
+    'lifetime_distributions',
+    'depositor_count',
+    'last_activity_at',
+] as const;
+export const hyperliquidVaultSortBySchema = z.enum(hyperliquidVaultSortFields).meta({
+    type: 'string',
+    enum: hyperliquidVaultSortFields,
+    default: 'lifetime_deposits',
+});
+
+const hyperliquidVaultDepositorSortFields = [
+    'deposits',
+    'withdrawals',
+    'distributions_received',
+    'last_activity_at',
+] as const;
+export const hyperliquidVaultDepositorSortBySchema = z.enum(hyperliquidVaultDepositorSortFields).meta({
+    type: 'string',
+    enum: hyperliquidVaultDepositorSortFields,
+    default: 'deposits',
+});
+
+const hyperliquidUserActivityEventTypes = [
+    'bridge_deposit',
+    'bridge_withdraw_pending',
+    'bridge_withdraw_finalized',
+    'deposit',
+    'withdraw',
+    'vault_deposit',
+    'vault_withdraw',
+    'liquidation',
+    'funding',
+] as const;
+export const hyperliquidUserActivityEventTypeSchema = z.enum(hyperliquidUserActivityEventTypes).meta({
+    type: 'string',
+    enum: hyperliquidUserActivityEventTypes,
+    description: 'Filter by balance-event type.',
+});
+
+const hyperliquidUserSortFields = [
+    'total_volume',
+    'transactions',
+    'total_fees',
+    'realized_pnl',
+    'total_funding',
+    'liquidation_fills',
+] as const;
+export const hyperliquidUserSortBySchema = z.enum(hyperliquidUserSortFields).meta({
+    type: 'string',
+    enum: hyperliquidUserSortFields,
+    default: 'total_volume',
+});
+
+export const hyperliquidTokenSchema = z.coerce
+    .string()
+    .min(1)
+    .meta({
+        type: 'string',
+        description:
+            'Spot token symbol (e.g. `HYPE`, `USDC`). Use to discover all spot pairs with this token on a given side via `/v1/hyperliquid/markets?base_token=...` or `?quote_token=...`.',
+        examples: ['HYPE', 'USDC', 'PURR'],
+    });
+
+export const hyperliquidCoinSchema = z.coerce.string().min(1).meta({
+    type: 'string',
+    description:
+        'Hyperliquid coin identifier. Core perps have no prefix (`BTC`, `HYPE`); spot pairs use `@N` (`@107`); builder DEXs prefix the symbol with the DEX name (`xyz:SILVER`).',
+    example: 'BTC',
+});
