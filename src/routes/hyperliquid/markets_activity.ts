@@ -28,7 +28,10 @@ const querySchema = createQuerySchema({
 const responseSchema = apiUsageResponseSchema.extend({
     data: z.array(
         z.object({
+            block_num: z.number().int(),
             timestamp: dateTimeSchema,
+            transaction_hash: z.string(),
+            transaction_id: z.number().int(),
             coin: z.string(),
             market_name: z.string(),
             dex: z.string(),
@@ -46,9 +49,6 @@ const responseSchema = apiUsageResponseSchema.extend({
             client_order_id: z.string(),
             twap_id: z.number().int(),
             crossed: z.boolean(),
-            transaction_hash: z.string(),
-            transaction_id: z.number().int(),
-            block_num: z.number().int(),
         })
     ),
 });
@@ -71,7 +71,11 @@ const openapi = describeRoute(
                                 value: {
                                     data: [
                                         {
+                                            block_num: 979136485,
                                             timestamp: '2026-04-30 23:26:59',
+                                            transaction_hash:
+                                                '0x0000000000000000000000000000000000000000000000000000000000000000',
+                                            transaction_id: 494766926007210,
                                             coin: 'BTC',
                                             market_name: 'BTC',
                                             dex: 'perps',
@@ -89,10 +93,6 @@ const openapi = describeRoute(
                                             client_order_id: '',
                                             twap_id: 1781070,
                                             crossed: true,
-                                            transaction_hash:
-                                                '0x0000000000000000000000000000000000000000000000000000000000000000',
-                                            transaction_id: 494766926007210,
-                                            block_num: 979136485,
                                         },
                                     ],
                                 },

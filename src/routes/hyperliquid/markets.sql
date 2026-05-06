@@ -5,8 +5,8 @@ WITH
             dex_from_coin(coin)                         AS dex,
             argMaxMerge(close)                          AS price,
             sum(side_buy_volume + side_ask_volume)      AS volume_24h,
-            sum(side_buy_volume)                        AS buy_volume_24h,
-            sum(side_ask_volume)                        AS ask_volume_24h,
+            sum(side_ask_volume)                        AS buy_volume_24h,
+            sum(side_buy_volume)                        AS sell_volume_24h,
             sum(transactions)                           AS trades_24h
         FROM {db_hypercore:Identifier}.state_ohlcv_fills
         WHERE interval_min = 60
@@ -61,7 +61,7 @@ SELECT
     if(prev.price_24h > 0, (cur.price - prev.price_24h) / prev.price_24h, 0) AS price_24h_change,
     cur.volume_24h                                                           AS volume_24h,
     cur.buy_volume_24h                                                       AS buy_volume_24h,
-    cur.ask_volume_24h                                                       AS ask_volume_24h,
+    cur.sell_volume_24h                                                      AS sell_volume_24h,
     cur.trades_24h                                                           AS trades_24h,
     coalesce(uu.unique_users_24h, 0)                                         AS unique_users_24h,
     oi.open_interest                                                         AS open_interest,

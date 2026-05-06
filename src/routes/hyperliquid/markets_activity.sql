@@ -14,7 +14,10 @@ WITH
         ) AS t
     )
 SELECT
+    page.block_num                                          AS block_num,
     page.timestamp                                          AS timestamp,
+    page.transaction_hash                                   AS transaction_hash,
+    page.transaction_id                                     AS transaction_id,
     page.coin                                               AS coin,
     if(empty(n.market_name), page.coin, n.market_name)      AS market_name,
     page.dex                                                AS dex,
@@ -31,10 +34,7 @@ SELECT
     page.order_id                                           AS order_id,
     page.client_order_id                                    AS client_order_id,
     page.twap_id                                            AS twap_id,
-    page.crossed                                            AS crossed,
-    page.transaction_hash                                   AS transaction_hash,
-    page.transaction_id                                     AS transaction_id,
-    page.block_num                                          AS block_num
+    page.crossed                                            AS crossed
 FROM (
     SELECT
         timestamp,

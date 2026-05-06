@@ -1,10 +1,11 @@
 SELECT
+    any(f.block_num)                                            AS block_num,
     any(f.timestamp)                                            AS timestamp,
+    f.event_hash                                                AS event_hash,
     f.coin                                                      AS coin,
     any(if(empty(n.market_name), f.coin, n.market_name))        AS market_name,
     dex_from_coin(f.coin)                                       AS dex,
     f.liquidated_user                                           AS liquidated_user,
-    f.event_hash                                                AS event_hash,
     f.direction                                                 AS direction,
     if(f.direction = 'AUTO_DELEVERAGING', 'AUTO_DELEVERAGING',
        replaceRegexpOne(f.direction, '^LIQUIDATED_', ''))       AS liquidation_kind,

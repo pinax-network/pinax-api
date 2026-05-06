@@ -26,10 +26,10 @@ const querySchema = createQuerySchema({
 const responseSchema = apiUsageResponseSchema.extend({
     data: z.array(
         z.object({
-            timestamp: dateTimeSchema,
             block_num: z.number().int(),
-            event_index: z.number().int(),
+            timestamp: dateTimeSchema,
             transaction_hash: z.string(),
+            event_index: z.number().int(),
             event_type: hyperliquidUserActivityEventTypeSchema,
             user: z.string(),
             counterparty: z.string(),
@@ -58,11 +58,11 @@ const openapi = describeRoute(
                                 value: {
                                     data: [
                                         {
-                                            timestamp: '2026-04-30 23:00:00',
                                             block_num: 979112711,
-                                            event_index: 7001290,
+                                            timestamp: '2026-04-30 23:00:00',
                                             transaction_hash:
                                                 '0x0000000000000000000000000000000000000000000000000000000000000000',
+                                            event_index: 7001290,
                                             event_type: 'funding',
                                             user: '0xecb63caa47c7c4e77f60f1ce858cf28dc2b82b00',
                                             counterparty: 'cash:SILVER',

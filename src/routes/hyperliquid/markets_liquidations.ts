@@ -30,12 +30,13 @@ const querySchema = createQuerySchema({
 const responseSchema = apiUsageResponseSchema.extend({
     data: z.array(
         z.object({
+            block_num: z.number().int(),
             timestamp: dateTimeSchema,
+            event_hash: z.string(),
             coin: z.string(),
             market_name: z.string(),
             dex: z.string(),
             liquidated_user: z.string(),
-            event_hash: z.string(),
             direction: z.string(),
             liquidation_kind: z.string(),
             fills: z.number().int(),
@@ -67,13 +68,14 @@ const openapi = describeRoute(
                                 value: {
                                     data: [
                                         {
+                                            block_num: 880714128,
                                             timestamp: '2026-02-06 00:19:53',
+                                            event_hash:
+                                                '0x37cd3a3ffeb5bee739460434c180bf000008522599b8ddb9db95e592bdb998d1',
                                             coin: 'BTC',
                                             market_name: 'BTC',
                                             dex: 'perps',
                                             liquidated_user: '0x7ba283114573bde6fd304ad7b188a763e5402a52',
-                                            event_hash:
-                                                '0x37cd3a3ffeb5bee739460434c180bf000008522599b8ddb9db95e592bdb998d1',
                                             direction: 'LIQUIDATED_CROSS_LONG',
                                             liquidation_kind: 'CROSS_LONG',
                                             fills: 2,
