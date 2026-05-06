@@ -31,8 +31,8 @@ WITH ohlc AS (
         /* extra fields */
         p.token0 IN {stablecoin_contracts: Array(String)} AS is_stablecoin
     FROM {db_dex:Identifier}.ohlc_prices p
-    LEFT JOIN metadata.metadata m0 ON {network: String} = m0.network AND p.token0 = m0.contract
-    LEFT JOIN metadata.metadata m1 ON {network: String} = m1.network AND p.token1 = m1.contract
+    LEFT JOIN metadata.metadata AS m0 FINAL ON {network: String} = m0.network AND p.token0 = m0.contract
+    LEFT JOIN metadata.metadata AS m1 FINAL ON {network: String} = m1.network AND p.token1 = m1.contract
     WHERE
             p.interval_min = {interval: UInt64}
         AND p.pool = {pool: String}
