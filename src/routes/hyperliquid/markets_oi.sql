@@ -14,17 +14,8 @@ SELECT
     sum(oi.total_funding)                                         AS total_funding,
     sum(oi.positive_funding)                                      AS positive_funding,
     sum(oi.negative_funding)                                      AS negative_funding,
-    sum(oi.funding_events)                                        AS funding_events,
-    coalesce(any(u.uniq_user), 0)                                 AS unique_users
+    sum(oi.funding_events)                                        AS funding_events
 FROM {db_hypercore:Identifier}.state_open_interest AS oi
-LEFT JOIN (
-    SELECT interval_min, coin, timestamp, uniq_user
-    FROM {db_hypercore:Identifier}.state_open_interest_uniq_user FINAL
-    WHERE coin = {coin:String}
-      AND interval_min = {interval:UInt32}
-      AND (isNull({start_time:Nullable(UInt64)}) OR timestamp >= toDateTime({start_time:Nullable(UInt64)}))
-      AND (isNull({end_time:Nullable(UInt64)})   OR timestamp <  toDateTime({end_time:Nullable(UInt64)}))
-) AS u USING (interval_min, coin, timestamp)
 LEFT JOIN {db_hypercore:Identifier}.state_spot_pair_names AS n FINAL ON n.coin = oi.coin
 WHERE oi.coin = {coin:String}
   AND oi.interval_min = {interval:UInt32}
