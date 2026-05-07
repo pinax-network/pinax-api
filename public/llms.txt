@@ -1,6 +1,6 @@
 # Token API
 
-> Real-time token, balance, transfer, holder, DEX, NFT, and Polymarket data across EVM, SVM, and TVM networks.
+> Real-time token, balance, transfer, holder, DEX, NFT, Polymarket, and Hyperliquid data across EVM, SVM, and TVM networks.
 
 - Base URL: https://token-api.thegraph.com
 - Most endpoints require `Authorization: Bearer <token>` from The Graph Market, or `X-Api-Key`.
@@ -26,3 +26,5 @@ No authentication required, no usage charge.
 - [SVM DEXes](https://token-api.thegraph.com/v1/svm/dexes): Supported SVM DEX protocols by network.
 - [TVM DEXes](https://token-api.thegraph.com/v1/tvm/dexes): Supported TVM DEX protocols by network.
 - [Polymarket markets](https://token-api.thegraph.com/v1/polymarket/markets): Public Polymarket market discovery.
+- [Hyperliquid DEXes](https://token-api.thegraph.com/v1/hyperliquid/dexes): Hyperliquid core perps, spot, and builder-deployed DEXes.
+- [Hyperliquid markets](https://token-api.thegraph.com/v1/hyperliquid/markets): Public Hyperliquid market discovery.

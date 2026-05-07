@@ -1,6 +1,6 @@
 ---
 name: Token API
-description: Real-time token, balance, transfer, holder, DEX, NFT, and Polymarket data across EVM, SVM, and TVM networks.
+description: Real-time token, balance, transfer, holder, DEX, NFT, Polymarket, and Hyperliquid data across EVM, SVM, and TVM networks.
 ---
 
 # Token API
@@ -35,6 +35,8 @@ An `X-Api-Key: <your-api-key>` header is accepted as an alternative.
 - `GET /v1/svm/dexes`
 - `GET /v1/tvm/dexes`
 - `GET /v1/polymarket/markets`
+- `GET /v1/hyperliquid/dexes`
+- `GET /v1/hyperliquid/markets`
 
 ## Errors
 
@@ -62,7 +64,8 @@ Map a goal to the relevant endpoint family:
 - **Get OHLC time-series** — `/v1/{evm,svm,tvm}/pools/ohlc`, `/v1/polymarket/markets/ohlc`
 - **List a wallet's NFT holdings and activity** — `/v1/evm/nft/ownerships`, `/v1/evm/nft/transfers`, `/v1/evm/nft/sales`, `/v1/evm/nft/items`, `/v1/evm/nft/collections`
 - **Discover Polymarket markets, OI, and per-user PNL** — `/v1/polymarket/markets`, `/v1/polymarket/markets/oi`, `/v1/polymarket/markets/activity`, `/v1/polymarket/users`, `/v1/polymarket/users/positions`
-- **Discover supported chains and protocols** (free) — `/v1/networks`, `/v1/{evm,svm,tvm}/dexes`
+- **Discover Hyperliquid markets, OHLC, OI, liquidations, and per-user PnL** — `/v1/hyperliquid/markets`, `/v1/hyperliquid/markets/ohlc`, `/v1/hyperliquid/markets/oi`, `/v1/hyperliquid/markets/liquidations`, `/v1/hyperliquid/users`, `/v1/hyperliquid/users/positions`, `/v1/hyperliquid/vaults`
+- **Discover supported chains and protocols** (free) — `/v1/networks`, `/v1/{evm,svm,tvm}/dexes`, `/v1/hyperliquid/dexes`
 
 ## Common patterns
 
@@ -297,3 +300,44 @@ Prediction-market data for the Polygon-based Polymarket CTF exchange. Outcome to
 | `GET /v1/polymarket/platform` | — | `interval`, `start_time`, `end_time` |
 
 Aggregate volume, open interest, and fees across all Polymarket markets.
+
+---
+
+## Hyperliquid
+
+Trading data for the Hyperliquid L1 — core perps, `@N`-indexed spot pairs, and builder-deployed DEXes (`xyz`, `cash`, …). The `coin` parameter is the canonical identifier across all `/v1/hyperliquid/*` endpoints: unprefixed for core perps (`BTC`), `@N` for spot (`@107`), and `<dex>:<symbol>` for builder DEXes (`xyz:SILVER`). Discover the live DEX set via `GET /v1/hyperliquid/dexes`.
+
+### Markets
+
+| Endpoint | Required | Optional | Notes |
+|----------|----------|----------|-------|
+| `GET /v1/hyperliquid/dexes` | — | — | **Unauthenticated.** All supported DEX ids. |
+| `GET /v1/hyperliquid/markets` | — | `coin`, `dex`, `base_token`, `quote_token` | **Unauthenticated.** Latest snapshot per market: last price, 24h change, volume by side, OI, funding rate. `base_token` / `quote_token` are spot-discovery filters. |
+| `GET /v1/hyperliquid/markets/ohlc` | `coin` | `dex`, `interval`, `start_time`, `end_time` | OHLCV per coin (and optional dex). |
+| `GET /v1/hyperliquid/markets/oi` | `coin` | `dex`, `interval`, `start_time`, `end_time` | Open-interest time-series. Default `interval=1h`. |
+| `GET /v1/hyperliquid/markets/activity` | — | `coin`, `dex`, `user`, `start_time`, `end_time` | Trade-fill stream. |
+| `GET /v1/hyperliquid/markets/liquidations` | — | `coin`, `dex`, `liquidated_user`, `sort_by` (`notional` \| `time`), `start_time`, `end_time` | Per-fill liquidation feed. |
+| `GET /v1/hyperliquid/markets/liquidations/ohlc` | `coin` | `dex`, `interval`, `start_time`, `end_time` | OHLCV of liquidation notional. |
+
+### Users
+
+| Endpoint | Required | Optional | Notes |
+|----------|----------|----------|-------|
+| `GET /v1/hyperliquid/users` | — | `user`, `coin`, `dex`, `interval` (`1h` \| `1d` \| `1w` \| `30d`), `sort_by` (`total_volume` \| `transactions` \| `total_fees` \| `realized_pnl` \| `total_funding` \| `liquidation_fills`) | Dual mode: profile when `user` is set, leaderboard otherwise. Omit `interval` for all-time. Refreshed hourly. |
+| `GET /v1/hyperliquid/users/positions` | `user` | `coin`, `dex` | Open perp positions per user. |
+| `GET /v1/hyperliquid/users/activity` | `user` | `event_types` (batched: `bridge_deposit`, `bridge_withdraw_pending`, `bridge_withdraw_finalized`, `deposit`, `withdraw`, `vault_deposit`, `vault_withdraw`, `liquidation`, `funding`), `start_time`, `end_time` | Balance-changing events. Defaults to last 30 days. For trade fills, use `/v1/hyperliquid/markets/activity`. |
+
+### Vaults
+
+| Endpoint | Required | Optional | Notes |
+|----------|----------|----------|-------|
+| `GET /v1/hyperliquid/vaults` | — | `vault`, `sort_by` (`lifetime_deposits` \| `lifetime_withdrawals` \| `lifetime_distributions` \| `depositor_count` \| `last_activity_at`) | Lifetime flow stats. Vaults predating the indexer cutover have null `leader` / `created_at`. |
+| `GET /v1/hyperliquid/vaults/depositors` | `vault` | `sort_by` (`deposits` \| `withdrawals` \| `distributions_received` \| `last_activity_at`) | Per-depositor stake in a vault. |
+
+### Platform
+
+| Endpoint | Required | Optional |
+|----------|----------|----------|
+| `GET /v1/hyperliquid/platform` | — | `interval`, `start_time`, `end_time` |
+
+Cross-coin, cross-DEX time-series of volume, fees, trade counts, and a liquidation slice.
