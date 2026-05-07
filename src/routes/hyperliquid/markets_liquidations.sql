@@ -18,7 +18,7 @@ SELECT
     sum(f.fee)                                                  AS total_fees
 FROM {db_hypercore:Identifier}.fills_liquidation AS f
 LEFT JOIN {db_hypercore:Identifier}.state_spot_pair_names AS n FINAL ON n.coin = f.coin
-WHERE (f.direction LIKE 'LIQUIDATED_%' OR f.direction = 'AUTO_DELEVERAGING')
+WHERE f.direction LIKE 'LIQUIDATED_%'
   AND (isNull({coin:Nullable(String)})            OR f.coin = {coin:Nullable(String)})
   AND (isNull({dex:Nullable(String)})             OR dex_from_coin(f.coin) = {dex:Nullable(String)})
   AND (isNull({liquidated_user:Nullable(String)}) OR f.liquidated_user = {liquidated_user:Nullable(String)})
