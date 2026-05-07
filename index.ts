@@ -127,6 +127,8 @@ app.get(
     '/skills.md',
     () => new Response(Bun.file('./public/skills.md'), { headers: { 'Content-Type': contentTypeMarkdown } })
 );
+app.get('/skill.md', (c) => c.redirect('/skills.md', 301));
+app.get('/SKILL.md', (c) => c.redirect('/SKILLS.md', 301));
 app.get(
     '/llms.txt',
     llmsTextOpenapi,
