@@ -44,7 +44,6 @@ const responseSchema = apiUsageResponseSchema.extend({
             positive_funding: z.number(),
             negative_funding: z.number(),
             funding_events: z.number().int(),
-            unique_users: z.number().int(),
         })
     ),
 });
@@ -83,7 +82,6 @@ const openapi = describeRoute(
                                             positive_funding: 16482.55,
                                             negative_funding: -16482.55,
                                             funding_events: 30415,
-                                            unique_users: 30415,
                                         },
                                     ],
                                 },
