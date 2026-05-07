@@ -50,7 +50,7 @@ const skillsMarkdownOpenapi = describeRoute({
                         type: 'string',
                         example: `---
 name: Token API
-description: Real-time token, balance, transfer, holder, DEX, NFT, and Polymarket data across EVM, SVM, and TVM networks.
+description: Real-time token, balance, transfer, holder, DEX, NFT, Polymarket, and Hyperliquid data across EVM, SVM, and TVM networks.
 ---
 
 # Token API
@@ -80,7 +80,7 @@ const llmsTextOpenapi = describeRoute({
                         type: 'string',
                         example: `# Token API
 
-> Real-time token, balance, transfer, holder, DEX, NFT, and Polymarket data across EVM, SVM, and TVM networks.
+> Real-time token, balance, transfer, holder, DEX, NFT, Polymarket, and Hyperliquid data across EVM, SVM, and TVM networks.
 
 ...`,
                     },
