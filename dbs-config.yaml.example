@@ -33,7 +33,7 @@ networks:
     balances: solana:svm-balances@v0.3.2
     accounts: solana:svm-accounts@v0.3.0
     metadata: solana:svm-metadata@v0.3.1
-    dexes: solana:svm-dex@v0.4.0
+    dexes: solana:svm-dex@v0.4.4
 
   # TVM Networks
   tron:

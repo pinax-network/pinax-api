@@ -169,6 +169,8 @@ const svmProtocolsWithoutAggregators = [
     'dumpfun',
     'moonshot',
     'pancakeswap',
+    'spl_token_swap',
+    'okx_dex',
 ] as const;
 
 const svmProtocols = ['jupiter_v4', 'jupiter_v6', ...svmProtocolsWithoutAggregators] as const;
