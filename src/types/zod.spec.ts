@@ -315,6 +315,8 @@ describe('Protocol Schemas', () => {
                 'byreal',
                 'moonshot',
                 'pancakeswap',
+                'spl_token_swap',
+                'okx_dex',
             ] as const;
 
             for (const protocol of protocols) {
