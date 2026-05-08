@@ -46,7 +46,10 @@ const responseSchema = apiUsageResponseSchema.extend({
             unique_makers: z.number(),
             unique_takers: z.number(),
             total_fees: z.number(),
+            total_refunds: z.number(),
+            net_fees: z.number(),
             fee_count: z.number(),
+            effective_fee_rate_gross: z.number(),
             effective_fee_rate: z.number(),
             market: marketContextSchema,
         })
@@ -83,7 +86,10 @@ const openapi = describeRoute(
                                             unique_makers: 592,
                                             unique_takers: 121,
                                             total_fees: 0,
+                                            total_refunds: 0,
+                                            net_fees: 0,
                                             fee_count: 0,
+                                            effective_fee_rate_gross: 0,
                                             effective_fee_rate: 0,
                                             market: {
                                                 condition_id:
