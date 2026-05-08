@@ -11,8 +11,11 @@ SELECT
     o.unique_makers,
     o.unique_takers,
     f.scaled_total_fee AS total_fees,
+    f.scaled_total_refund AS total_refunds,
+    f.scaled_net_fee AS net_fees,
     f.fee_count,
-    f.effective_fee_rate,
+    f.effective_fee_rate_gross,
+    f.effective_fee_rate_net AS effective_fee_rate,
     CAST((nullIf(a.condition_id, ''), nullIf(a.market_slug, ''), o.asset_id, nullIf(a.outcome_label, ''), a.closed)
         AS Tuple(condition_id Nullable(String), market_slug Nullable(String), token_id String, outcome_label Nullable(String), closed Bool)) AS market
 FROM {db_polymarket:Identifier}.orderbook o
