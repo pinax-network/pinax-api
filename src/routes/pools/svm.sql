@@ -55,5 +55,5 @@ SELECT
     /* Network */
     {network: String} AS network
 FROM pools AS p
-JOIN pools_with_tokens AS pt ON p.amm_pool = pt.amm_pool
+JOIN pools_with_tokens AS pt ON p.amm_pool = pt.amm_pool AND p.protocol = pt.protocol
 ORDER BY p.transactions DESC
