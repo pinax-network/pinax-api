@@ -32,6 +32,9 @@ const responseSchema = apiUsageResponseSchema.extend({
             amount: z.string(),
             value: z.number(),
 
+            // -- holder type --
+            is_contract: z.boolean(),
+
             // -- contract --
             name: z.string().nullable(),
             symbol: z.string().nullable(),
@@ -67,6 +70,7 @@ const openapi = describeRoute(
                                             address: '0x00000000219ab540356cbb839cbe05303d7705fa',
                                             amount: '78761803578844096172899779',
                                             value: 78761803.5788441,
+                                            is_contract: true,
                                             name: 'Ethereum',
                                             symbol: 'ETH',
                                             decimals: 18,
@@ -89,8 +93,9 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
     const params = c.req.valid('query');
 
     const dbBalances = config.balancesDatabases[params.network];
+    const dbContracts = config.contractsDatabases[params.network];
 
-    if (!dbBalances) {
+    if (!dbBalances || !dbContracts) {
         return c.json({ error: `Network not found: ${params.network}` }, 400);
     }
 
@@ -100,6 +105,7 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
         {
             ...params,
             db_balances: dbBalances.database,
+            db_contracts: dbContracts.database,
         },
         {
             clickhouse_settings: {

@@ -37,6 +37,9 @@ const responseSchema = apiUsageResponseSchema.extend({
             amount: z.string(),
             value: z.number(),
 
+            // -- holder type --
+            is_contract: z.boolean(),
+
             // -- contract --
             name: z.string().nullable(),
             symbol: z.string().nullable(),
@@ -73,6 +76,7 @@ const openapi = describeRoute(
                                             contract: '0xdac17f958d2ee523a2206206994597c13d831ec7',
                                             amount: '20000000000000000',
                                             value: 20000000000,
+                                            is_contract: false,
                                             name: 'Tether USD',
                                             symbol: 'USDT',
                                             decimals: 6,
@@ -99,14 +103,16 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
     const params = c.req.valid('query');
 
     const dbBalances = config.balancesDatabases[params.network];
+    const dbContracts = config.contractsDatabases[params.network];
 
-    if (!dbBalances) {
+    if (!dbBalances || !dbContracts) {
         return c.json({ error: `Network not found: ${params.network}` }, 400);
     }
 
     const response = await makeUsageQueryJson(c, [query], {
         ...params,
         db_balances: dbBalances.database,
+        db_contracts: dbContracts.database,
     });
     return handleUsageQueryError(c, response);
 });
