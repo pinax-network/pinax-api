@@ -1,7 +1,7 @@
 WITH latest_price AS (
     SELECT coalesce(argMax(close, timestamp), 0) AS price
     FROM {db_polymarket:Identifier}.orderbook
-    WHERE interval_min = 1440 AND asset_id = {token_id:String}
+    WHERE interval_min = 1440 AND asset_id = toUInt256({token_id:String})
 )
 SELECT
     p.user,

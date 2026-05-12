@@ -20,7 +20,7 @@ FROM {db_polymarket:Identifier}.state_user_position p
 LEFT JOIN {db_scraper:Identifier}.polymarket_markets_by_asset_id a
     ON a.asset_id = p.token_id
 LEFT JOIN {db_polymarket:Identifier}.state_latest_price lp FINAL
-    ON lp.asset_id = toString(p.token_id)
+    ON lp.asset_id = p.token_id
 WHERE p.interval_min = 1440
   AND p.user = {user:String}
   AND (isNull({token_id:Nullable(String)}) OR p.token_id = toUInt256({token_id:Nullable(String)}))
