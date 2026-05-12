@@ -63,7 +63,7 @@ const responseSchema = apiUsageResponseSchema.extend({
             decimals: z.number().nullable(),
 
             amount: z.string(),
-            value: z.number(),
+            value: z.number().describe('Decimal-scaled token amount (= amount / 10^decimals). Not a USD value.'),
 
             // -- chain --
             network: evmNetworkIdSchema,
