@@ -40,7 +40,9 @@ const responseSchema = apiUsageResponseSchema.extend({
             amm_pool: svmAmmPoolSchema,
 
             input_mint: svmMintSchema,
+            input_decimals: z.number().nullable(),
             output_mint: svmMintSchema,
+            output_decimals: z.number().nullable(),
             transactions: z.number(),
 
             // -- chain --
@@ -74,7 +76,9 @@ const openapi = describeRoute(
                                             amm_name: 'Raydium Liquidity Pool V4',
                                             amm_pool: 'Dqb7bL7MZkuDgHrZZphRMRViJnepHxf9odx3RRwmifur',
                                             input_mint: '9bJKq2eLbLFKbcD9zYBNTrQ5Pua7hXMeivu7Fk3iWWoQ',
+                                            input_decimals: 6,
                                             output_mint: 'Fm34vVNQYoEkenNjCeM8MVP8mBV5EGLwA86WFHwyMcz4',
+                                            output_decimals: 9,
                                             transactions: 43062555,
                                             network: 'solana',
                                         },
