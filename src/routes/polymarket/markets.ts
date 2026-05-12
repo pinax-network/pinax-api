@@ -18,10 +18,10 @@ import { validatorHook, withErrorResponses } from '../../utils.js';
 import baseQuery from './markets.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
-    condition_id: { schema: polymarketConditionIdSchema, optional: true },
-    market_slug: { schema: polymarketSlugSchema, optional: true },
-    token_id: { schema: polymarketTokenIdSchema, optional: true },
-    event_slug: { schema: polymarketSlugSchema, optional: true },
+    condition_id: { schema: polymarketConditionIdSchema, batched: true, optional: true },
+    market_slug: { schema: polymarketSlugSchema, batched: true, optional: true },
+    token_id: { schema: polymarketTokenIdSchema, batched: true, optional: true },
+    event_slug: { schema: polymarketSlugSchema, batched: true, optional: true },
     closed: { schema: booleanFromString, optional: true },
     sort_by: { schema: polymarketMarketSortBySchema, prefault: 'volume' },
 });

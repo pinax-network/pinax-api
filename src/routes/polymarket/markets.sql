@@ -1,11 +1,8 @@
-WITH resolved_token AS (
-    SELECT condition_id
+WITH token_condition_ids AS (
+    SELECT DISTINCT condition_id
     FROM {db_scraper:Identifier}.polymarket_markets_by_asset_id
-    WHERE isNull({condition_id:Nullable(String)})
-      AND isNull({market_slug:Nullable(String)})
-      AND isNotNull({token_id:Nullable(String)})
-      AND asset_id = toUInt256({token_id:Nullable(String)})
-    LIMIT 1
+    WHERE notEmpty({token_id:Array(String)})
+      AND asset_id IN (SELECT toUInt256(arrayJoin({token_id:Array(String)})))
 )
 SELECT
     m.condition_id,
@@ -26,19 +23,11 @@ SELECT
 FROM {db_scraper:Identifier}.polymarket_markets m FINAL
 LEFT JOIN {db_scraper:Identifier}.polymarket_events e FINAL
     ON e.condition_id = m.condition_id
-WHERE
-    CASE
-        WHEN isNotNull({condition_id:Nullable(String)})
-            THEN m.condition_id = {condition_id:Nullable(String)}
-        WHEN isNotNull({market_slug:Nullable(String)})
-            THEN m.market_slug = {market_slug:Nullable(String)}
-        WHEN isNotNull({token_id:Nullable(String)})
-            THEN m.condition_id = (SELECT condition_id FROM resolved_token)
-        WHEN isNotNull({event_slug:Nullable(String)})
-            THEN e.slug = {event_slug:Nullable(String)}
-        ELSE 1 = 1
-    END
-  AND (isNull({closed:Nullable(UInt8)}) OR m.closed = {closed:Nullable(UInt8)})
+WHERE (empty({condition_id:Array(String)}) OR m.condition_id IN {condition_id:Array(String)})
+  AND (empty({market_slug:Array(String)})  OR m.market_slug  IN {market_slug:Array(String)})
+  AND (empty({token_id:Array(String)})     OR m.condition_id IN (SELECT condition_id FROM token_condition_ids))
+  AND (empty({event_slug:Array(String)})   OR e.slug         IN {event_slug:Array(String)})
+  AND (isNull({closed:Nullable(UInt8)})    OR m.closed = {closed:Nullable(UInt8)})
 ORDER BY m.volume_num DESC
 LIMIT {limit:UInt64}
 OFFSET {offset:UInt64}

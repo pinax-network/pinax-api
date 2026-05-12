@@ -19,10 +19,10 @@ import { validatorHook, withErrorResponses } from '../../utils.js';
 import baseQuery from './positions.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
-    user: { schema: evmAddress },
-    token_id: { schema: polymarketTokenIdSchema, optional: true },
-    condition_id: { schema: polymarketConditionIdSchema, optional: true },
-    market_slug: { schema: polymarketSlugSchema, optional: true },
+    user: { schema: evmAddress, batched: true },
+    token_id: { schema: polymarketTokenIdSchema, batched: true, optional: true },
+    condition_id: { schema: polymarketConditionIdSchema, batched: true, optional: true },
+    market_slug: { schema: polymarketSlugSchema, batched: true, optional: true },
     closed: { schema: booleanFromString, optional: true },
     sort_by: { schema: polymarketPositionSortBySchema, prefault: 'position_value' },
 });

@@ -22,8 +22,8 @@ LEFT JOIN {db_scraper:Identifier}.polymarket_markets_by_asset_id a
 LEFT JOIN {db_polymarket:Identifier}.state_latest_price lp FINAL
     ON lp.asset_id = p.token_id
 WHERE p.interval_min = 0
-  AND p.user = {user:String}
-  AND (isNull({token_id:Nullable(String)}) OR p.token_id = toUInt256({token_id:Nullable(String)}))
-  AND (isNull({condition_id:Nullable(String)}) OR a.condition_id = {condition_id:Nullable(String)})
-  AND (isNull({market_slug:Nullable(String)}) OR a.market_slug = {market_slug:Nullable(String)})
+  AND p.user IN {user:Array(String)}
+  AND (empty({token_id:Array(String)})     OR p.token_id IN (SELECT toUInt256(arrayJoin({token_id:Array(String)}))))
+  AND (empty({condition_id:Array(String)}) OR a.condition_id IN {condition_id:Array(String)})
+  AND (empty({market_slug:Array(String)})  OR a.market_slug  IN {market_slug:Array(String)})
 GROUP BY p.user, p.token_id, a.condition_id, a.market_slug, a.outcome_label, a.closed, lp.close

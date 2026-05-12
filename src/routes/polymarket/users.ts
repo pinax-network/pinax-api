@@ -16,7 +16,7 @@ import { validatorHook, withErrorResponses } from '../../utils.js';
 import baseQuery from './users.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
-    user: { schema: evmAddress, optional: true },
+    user: { schema: evmAddress, batched: true, optional: true },
     interval: { schema: userLookbackIntervalSchema, optional: true },
     sort_by: { schema: polymarketUserSortBySchema, prefault: 'total_volume' },
 });
