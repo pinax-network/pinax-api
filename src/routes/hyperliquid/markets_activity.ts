@@ -18,9 +18,9 @@ import { validatorHook, withErrorResponses } from '../../utils.js';
 import query from './markets_activity.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
-    coin: { schema: hyperliquidCoinSchema, optional: true },
-    dex: { schema: hyperliquidDexIdSchema, optional: true },
-    user: { schema: evmAddressSchema, optional: true },
+    coin: { schema: hyperliquidCoinSchema, batched: true, optional: true },
+    dex: { schema: hyperliquidDexIdSchema, batched: true, optional: true },
+    user: { schema: evmAddressSchema, batched: true, optional: true },
     start_time: { schema: timestampSchema, optional: true },
     end_time: { schema: timestampSchema, optional: true },
 });
@@ -110,7 +110,7 @@ const route = new Hono<{ Variables: { validatedData: z.infer<typeof querySchema>
 route.get('/', openapi, zValidator('query', querySchema, validatorHook), validator('query', querySchema), async (c) => {
     const params = c.req.valid('query');
 
-    if (!params.coin && !params.dex && !params.user) {
+    if (!params.coin.length && !params.dex.length && !params.user.length) {
         return c.json(
             { status: 400, code: 'bad_query_input', message: 'Provide at least one of coin, dex, or user' },
             400

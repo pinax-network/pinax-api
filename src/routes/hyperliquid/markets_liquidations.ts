@@ -19,9 +19,9 @@ import { validatorHook, withErrorResponses } from '../../utils.js';
 import baseQuery from './markets_liquidations.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
-    coin: { schema: hyperliquidCoinSchema, optional: true },
-    dex: { schema: hyperliquidDexIdSchema, optional: true },
-    liquidated_user: { schema: evmAddressSchema, optional: true },
+    coin: { schema: hyperliquidCoinSchema, batched: true, optional: true },
+    dex: { schema: hyperliquidDexIdSchema, batched: true, optional: true },
+    liquidated_user: { schema: evmAddressSchema, batched: true, optional: true },
     sort_by: { schema: hyperliquidLiquidationSortBySchema, prefault: 'notional' },
     start_time: { schema: timestampSchema, optional: true },
     end_time: { schema: timestampSchema, optional: true },

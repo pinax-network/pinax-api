@@ -9,9 +9,9 @@ SELECT
 FROM {db_hypercore:Identifier}.funding_deltas AS f
 LEFT JOIN {db_hypercore:Identifier}.state_spot_pair_names AS n FINAL ON n.coin = f.coin
 WHERE f.timestamp >= now() - INTERVAL 2 DAY
-  AND f.user = {user:String}
-  AND (isNull({coin:Nullable(String)}) OR f.coin = {coin:Nullable(String)})
-  AND (isNull({dex:Nullable(String)})  OR f.dex  = {dex:Nullable(String)})
+  AND f.user IN {user:Array(String)}
+  AND (empty({coin:Array(String)}) OR f.coin IN {coin:Array(String)})
+  AND (empty({dex:Array(String)})  OR f.dex  IN {dex:Array(String)})
 GROUP BY f.user, f.coin
 HAVING position_size != 0
 ORDER BY abs(position_size) DESC

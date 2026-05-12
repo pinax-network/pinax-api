@@ -18,8 +18,8 @@ import { validatorHook, withErrorResponses } from '../../utils.js';
 import query from './markets_oi.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
-    coin: { schema: hyperliquidCoinSchema },
-    dex: { schema: hyperliquidDexIdSchema, optional: true },
+    coin: { schema: hyperliquidCoinSchema, batched: true },
+    dex: { schema: hyperliquidDexIdSchema, batched: true, optional: true },
     interval: { schema: evmIntervalSchema, prefault: '1h' },
     start_time: { schema: timestampSchema, optional: true },
     end_time: { schema: timestampSchema, optional: true },

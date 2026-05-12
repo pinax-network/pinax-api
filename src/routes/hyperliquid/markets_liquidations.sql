@@ -19,9 +19,9 @@ SELECT
 FROM {db_hypercore:Identifier}.fills_liquidation AS f
 LEFT JOIN {db_hypercore:Identifier}.state_spot_pair_names AS n FINAL ON n.coin = f.coin
 WHERE f.user = f.liquidated_user
-  AND (isNull({coin:Nullable(String)})            OR f.coin = {coin:Nullable(String)})
-  AND (isNull({dex:Nullable(String)})             OR dex_from_coin(f.coin) = {dex:Nullable(String)})
-  AND (isNull({liquidated_user:Nullable(String)}) OR f.liquidated_user = {liquidated_user:Nullable(String)})
+  AND (empty({coin:Array(String)})            OR f.coin IN {coin:Array(String)})
+  AND (empty({dex:Array(String)})             OR dex_from_coin(f.coin) IN {dex:Array(String)})
+  AND (empty({liquidated_user:Array(String)}) OR f.liquidated_user IN {liquidated_user:Array(String)})
   AND (isNull({start_time:Nullable(UInt64)})      OR f.timestamp >= toDateTime({start_time:Nullable(UInt64)}))
   AND (isNull({end_time:Nullable(UInt64)})        OR f.timestamp <  toDateTime({end_time:Nullable(UInt64)}))
 GROUP BY f.event_hash, f.liquidated_user, f.coin, f.direction

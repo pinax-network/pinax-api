@@ -16,7 +16,7 @@ import { validatorHook, withErrorResponses } from '../../utils.js';
 import baseQuery from './vaults_depositors.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
-    vault: { schema: evmAddressSchema },
+    vault: { schema: evmAddressSchema, batched: true },
     sort_by: { schema: hyperliquidVaultDepositorSortBySchema, prefault: 'deposits' },
 });
 
