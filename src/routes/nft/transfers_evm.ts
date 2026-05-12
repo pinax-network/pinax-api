@@ -97,7 +97,7 @@ const responseSchema = apiUsageResponseSchema.extend({
             token_standard: nftTokenStandardSchema,
             from: evmAddressSchema,
             to: evmAddressSchema,
-            amount: z.number(),
+            amount: z.string(),
             network: evmNetworkIdSchema,
         })
     ),
@@ -135,7 +135,7 @@ const openapi = describeRoute(
                                             token_standard: 'ERC721',
                                             from: '0x355062b5d0e324815290b96370e87607a71d613d',
                                             to: '0x7ccde43632b3287fda060719d802b2c4cb6f769b',
-                                            amount: 1,
+                                            amount: '1',
                                             network: 'mainnet',
                                         },
                                     ],
