@@ -13,7 +13,7 @@ let evmNetwork: string;
 let hasEvmDex: boolean;
 
 async function fetchRoute(path: string) {
-    const response = await app.request(path, { headers: { 'X-Plan': 'free' } });
+    const response = await app.request(path);
     const body = await response.json();
     return { response, body };
 }
@@ -23,8 +23,6 @@ describe.skipIf(!DB_TESTS)('EVM swaps Uniswap V3 regression checks', () => {
         const { config } = await import('../../config.js');
         const { hasDatabase } = await import('../../supported-routes.js');
         const { default: evmSwapsRoute } = await import('./evm.js');
-
-        (config as any).plans = null;
 
         app = new Hono();
         app.route('/v1/evm/swaps', evmSwapsRoute);

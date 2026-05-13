@@ -207,7 +207,7 @@ const SINGLE_FILTER_ROUTE_CASES = [
 ] as const;
 
 async function fetchRoute(path: string) {
-    const response = await app.request(path, { headers: { 'X-Plan': 'free' } });
+    const response = await app.request(path);
     const body = await response.json();
     return { response, body };
 }
@@ -237,9 +237,6 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         // Lazy-load config and routes to avoid circular dependency issues
         const { config } = await import('../config.js');
         const { hasDatabase } = await import('../supported-routes.js');
-
-        // Bypass plan limits for DB integration tests (config.plans may be mutated by other test files)
-        (config as any).plans = null;
 
         app = new Hono();
         const routes = await import('./index.js');

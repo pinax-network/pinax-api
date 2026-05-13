@@ -587,7 +587,7 @@ function getNetworkForChain(chain: ChainType): string {
 
 async function fetchRoute(url: string): Promise<{ status: number; body: any; duration_ms: number }> {
     const start = performance.now();
-    const response = await app.request(url, { headers: { 'X-Plan': 'free', 'Cache-Control': 'no-cache' } });
+    const response = await app.request(url, { headers: { 'Cache-Control': 'no-cache' } });
     const body = await response.json();
     const duration_ms = Math.round((performance.now() - start) * 100) / 100;
     return { status: response.status, body, duration_ms };
@@ -613,8 +613,6 @@ const allResults: TestResult[] = [];
 describe.skipIf(!DB_TESTS)('Database performance', () => {
     beforeAll(async () => {
         const { config } = await import('../config.js');
-        // Bypass plan limits for tests
-        (config as any).plans = null;
 
         app = new Hono();
         const routes = await import('./index.js');

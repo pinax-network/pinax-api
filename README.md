@@ -162,7 +162,6 @@ The Token API provides access to onchain NFT and fungible token data, including 
 | `LARGE_QUERIES_ROWS_TRIGGER` | Row threshold for large-query metrics | `10000000` | No |
 | `LARGE_QUERIES_BYTES_TRIGGER` | Byte threshold for large-query metrics | `1000000000` | No |
 | `SKIP_NETWORKS_VALIDATION` | Skip startup validation that configured networks exist in ClickHouse | `false` | No |
-| `PLANS` | Plan limits as `name:limit,batched,intervals` entries | empty (disabled) | No |
 | `PRETTY_LOGGING` | Enable pretty console logging | `false` | No |
 | `VERBOSE` | Enable verbose logging | `false` | No |
 
