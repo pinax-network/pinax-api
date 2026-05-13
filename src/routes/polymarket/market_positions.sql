@@ -24,6 +24,6 @@ SELECT
 FROM {db_polymarket:Identifier}.market_position p
 LEFT JOIN {db_scraper:Identifier}.polymarket_markets_by_asset_id a
     ON a.asset_id = p.token_id
-WHERE p.interval_min = 1440
+WHERE p.interval_min = 0
   AND p.token_id = toUInt256({token_id:String})
 GROUP BY p.user, p.token_id, a.condition_id, a.market_slug, a.outcome_label, a.closed

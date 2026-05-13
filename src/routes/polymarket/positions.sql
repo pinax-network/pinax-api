@@ -16,12 +16,12 @@ SELECT
     sum(p.transactions) AS transactions,
     CAST((nullIf(a.condition_id, ''), nullIf(a.market_slug, ''), toString(p.token_id), nullIf(a.outcome_label, ''), a.closed)
         AS Tuple(condition_id Nullable(String), market_slug Nullable(String), token_id String, outcome_label Nullable(String), closed Bool)) AS market
-FROM {db_polymarket:Identifier}.state_user_position p
+FROM {db_polymarket:Identifier}.user_position p
 LEFT JOIN {db_scraper:Identifier}.polymarket_markets_by_asset_id a
     ON a.asset_id = p.token_id
 LEFT JOIN {db_polymarket:Identifier}.state_latest_price lp FINAL
     ON lp.asset_id = p.token_id
-WHERE p.interval_min = 1440
+WHERE p.interval_min = 0
   AND p.user = {user:String}
   AND (isNull({token_id:Nullable(String)}) OR p.token_id = toUInt256({token_id:Nullable(String)}))
   AND (isNull({condition_id:Nullable(String)}) OR a.condition_id = {condition_id:Nullable(String)})
