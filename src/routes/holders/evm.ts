@@ -35,7 +35,7 @@ const responseSchema = apiUsageResponseSchema.extend({
             address: evmAddressSchema,
             contract: evmContractSchema,
             amount: z.string(),
-            value: z.number(),
+            value: z.number().describe('Decimal-scaled token amount (= amount / 10^decimals). Not a USD value.'),
 
             // -- holder type --
             is_contract: z.boolean(),
