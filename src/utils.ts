@@ -2,7 +2,6 @@ import type { Context } from 'hono';
 import type { DescribeRouteOptions } from 'hono-openapi';
 import { resolver } from 'hono-openapi';
 import { ZodError } from 'zod';
-import { config } from './config.js';
 import { logger } from './logger.js';
 import {
     type ApiErrorResponse,
@@ -12,6 +11,19 @@ import {
     type ServerErrorResponse,
     serverErrorResponseSchema,
 } from './types/zod.js';
+
+// Plan limits are injected by the upstream gateway on every authenticated
+// request. Requests without these headers (e.g. local development) bypass
+// enforcement.
+const HEADER_BATCH_SIZE = 'x-token-api-batch-size';
+const HEADER_ITEMS_RETURNED = 'x-token-api-items-returned';
+const HEADER_LOWEST_TIME_PARAMETER = 'x-token-api-lowest-time-parameter';
+
+function parseLimitHeader(raw: string | undefined): number | null {
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+}
 
 export function APIErrorResponse(
     c: Context,
@@ -77,70 +89,44 @@ export function validatorHook(
 ) {
     if (!parseResult.success) return APIErrorResponse(ctx, 400, 'bad_query_input', parseResult.error);
 
-    const plan = ctx.req.header('X-Plan');
+    const maxItems = parseLimitHeader(ctx.req.header(HEADER_ITEMS_RETURNED));
+    const maxBatch = parseLimitHeader(ctx.req.header(HEADER_BATCH_SIZE));
+    const lowestInterval = ctx.req.header(HEADER_LOWEST_TIME_PARAMETER);
+    const data = parseResult.data;
 
-    // Bypass plan limits if PLANS config is empty (local development) and for monitoring and DEX list endpoints
-    if (
-        config.plans !== null &&
-        ctx.req.path !== '/v1/health' &&
-        ctx.req.path !== '/v1/version' &&
-        ctx.req.path !== '/v1/networks' &&
-        !ctx.req.path.endsWith(`/dexes`)
-    ) {
-        if (!plan) return APIErrorResponse(ctx, 400, 'bad_header', `Missing 'X-Plan' header in request.`);
+    // `items-returned`: cap on `limit`. 0 = unlimited.
+    if (maxItems !== null && maxItems > 0 && data.limit && data.limit > maxItems) {
+        return APIErrorResponse(ctx, 403, 'forbidden', `Parameter 'limit' exceeds maximum of ${maxItems} items.`);
+    }
 
-        const planConfig = config.plans.get(plan);
-        if (!planConfig) {
-            return APIErrorResponse(ctx, 400, 'bad_header', `'X-Plan' header has invalid value.`);
-        }
-
-        const max_limit: number = planConfig.maxLimit;
-        const max_batched: number = planConfig.maxBatched;
-        const allowed_intervals: string[] = planConfig.allowedIntervals;
-        const data = parseResult.data;
-
-        // Limit
-        if (max_limit !== 0 && data.limit && data.limit > max_limit)
-            return APIErrorResponse(ctx, 403, 'forbidden', `Parameter 'limit' exceeds maximum of ${max_limit} items.`);
-
-        // Batched parameters
+    // `batch-size`: cap on any array-valued query parameter. 0 = unlimited.
+    if (maxBatch !== null && maxBatch > 0) {
         const exceededParams = Object.entries(data)
-            .filter(([_, value]) => Array.isArray(value) && value.length > max_batched)
+            .filter(([_, value]) => Array.isArray(value) && value.length > maxBatch)
             .map(([key, value]) => ({ name: key, length: (value as unknown[]).length }));
 
-        if (max_batched !== 0 && exceededParams.length > 0) {
+        if (exceededParams.length > 0) {
             const paramDetails = exceededParams.map((p) => `'${p.name}' (${p.length} values)`).join(', ');
             return APIErrorResponse(
                 ctx,
                 403,
                 'forbidden',
-                `Parameters ${paramDetails} exceed maximum batch limit of ${max_batched}.`
+                `Parameters ${paramDetails} exceed maximum batch limit of ${maxBatch}.`
             );
         }
+    }
 
-        // OHLCV interval restrictions
-        const is_ohlcv_endpoint = ctx.req.path.endsWith('/ohlc') || ctx.req.path.endsWith('/historical');
-        if (is_ohlcv_endpoint && data.interval) {
-            // Check interval restrictions
-            if (allowed_intervals.length > 0) {
-                // Parse allowed intervals using evmIntervalSchema (superset of intervalSchema)
-                const allowedIntervalMinutes: number[] = [];
-                for (const intervalStr of allowed_intervals) {
-                    const parseResult = evmIntervalSchema.safeParse(intervalStr);
-                    if (parseResult.success) {
-                        allowedIntervalMinutes.push(parseResult.data);
-                    }
-                }
-
-                if (!allowedIntervalMinutes.includes(data.interval)) {
-                    return APIErrorResponse(
-                        ctx,
-                        403,
-                        'forbidden',
-                        `Parameter 'interval' must be one of: ${allowed_intervals.join(', ')}.`
-                    );
-                }
-            }
+    // `lowest-time-parameter`: minimum granularity (in minutes) the user may query.
+    // Only OHLCV endpoints carry an `interval` field.
+    if (lowestInterval && data.interval) {
+        const parsed = evmIntervalSchema.safeParse(lowestInterval);
+        if (parsed.success && data.interval < parsed.data) {
+            return APIErrorResponse(
+                ctx,
+                403,
+                'forbidden',
+                `Parameter 'interval' must be coarser than or equal to '${lowestInterval}'.`
+            );
         }
     }
 

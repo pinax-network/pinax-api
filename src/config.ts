@@ -39,8 +39,6 @@ export const DEFAULT_SKIP_NETWORKS_VALIDATION = false;
 export const DEFAULT_CACHE_SERVER_MAX_AGE = 600; // s-maxage for shared/proxy caches
 export const DEFAULT_CACHE_MAX_AGE = 60; // max-age for browser caches
 export const DEFAULT_CACHE_STALE_WHILE_REVALIDATE = 30; // RFC 5861 stale-while-revalidate window
-export const DEFAULT_PLANS = '';
-
 // GitHub metadata
 const GIT_COMMIT = (process.env.GIT_COMMIT ?? (await $`git rev-parse HEAD`.text())).replace(/\n/, '').slice(0, 7);
 const GIT_DATE = (process.env.GIT_DATE ?? (await $`git log -1 --format=%cd --date=short`.text())).replace(/\n/, '');
@@ -57,65 +55,6 @@ export const GIT_APP = {
 export const APP_NAME = pkg.name;
 export const APP_DESCRIPTION = pkg.description;
 export const APP_VERSION = `${GIT_APP.version}+${GIT_APP.commit} (${GIT_APP.date})`;
-
-/**
- * Parse plan configuration string into a Map.
- * Format: "name:limit,batched,intervals;name2:limit,batched,intervals"
- * Intervals are pipe-separated: "1m|5m|15m"
- * Returns null if input is empty (bypasses plan limits for local development).
- */
-export function parsePlans(val: string) {
-    if (!val || val.trim() === '') {
-        return null;
-    }
-
-    const plans = new Map<
-        string,
-        {
-            maxLimit: number;
-            maxBatched: number;
-            allowedIntervals: string[];
-        }
-    >();
-
-    val.split(';').forEach((planDef) => {
-        const [name, limits] = planDef.split(':');
-        if (!name || !limits) {
-            throw new Error(`Malformed plan entry: "${planDef}". Skipping.`);
-        }
-
-        // Format: name:limit,batched,intervals
-        const parts = limits.split(',');
-        if (parts.length !== 3) {
-            throw new Error(`Invalid limits format for plan "${name}". Expected 3 values.`);
-        }
-
-        const [limit, batched, intervals] = parts;
-        const maxLimit = Number(limit);
-        const maxBatched = Number(batched);
-        const allowedIntervals = intervals ? intervals.split('|').filter((s) => s.length > 0) : [];
-
-        if (Number.isNaN(maxLimit) || Number.isNaN(maxBatched)) {
-            throw new Error(`Invalid numeric limits for plan "${name}".`);
-        }
-
-        plans.set(name, {
-            maxLimit,
-            maxBatched,
-            allowedIntervals,
-        });
-
-        if (!name.startsWith('tgm-')) {
-            plans.set(`tgm-${name.toUpperCase()}`, {
-                maxLimit,
-                maxBatched,
-                allowedIntervals,
-            });
-        }
-    });
-
-    return plans;
-}
 
 // parse command line options
 const opts = program
@@ -250,11 +189,6 @@ const opts = program
             .env('CACHE_STALE_WHILE_REVALIDATE')
             .default(DEFAULT_CACHE_STALE_WHILE_REVALIDATE)
     )
-    .addOption(
-        new Option('--plans <string>', 'Plan configurations (name:limit,batched,intervals)')
-            .env('PLANS')
-            .default(DEFAULT_PLANS)
-    )
     .allowUnknownOption()
     .allowExcessArguments()
     .parse()
@@ -293,7 +227,6 @@ const config = z
         cacheServerMaxAge: z.coerce.number().nonnegative('Cache server max-age must be non-negative'),
         cacheMaxAge: z.coerce.number().nonnegative('Cache max-age must be non-negative'),
         cacheStaleWhileRevalidate: z.coerce.number().nonnegative('Cache stale-while-revalidate must be non-negative'),
-        plans: z.string().transform(parsePlans),
     })
     .transform((data) => {
         // Use YAML config as the authoritative source — spread all database maps dynamically
