@@ -17,7 +17,12 @@ pools AS (
         sum(transactions) as transactions
     FROM {db_dex:Identifier}.state_pools_aggregating_by_pool
     WHERE
-        (empty({input_token:Array(String)}) OR pool IN input_pools)
+        /* cow and dodo are decoded from router/aggregator contracts, not liquidity pools —
+           their factory == pool address is a single settlement/routing contract handling
+           thousands of unrelated pairs. They belong in /v1/evm/swaps, not /v1/evm/pools.
+           Tracked at https://github.com/pinax-network/substreams-evm */
+        toString(protocol) NOT IN ('cow', 'dodo')
+    AND (empty({input_token:Array(String)}) OR pool IN input_pools)
     AND (empty({output_token:Array(String)}) OR pool IN output_pools)
     AND (empty({pool:Array(String)}) OR pool IN {pool:Array(String)})
     AND (empty({factory:Array(String)}) OR factory IN {factory:Array(String)})
