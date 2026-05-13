@@ -569,7 +569,9 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
     // --- SVM Pools ---
     it('GET /v1/svm/pools', async () => {
         if (!hasSvmDex) return;
-        const { response, body } = await fetchRoute(`/v1/svm/pools?network=${svmNetwork}`);
+        const { response, body } = await fetchRoute(
+            `/v1/svm/pools?network=${svmNetwork}&amm_pool=${SVM_AMM_POOL_PUMP_EXAMPLE}`
+        );
         expect(response.status).toBe(200);
         expect(body.data).toBeArray();
         expect(body.data.length).toBeGreaterThan(0);

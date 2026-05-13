@@ -39,21 +39,33 @@ pools_with_tokens AS (
     FROM {db_dex:Identifier}.state_pools_aggregating_by_mint AS pt
     WHERE amm_pool IN (SELECT amm_pool FROM pools)
     GROUP BY protocol, program_id, amm, amm_pool
+),
+decimals AS (
+    SELECT mint, decimals AS dec_value
+    FROM {db_accounts:Identifier}.decimals_state
+    WHERE mint IN (
+        SELECT arrayJoin([token0, token1]) AS mint FROM pools_with_tokens
+    )
+    LIMIT 1 BY mint
 )
 SELECT
     /* DEX */
     p.program_id AS program_id,
     program_names(p.program_id) AS program_name,
     p.protocol AS protocol,
-    p.amm as amm,
-    program_names(p.amm) as amm_name,
+    p.amm AS amm,
+    program_names(p.amm) AS amm_name,
     p.amm_pool AS amm_pool,
     pt.token0 AS input_mint,
+    if(d0.mint != '', d0.dec_value, NULL) AS input_decimals,
     pt.token1 AS output_mint,
-    p.transactions as transactions,
+    if(d1.mint != '', d1.dec_value, NULL) AS output_decimals,
+    p.transactions AS transactions,
 
     /* Network */
     {network: String} AS network
 FROM pools AS p
 JOIN pools_with_tokens AS pt ON p.amm_pool = pt.amm_pool AND p.protocol = pt.protocol
+LEFT JOIN decimals AS d0 ON d0.mint = pt.token0
+LEFT JOIN decimals AS d1 ON d1.mint = pt.token1
 ORDER BY p.transactions DESC
