@@ -948,7 +948,7 @@ export const hyperliquidDexIdSchema = z.coerce
     .meta({
         type: 'string',
         description:
-            'DEX identifier. `perps` for core perps, `spot` for `@N` spot pairs, or a builder DEX name (e.g. `xyz`, `cash`). New builder DEXs are added on Hyperliquid permissionlessly — call `/v1/hyperliquid/dexes` for the live set.',
+            'DEX identifier. `perps` for core perps, `spot` for `@N` spot pairs, or a builder DEX name (`xyz`, `cash`, …). Call `/v1/hyperliquid/dexes` for the live set.',
         examples: knownHyperliquidDexes,
     });
 
@@ -1018,6 +1018,7 @@ export const hyperliquidUserSortBySchema = z.enum(hyperliquidUserSortFields).met
 export const hyperliquidTokenSchema = z.coerce
     .string()
     .min(1)
+    .refine((val) => !/[,\s]/.test(val), 'Invalid token symbol (no commas or whitespace)')
     .meta({
         type: 'string',
         description:
@@ -1025,9 +1026,13 @@ export const hyperliquidTokenSchema = z.coerce
         examples: ['HYPE', 'USDC', 'PURR'],
     });
 
-export const hyperliquidCoinSchema = z.coerce.string().min(1).meta({
-    type: 'string',
-    description:
-        'Hyperliquid coin identifier. Core perps have no prefix (`BTC`, `HYPE`); spot pairs use `@N` (`@107`); builder DEXs prefix the symbol with the DEX name (`xyz:SILVER`).',
-    example: 'BTC',
-});
+export const hyperliquidCoinSchema = z.coerce
+    .string()
+    .min(1)
+    .refine((val) => !/[,\s]/.test(val), 'Invalid coin identifier (no commas or whitespace)')
+    .meta({
+        type: 'string',
+        description:
+            'Hyperliquid coin identifier. Core perps have no prefix (`BTC`, `HYPE`); spot pairs use `@N` (`@107`); builder DEXs prefix the symbol with the DEX name (`xyz:SILVER`).',
+        example: 'BTC',
+    });

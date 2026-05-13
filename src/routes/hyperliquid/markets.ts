@@ -17,10 +17,10 @@ import { validatorHook, withErrorResponses } from '../../utils.js';
 import baseQuery from './markets.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
-    coin: { schema: hyperliquidCoinSchema, optional: true },
-    dex: { schema: hyperliquidDexIdSchema, optional: true },
-    base_token: { schema: hyperliquidTokenSchema, optional: true },
-    quote_token: { schema: hyperliquidTokenSchema, optional: true },
+    coin: { schema: hyperliquidCoinSchema, batched: true, optional: true },
+    dex: { schema: hyperliquidDexIdSchema, batched: true, optional: true },
+    base_token: { schema: hyperliquidTokenSchema, batched: true, optional: true },
+    quote_token: { schema: hyperliquidTokenSchema, batched: true, optional: true },
 });
 
 const responseSchema = apiUsageResponseSchema.extend({

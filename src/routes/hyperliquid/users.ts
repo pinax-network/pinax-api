@@ -20,11 +20,11 @@ import byCoinQuery from './users.sql' with { type: 'text' };
 import leaderboardQuery from './users_leaderboard.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
-    user: { schema: evmAddressSchema, optional: true },
+    user: { schema: evmAddressSchema, batched: true, optional: true },
     interval: { schema: userLookbackIntervalSchema, optional: true },
     sort_by: { schema: hyperliquidUserSortBySchema, prefault: 'total_volume' },
-    coin: { schema: hyperliquidCoinSchema, optional: true },
-    dex: { schema: hyperliquidDexIdSchema, optional: true },
+    coin: { schema: hyperliquidCoinSchema, batched: true, optional: true },
+    dex: { schema: hyperliquidDexIdSchema, batched: true, optional: true },
 });
 
 const responseSchema = apiUsageResponseSchema.extend({
@@ -148,7 +148,7 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
     // state_user_leaderboard is pre-aggregated across coins/dexes and keyed by
     // (interval_min, user) — use it whenever the request doesn't scope to a
     // specific coin or dex. Falls back to state_user_by_coin FINAL otherwise.
-    const usesLeaderboard = !params.coin && !params.dex;
+    const usesLeaderboard = !params.coin.length && !params.dex.length;
     const baseSql = usesLeaderboard ? leaderboardQuery : byCoinQuery;
     const sql = baseSql.replace('ORDER BY total_volume DESC', `ORDER BY ${sortColumn} DESC`);
 

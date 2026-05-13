@@ -11,8 +11,8 @@ WITH
         FROM {db_hypercore:Identifier}.state_ohlcv_fills
         WHERE interval_min = 60
           AND timestamp >= now() - INTERVAL 24 HOUR
-          AND (isNull({coin:Nullable(String)}) OR coin = {coin:Nullable(String)})
-          AND (isNull({dex:Nullable(String)}) OR dex_from_coin(coin) = {dex:Nullable(String)})
+          AND (empty({coin:Array(String)}) OR coin IN {coin:Array(String)})
+          AND (empty({dex:Array(String)})  OR dex_from_coin(coin) IN {dex:Array(String)})
         GROUP BY coin
     ),
     uu_24h AS (
@@ -22,8 +22,8 @@ WITH
         FROM {db_hypercore:Identifier}.state_ohlcv_fills_uniq_user FINAL
         WHERE interval_min = 1440
           AND timestamp >= now() - INTERVAL 48 HOUR
-          AND (isNull({coin:Nullable(String)}) OR coin = {coin:Nullable(String)})
-          AND (isNull({dex:Nullable(String)}) OR dex_from_coin(coin) = {dex:Nullable(String)})
+          AND (empty({coin:Array(String)}) OR coin IN {coin:Array(String)})
+          AND (empty({dex:Array(String)})  OR dex_from_coin(coin) IN {dex:Array(String)})
         GROUP BY coin
     ),
     day_prev AS (
@@ -34,8 +34,8 @@ WITH
         WHERE interval_min = 60
           AND timestamp >= now() - INTERVAL 48 HOUR
           AND timestamp <  now() - INTERVAL 24 HOUR
-          AND (isNull({coin:Nullable(String)}) OR coin = {coin:Nullable(String)})
-          AND (isNull({dex:Nullable(String)}) OR dex_from_coin(coin) = {dex:Nullable(String)})
+          AND (empty({coin:Array(String)}) OR coin IN {coin:Array(String)})
+          AND (empty({dex:Array(String)})  OR dex_from_coin(coin) IN {dex:Array(String)})
         GROUP BY coin
     ),
     oi_latest AS (
@@ -47,7 +47,7 @@ WITH
         FROM {db_hypercore:Identifier}.open_interest
         WHERE interval_min = 60
           AND timestamp >= now() - INTERVAL 6 HOUR
-          AND (isNull({coin:Nullable(String)}) OR coin = {coin:Nullable(String)})
+          AND (empty({coin:Array(String)}) OR coin IN {coin:Array(String)})
         GROUP BY coin
     )
 SELECT
@@ -72,8 +72,8 @@ LEFT JOIN day_prev prev ON prev.coin = cur.coin
 LEFT JOIN oi_latest oi  ON oi.coin  = cur.coin
 LEFT JOIN uu_24h     uu ON uu.coin  = cur.coin
 LEFT JOIN {db_hypercore:Identifier}.state_spot_pair_names AS n FINAL ON n.coin = cur.coin
-WHERE (isNull({base_token:Nullable(String)})  OR n.base_token  = {base_token:Nullable(String)})
-  AND (isNull({quote_token:Nullable(String)}) OR n.quote_token = {quote_token:Nullable(String)})
+WHERE (empty({base_token:Array(String)})  OR n.base_token  IN {base_token:Array(String)})
+  AND (empty({quote_token:Array(String)}) OR n.quote_token IN {quote_token:Array(String)})
 ORDER BY cur.volume_24h DESC
 LIMIT {limit:UInt64}
 OFFSET {offset:UInt64}

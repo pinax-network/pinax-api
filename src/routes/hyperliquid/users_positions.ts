@@ -17,9 +17,9 @@ import { validatorHook, withErrorResponses } from '../../utils.js';
 import query from './users_positions.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
-    user: { schema: evmAddressSchema },
-    coin: { schema: hyperliquidCoinSchema, optional: true },
-    dex: { schema: hyperliquidDexIdSchema, optional: true },
+    user: { schema: evmAddressSchema, batched: true },
+    coin: { schema: hyperliquidCoinSchema, batched: true, optional: true },
+    dex: { schema: hyperliquidDexIdSchema, batched: true, optional: true },
 });
 
 const responseSchema = apiUsageResponseSchema.extend({

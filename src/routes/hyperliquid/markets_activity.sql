@@ -61,9 +61,9 @@ FROM (
     FROM {db_hypercore:Identifier}.fills
     WHERE timestamp >= (SELECT t FROM start_ts)
       AND timestamp <  (SELECT t FROM end_ts)
-      AND (isNull({user:Nullable(String)}) OR user = {user:Nullable(String)})
-      AND (isNull({coin:Nullable(String)}) OR coin = {coin:Nullable(String)})
-      AND (isNull({dex:Nullable(String)})  OR dex  = {dex:Nullable(String)})
+      AND (empty({user:Array(String)}) OR user IN {user:Array(String)})
+      AND (empty({coin:Array(String)}) OR coin IN {coin:Array(String)})
+      AND (empty({dex:Array(String)})  OR dex  IN {dex:Array(String)})
     ORDER BY timestamp DESC, block_num DESC, event_index DESC
     LIMIT {limit:UInt64}
     OFFSET {offset:UInt64}

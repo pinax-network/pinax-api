@@ -7,7 +7,7 @@ WITH
             uniqExact(splitByChar(',', users)[1])             AS depositor_count,
             max(timestamp)                                    AS last_deposit_at
         FROM {db_hypercore:Identifier}.ledger_vault_deposits
-        WHERE (isNull({vault:Nullable(String)}) OR vault = {vault:Nullable(String)})
+        WHERE (empty({vault:Array(String)}) OR vault IN {vault:Array(String)})
         GROUP BY vault
     ),
     withdrawals AS (
@@ -18,7 +18,7 @@ WITH
             count()                                           AS withdrawal_count,
             max(timestamp)                                    AS last_withdrawal_at
         FROM {db_hypercore:Identifier}.ledger_vault_withdrawals
-        WHERE (isNull({vault:Nullable(String)}) OR vault = {vault:Nullable(String)})
+        WHERE (empty({vault:Array(String)}) OR vault IN {vault:Array(String)})
         GROUP BY vault
     ),
     distributions AS (
@@ -26,7 +26,7 @@ WITH
             vault,
             sum(usdc_num)                                     AS lifetime_distributions
         FROM {db_hypercore:Identifier}.ledger_vault_distributions
-        WHERE (isNull({vault:Nullable(String)}) OR vault = {vault:Nullable(String)})
+        WHERE (empty({vault:Array(String)}) OR vault IN {vault:Array(String)})
         GROUP BY vault
     ),
     creates AS (
@@ -37,7 +37,7 @@ WITH
             argMin(usdc_num, timestamp)                       AS initial_deposit,
             argMin(fee_num, timestamp)                        AS create_fee
         FROM {db_hypercore:Identifier}.ledger_vault_creates
-        WHERE (isNull({vault:Nullable(String)}) OR vault = {vault:Nullable(String)})
+        WHERE (empty({vault:Array(String)}) OR vault IN {vault:Array(String)})
         GROUP BY vault
     )
 SELECT
