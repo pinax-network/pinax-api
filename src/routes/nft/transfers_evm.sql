@@ -162,7 +162,7 @@ SELECT
     token_standard,
     from,
     to,
-    amount,
+    toString(amount) AS amount,
     {network:String} as network
 FROM limit_combined AS c
 LEFT JOIN erc721_metadata_by_contract AS m USING (contract)
