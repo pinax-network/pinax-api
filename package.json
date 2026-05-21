@@ -1,7 +1,7 @@
 {
     "private": true,
     "name": "token-api",
-    "description": "Token API",
+    "description": "Pinax API",
     "version": "3.18.0",
     "homepage": "https://github.com/pinax-network/token-api",
     "license": "Apache-2.0",
