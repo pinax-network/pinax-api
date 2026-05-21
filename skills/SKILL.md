@@ -1,6 +1,10 @@
 ---
-name: Token API
-description: Real-time token, balance, transfer, holder, DEX, NFT, Polymarket, and Hyperliquid data across EVM, SVM, and TVM networks.
+name: token-api
+description: >
+  Query The Graph Token API for real-time token, balance, transfer, holder, DEX,
+  NFT, Polymarket, and Hyperliquid data across EVM, SVM, and TVM networks.
+  Use when: integrating with Token API, choosing endpoints, building API
+  requests, handling pagination, or discovering supported networks.
 ---
 
 # Token API
@@ -11,6 +15,7 @@ description: Real-time token, balance, transfer, holder, DEX, NFT, Polymarket, a
 - **OpenAPI spec:** `GET /openapi` — authoritative reference, use for schema details
 - **Docs:** <https://thegraph.com/docs/en/token-api/quick-start/>
 - **FAQ:** <https://thegraph.com/docs/en/token-api/faq/>
+- **Canonical skill file:** `GET /skills/SKILL.md`
 
 All responses are JSON: `{ "data": [...], ... }` for data endpoints, or a top-level object for monitoring. Errors follow `{ "status": <code>, "code": "<slug>", "message": "<text>" }`.
 
@@ -26,6 +31,7 @@ An `X-Api-Key: <your-api-key>` header is accepted as an alternative.
 
 **Unauthenticated endpoints** (no header required, no usage charge):
 - `GET /llms.txt`
+- `GET /skills/SKILL.md`
 - `GET /SKILLS.md`
 - `GET /skills.md` (lowercase alias)
 - `GET /v1/health`

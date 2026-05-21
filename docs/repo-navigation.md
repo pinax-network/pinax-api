@@ -19,7 +19,8 @@ This document captures stable, tool-agnostic navigation knowledge for the `token
 - `scripts/`: maintenance and analysis scripts (perf, query logs, stablecoins, query breakdown generation).
 - `queries/`: SQL reference breakdowns consumed by script workflows.
 - `reports/`: checked-in analysis/performance reports (documentation artifacts, not runtime code).
-- `public/`: static files served by app (`index.html`, `skills.md`, `llms.txt`, assets).
+- `public/`: static files served by app (`index.html`, `llms.txt`, assets).
+- `skills/SKILL.md`: canonical agent skills file served by app for ClawHub and agent discovery.
 - `.github/workflows/`: CI and release automation entrypoints.
 
 ## 2) Architecture mental model (request/data flow)
@@ -60,8 +61,9 @@ This document captures stable, tool-agnostic navigation knowledge for the `token
   - Connection/auth/cluster routing: `src/clickhouse/client.ts`.
   - Streaming, stats, query error handling: `src/clickhouse/makeQuery.ts` and `src/handleQuery.ts`.
 
-- Change static docs or landing assets:
-  - Edit `public/index.html`, `public/skills.md`, `public/llms.txt`, and media in `public/`.
+- Change static docs, agent skill references, or landing assets:
+  - Edit `skills/SKILL.md` for the canonical agent skills file.
+  - Edit `public/index.html`, `public/llms.txt`, and media in `public/`.
 
 - Update CI/release behavior:
   - Edit `.github/workflows/*.yml`.
@@ -90,7 +92,7 @@ CI anchors:
 
 Primary source-of-truth directories:
 
-- `src/`, `scripts/`, `queries/`, `public/`, `.github/workflows/`, `docs/`.
+- `src/`, `scripts/`, `queries/`, `public/`, `skills/`, `.github/workflows/`, `docs/`.
 
 Generated or install/build artifacts:
 
