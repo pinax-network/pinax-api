@@ -28,6 +28,9 @@ app.get('/favicon.svg', () => new Response(Bun.file('./public/favicon.svg')));
 app.get('/banner.jpg', () => new Response(Bun.file('./public/banner.jpg')));
 
 const contentTypeMarkdown = 'text/markdown; charset=UTF-8';
+const skillsMarkdownFile = './skills/SKILL.md';
+const markdownResponse = (path: string) =>
+    new Response(Bun.file(path), { headers: { 'Content-Type': contentTypeMarkdown } });
 
 const skillsMarkdownOpenapi = describeRoute({
     operationId: 'getSkillsMarkdown',
@@ -112,22 +115,12 @@ const openapiSpecOpenapi = describeRoute({
     },
 });
 
-app.get(
-    '/SKILLS.md',
-    skillsMarkdownOpenapi,
-    () => new Response(Bun.file('./public/skills.md'), { headers: { 'Content-Type': contentTypeMarkdown } })
-);
-app.get(
-    '/skills.md',
-    () => new Response(Bun.file('./public/skills.md'), { headers: { 'Content-Type': contentTypeMarkdown } })
-);
+app.get('/skills/SKILL.md', skillsMarkdownOpenapi, () => markdownResponse(skillsMarkdownFile));
+app.get('/SKILLS.md', () => markdownResponse(skillsMarkdownFile));
+app.get('/skills.md', () => markdownResponse(skillsMarkdownFile));
 app.get('/skill.md', (c) => c.redirect('/skills.md', 301));
 app.get('/SKILL.md', (c) => c.redirect('/SKILLS.md', 301));
-app.get(
-    '/llms.txt',
-    llmsTextOpenapi,
-    () => new Response(Bun.file('./public/llms.txt'), { headers: { 'Content-Type': contentTypeMarkdown } })
-);
+app.get('/llms.txt', llmsTextOpenapi, () => markdownResponse('./public/llms.txt'));
 app.get(
     '/openapi',
     openapiSpecOpenapi,

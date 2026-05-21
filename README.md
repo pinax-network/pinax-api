@@ -392,6 +392,7 @@ token-api/
 ├── scripts/             # Utility scripts (perf, query analysis, stablecoin checks)
 ├── queries/             # SQL breakdown/reference queries used by scripts
 ├── reports/             # Versioned performance and operational reports
+├── skills/              # Canonical agent skill file for publication
 ├── src/
 │   ├── routes/          # API route handlers (colocated .ts + .sql)
 │   ├── config/          # YAML config loader and validators
@@ -401,7 +402,7 @@ token-api/
 │   ├── registry/        # Native/stable token registry helpers
 │   ├── services/        # Shared services (Redis/spam-scoring)
 │   └── sql/             # SQL utilities
-├── public/              # Static assets
+├── public/              # Static assets and documentation indexes
 ├── docs/                # Maintainer navigation and operational docs
 └── index.ts             # Application entry point
 ```
