@@ -12,7 +12,7 @@ export function banner() {
     ░░░██║░░░╚█████╔╝██║░╚██╗███████╗██║░╚███║  ██║░░██║██║░░░░░██║
     ░░░╚═╝░░░░╚════╝░╚═╝░░╚═╝╚══════╝╚═╝░░╚══╝  ╚═╝░░╚═╝╚═╝░░░░░╚═╝
 `;
-    text += `                 Token API v${APP_VERSION}\n`;
+    text += `                 Pinax API v${APP_VERSION}\n`;
     text += `               ${pkg.homepage}\n`;
 
     return text;

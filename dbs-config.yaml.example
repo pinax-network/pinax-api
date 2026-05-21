@@ -1,4 +1,4 @@
-# Token API Database Configuration
+# Pinax API Database Configuration
 # This file defines the database mappings for each network and data type.
 # Set DBS_CONFIG_PATH environment variable to point to this file.
 #

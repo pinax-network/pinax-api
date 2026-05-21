@@ -34,8 +34,8 @@ const markdownResponse = (path: string) =>
 
 const skillsMarkdownOpenapi = describeRoute({
     operationId: 'getSkillsMarkdown',
-    summary: 'Agent Skills Reference',
-    description: 'Returns the public Markdown reference for AI agents integrating with Token API.',
+    summary: 'Pinax API Skill',
+    description: 'Returns the public Markdown reference for AI agents integrating with Pinax API.',
     tags: ['Documentation'],
     security: [],
     responses: {
@@ -46,13 +46,13 @@ const skillsMarkdownOpenapi = describeRoute({
                     schema: {
                         type: 'string',
                         example: `---
-name: Token API
-description: Real-time token, balance, transfer, holder, DEX, NFT, Polymarket, and Hyperliquid data across EVM, SVM, and TVM networks.
+name: pinax-api
+description: Query Pinax API datasets including Token API, prediction markets, and perp exchange data.
 ---
 
-# Token API
+# Pinax API
 
-> Quick reference for AI agents using Token API. The authoritative machine-readable contract is \`GET /openapi\`.
+> Quick reference for AI agents using Pinax API. The authoritative machine-readable contract is \`GET /openapi\`.
 
 ...`,
                     },
@@ -65,7 +65,7 @@ description: Real-time token, balance, transfer, holder, DEX, NFT, Polymarket, a
 const llmsTextOpenapi = describeRoute({
     operationId: 'getLlmsText',
     summary: 'LLM Documentation Index',
-    description: 'Returns the public llms.txt documentation index for AI tools discovering Token API.',
+    description: 'Returns the public llms.txt documentation index for AI tools discovering Pinax API.',
     tags: ['Documentation'],
     security: [],
     responses: {
@@ -75,9 +75,9 @@ const llmsTextOpenapi = describeRoute({
                 [contentTypeMarkdown]: {
                     schema: {
                         type: 'string',
-                        example: `# Token API
+                        example: `# Pinax API
 
-> Real-time token, balance, transfer, holder, DEX, NFT, Polymarket, and Hyperliquid data across EVM, SVM, and TVM networks.
+> Real-time Token API, prediction market, and perp exchange data.
 
 ...`,
                     },
@@ -90,7 +90,7 @@ const llmsTextOpenapi = describeRoute({
 const openapiSpecOpenapi = describeRoute({
     operationId: 'getOpenapiSpec',
     summary: 'OpenAPI Specification',
-    description: 'Returns the public OpenAPI specification for Token API.',
+    description: 'Returns the public OpenAPI specification for Pinax API.',
     tags: ['Documentation'],
     security: [],
     responses: {
@@ -115,11 +115,11 @@ const openapiSpecOpenapi = describeRoute({
     },
 });
 
-app.get('/skills/SKILL.md', skillsMarkdownOpenapi, () => markdownResponse(skillsMarkdownFile));
-app.get('/SKILLS.md', () => markdownResponse(skillsMarkdownFile));
-app.get('/skills.md', () => markdownResponse(skillsMarkdownFile));
-app.get('/skill.md', (c) => c.redirect('/skills.md', 301));
-app.get('/SKILL.md', (c) => c.redirect('/SKILLS.md', 301));
+app.get('/SKILL.md', skillsMarkdownOpenapi, () => markdownResponse(skillsMarkdownFile));
+app.get('/skills/SKILL.md', (c) => c.redirect('/SKILL.md', 301));
+app.get('/SKILLS.md', (c) => c.redirect('/SKILL.md', 301));
+app.get('/skills.md', (c) => c.redirect('/SKILL.md', 301));
+app.get('/skill.md', (c) => c.redirect('/SKILL.md', 301));
 app.get('/llms.txt', llmsTextOpenapi, () => markdownResponse('./public/llms.txt'));
 app.get(
     '/openapi',
@@ -127,9 +127,10 @@ app.get(
     openAPIRouteHandler(app, {
         documentation: {
             info: {
-                title: 'Token API',
+                title: 'Pinax API',
                 version: APP_VERSION,
-                description: 'Power your apps & AI agents with real-time token data.',
+                description:
+                    'Power your apps and AI agents with real-time Token API, prediction market, and perp exchange data.',
             },
             servers: config.disableOpenapiServers
                 ? [{ url: `http://${config.hostname}:${config.port}`, description: `${APP_DESCRIPTION} - Local` }]

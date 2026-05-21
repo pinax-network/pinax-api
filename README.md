@@ -1,11 +1,11 @@
-# The Graph: Token API
+# Pinax API
 
 [![.github/workflows/bun-test.yml](https://github.com/pinax-network/token-api/actions/workflows/bun-test.yml/badge.svg)](https://github.com/pinax-network/token-api/actions/workflows/bun-test.yml)
 ![license](https://img.shields.io/github/license/pinax-network/token-api)
 
-### <https://thegraph.com/token-api/>
+### <https://api.pinax.network/>
 
-> Power your apps & AI agents with real-time token data.
+> Power your apps and AI agents with real-time Token API, prediction market, and perp exchange data.
 
 📚 **[Documentation](https://thegraph.com/docs/en/token-api/quick-start/)**
 
@@ -13,13 +13,13 @@
 
 ## Overview
 
-The Graph’s Token API lets you access blockchain token information via a GET request. This guide is designed to help you quickly integrate the Token API into your application.
+Pinax API lets you access high-volume blockchain datasets via simple HTTP requests. This guide is designed to help you quickly integrate Pinax API into your application.
 
-The Token API provides access to onchain NFT and fungible token data, including live and historical balances, holders, prices, market data, token metadata, and token transfers. This API also uses the Model Context Protocol (MCP) to allow AI tools such as Claude to enrich raw blockchain data with contextual insights.
+The current Pinax API surface includes Token API data for EVM, SVM, and TVM networks, prediction market data, and perp exchange data. The Token API dataset covers onchain NFT and fungible token data, including live and historical balances, holders, prices, market data, token metadata, and token transfers. Pinax API also exposes agent-friendly discovery files so AI tools can enrich raw blockchain data with contextual insights.
 
 ## Features
 
-### Token Data
+### Token API Dataset
 
 - **Real-time Balances**: Current token holdings for any wallet address
 - **Token Transfers**: Historical transfer events with full transaction details
@@ -38,6 +38,18 @@ The Token API provides access to onchain NFT and fungible token data, including 
 - **DEX Swaps**: Uniswap and Solana DEX swap events with token amounts
 - **Liquidity Pools**: Pool information, token pairs, and trading fees
 - **Historical Data**: Time-series data for portfolio tracking and analytics
+
+### Prediction Markets
+
+- **Market Discovery**: Polymarket market metadata, status, tokens, and outcomes
+- **Market Activity**: Trades, positions, open interest, and OHLC time-series
+- **User Analytics**: User-level positions, PnL, and market participation
+
+### Perp Exchanges
+
+- **Market Discovery**: Hyperliquid perp and spot market metadata
+- **Market Data**: OHLC, open interest, liquidations, and market activity
+- **User Analytics**: User positions, vaults, depositors, and platform metrics
 
 ### Multi-Chain Support
 
@@ -74,7 +86,7 @@ The Token API provides access to onchain NFT and fungible token data, including 
    Create a `dbs-config.yaml` file in the root directory:
 
    ```yaml
-   # Token API Database Configuration
+   # Pinax API Database Configuration
    # This file defines the database mappings for each network and data type
    clusters:
      default:
@@ -252,7 +264,7 @@ Envoy's cache filter respects `Cache-Control` directives including `s-maxage` an
 
 ### ClickHouse Database
 
-The Token API requires a ClickHouse database instance with the following characteristics:
+Pinax API requires a ClickHouse database instance with the following characteristics:
 
 - **Version**: ClickHouse 22.0+ recommended
 - **Memory**: Minimum 4GB RAM for production workloads
@@ -270,7 +282,7 @@ The API relies on Substreams data pipelines to populate the ClickHouse database.
 
 ## Authentication
 
-The API uses Bearer token authentication. For the live endpoint (token-api.thegraph.com), you can get your API token at [The Graph Market](https://thegraph.market).
+The API uses Bearer token authentication. For the live endpoint (`https://api.pinax.network`), you can get your API token at [The Graph Market](https://thegraph.market).
 Head over <https://thegraph.com/docs/en/token-api/quick-start/#authentication> for more information.
 
 ```bash
@@ -427,6 +439,6 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 
 ## Support
 
-- **Documentation**: [API Docs](https://thegraph.com/token-api/)
+- **Documentation**: [API Docs](https://api.pinax.network/)
 - **Issues**: [GitHub Issues](https://github.com/pinax-network/token-api/issues)
 - **Community**: [The Graph Discord](https://discord.gg/thegraph)

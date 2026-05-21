@@ -1,21 +1,21 @@
 ---
-name: token-api
+name: pinax-api
 description: >
-  Query The Graph Token API for real-time token, balance, transfer, holder, DEX,
-  NFT, Polymarket, and Hyperliquid data across EVM, SVM, and TVM networks.
-  Use when: integrating with Token API, choosing endpoints, building API
-  requests, handling pagination, or discovering supported networks.
+  Query Pinax API datasets, including Token API for EVM/SVM/TVM token data,
+  prediction markets, and perp exchange data. Use when: integrating with Pinax
+  API, choosing endpoints, building API requests, handling pagination, or
+  discovering supported networks.
 ---
 
-# Token API
+# Pinax API
 
-> Quick reference for AI agents using Token API. The authoritative machine-readable contract is `GET /openapi`.
+> Quick reference for AI agents using Pinax API. The authoritative machine-readable contract is `GET /openapi`.
 
-- **Base URL:** `https://token-api.thegraph.com`
+- **Base URL:** `https://api.pinax.network`
 - **OpenAPI spec:** `GET /openapi` — authoritative reference, use for schema details
 - **Docs:** <https://thegraph.com/docs/en/token-api/quick-start/>
 - **FAQ:** <https://thegraph.com/docs/en/token-api/faq/>
-- **Canonical skill file:** `GET /skills/SKILL.md`
+- **Canonical skill file:** `GET /SKILL.md`
 
 All responses are JSON: `{ "data": [...], ... }` for data endpoints, or a top-level object for monitoring. Errors follow `{ "status": <code>, "code": "<slug>", "message": "<text>" }`.
 
@@ -31,9 +31,10 @@ An `X-Api-Key: <your-api-key>` header is accepted as an alternative.
 
 **Unauthenticated endpoints** (no header required, no usage charge):
 - `GET /llms.txt`
-- `GET /skills/SKILL.md`
-- `GET /SKILLS.md`
-- `GET /skills.md` (lowercase alias)
+- `GET /SKILL.md`
+- `GET /skills/SKILL.md` (alias)
+- `GET /SKILLS.md` (alias)
+- `GET /skills.md` (alias)
 - `GET /v1/health`
 - `GET /v1/version`
 - `GET /v1/networks`
@@ -60,17 +61,17 @@ Common codes: `bad_query_input` (400), `authentication_failed` (401), `route_not
 
 ## Capabilities
 
-Map a goal to the relevant endpoint family:
+Map a goal to the relevant dataset and endpoint family:
 
-- **Look up a wallet's balances and transfer history** — `/v1/{evm,svm,tvm}/balances`, `/v1/{evm,svm,tvm}/transfers`
-- **Track balance changes over time** — `/v1/evm/balances/historical`, `/v1/evm/balances/historical/native`
-- **Resolve token metadata** — `/v1/{evm,svm,tvm}/tokens`, `/v1/{evm,svm,tvm}/tokens/native`
-- **Find holders of a token** — `/v1/{evm,svm}/holders`, `/v1/evm/holders/native`, `/v1/evm/nft/holders`
-- **Trace DEX swaps and liquidity pools** — `/v1/{evm,svm,tvm}/swaps`, `/v1/{evm,svm,tvm}/pools`, `/v1/{evm,svm,tvm}/dexes`
-- **Get OHLC time-series** — `/v1/{evm,svm,tvm}/pools/ohlc`, `/v1/polymarket/markets/ohlc`
-- **List a wallet's NFT holdings and activity** — `/v1/evm/nft/ownerships`, `/v1/evm/nft/transfers`, `/v1/evm/nft/sales`, `/v1/evm/nft/items`, `/v1/evm/nft/collections`
-- **Discover Polymarket markets, OI, and per-user PNL** — `/v1/polymarket/markets`, `/v1/polymarket/markets/oi`, `/v1/polymarket/markets/activity`, `/v1/polymarket/users`, `/v1/polymarket/users/positions`
-- **Discover Hyperliquid markets, OHLC, OI, liquidations, and per-user PnL** — `/v1/hyperliquid/markets`, `/v1/hyperliquid/markets/ohlc`, `/v1/hyperliquid/markets/oi`, `/v1/hyperliquid/markets/liquidations`, `/v1/hyperliquid/users`, `/v1/hyperliquid/users/positions`, `/v1/hyperliquid/vaults`
+- **Token API: look up wallet balances and transfer history** — `/v1/{evm,svm,tvm}/balances`, `/v1/{evm,svm,tvm}/transfers`
+- **Token API: track balance changes over time** — `/v1/evm/balances/historical`, `/v1/evm/balances/historical/native`
+- **Token API: resolve token metadata** — `/v1/{evm,svm,tvm}/tokens`, `/v1/{evm,svm,tvm}/tokens/native`
+- **Token API: find holders of a token** — `/v1/{evm,svm}/holders`, `/v1/evm/holders/native`, `/v1/evm/nft/holders`
+- **Token API: trace DEX swaps and liquidity pools** — `/v1/{evm,svm,tvm}/swaps`, `/v1/{evm,svm,tvm}/pools`, `/v1/{evm,svm,tvm}/dexes`
+- **Token API: get OHLC time-series** — `/v1/{evm,svm,tvm}/pools/ohlc`
+- **Token API: list a wallet's NFT holdings and activity** — `/v1/evm/nft/ownerships`, `/v1/evm/nft/transfers`, `/v1/evm/nft/sales`, `/v1/evm/nft/items`, `/v1/evm/nft/collections`
+- **Prediction Markets: discover markets, OI, and per-user PNL** — `/v1/polymarket/markets`, `/v1/polymarket/markets/ohlc`, `/v1/polymarket/markets/oi`, `/v1/polymarket/markets/activity`, `/v1/polymarket/users`, `/v1/polymarket/users/positions`
+- **Perp Exchanges: discover markets, OHLC, OI, liquidations, and per-user PnL** — `/v1/hyperliquid/markets`, `/v1/hyperliquid/markets/ohlc`, `/v1/hyperliquid/markets/oi`, `/v1/hyperliquid/markets/liquidations`, `/v1/hyperliquid/users`, `/v1/hyperliquid/users/positions`, `/v1/hyperliquid/vaults`
 - **Discover supported chains and protocols** (free) — `/v1/networks`, `/v1/{evm,svm,tvm}/dexes`, `/v1/hyperliquid/dexes`
 
 ## Common patterns

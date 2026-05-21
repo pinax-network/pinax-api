@@ -1,15 +1,15 @@
-# Token API
+# Pinax API
 
-> Real-time token, balance, transfer, holder, DEX, NFT, Polymarket, and Hyperliquid data across EVM, SVM, and TVM networks.
+> Real-time Token API, prediction market, and perp exchange data.
 
-- Base URL: https://token-api.thegraph.com
+- Base URL: https://api.pinax.network
 - Most endpoints require `Authorization: Bearer <token>` from The Graph Market, or `X-Api-Key`.
 - Network support is configuration-driven — call `GET /v1/networks` first to see what's indexed.
 
 ## Core references
 
-- [OpenAPI specification](https://token-api.thegraph.com/openapi): Authoritative machine-readable contract — use for schemas and parameters.
-- [Agent skills reference](https://token-api.thegraph.com/skills/SKILL.md): Endpoint catalog, conventions, and worked examples for agents.
+- [OpenAPI specification](https://api.pinax.network/openapi): Authoritative machine-readable contract — use for schemas and parameters.
+- [Pinax API skill](https://api.pinax.network/SKILL.md): Endpoint catalog, conventions, and worked examples for agents.
 - [Quick start](https://thegraph.com/docs/en/token-api/quick-start/): Setup and first requests.
 - [FAQ](https://thegraph.com/docs/en/token-api/faq/): Plans, billing, authentication.
 
@@ -17,14 +17,14 @@
 
 No authentication required, no usage charge.
 
-- [llms.txt](https://token-api.thegraph.com/llms.txt): This file.
-- [skills/SKILL.md](https://token-api.thegraph.com/skills/SKILL.md): Agent skills reference (`/SKILLS.md` and `/skills.md` aliases also work).
-- [Health](https://token-api.thegraph.com/v1/health): Database connectivity status.
-- [Version](https://token-api.thegraph.com/v1/version): Build version, date, commit.
-- [Networks](https://token-api.thegraph.com/v1/networks): Indexed chains and per-category indexing freshness.
-- [EVM DEXes](https://token-api.thegraph.com/v1/evm/dexes): Supported EVM DEX protocols by network.
-- [SVM DEXes](https://token-api.thegraph.com/v1/svm/dexes): Supported SVM DEX protocols by network.
-- [TVM DEXes](https://token-api.thegraph.com/v1/tvm/dexes): Supported TVM DEX protocols by network.
-- [Polymarket markets](https://token-api.thegraph.com/v1/polymarket/markets): Public Polymarket market discovery.
-- [Hyperliquid DEXes](https://token-api.thegraph.com/v1/hyperliquid/dexes): Hyperliquid core perps, spot, and builder-deployed DEXes.
-- [Hyperliquid markets](https://token-api.thegraph.com/v1/hyperliquid/markets): Public Hyperliquid market discovery.
+- [llms.txt](https://api.pinax.network/llms.txt): This file.
+- [SKILL.md](https://api.pinax.network/SKILL.md): Pinax API skill (`/skills/SKILL.md`, `/SKILLS.md`, and `/skills.md` aliases also work).
+- [Health](https://api.pinax.network/v1/health): Database connectivity status.
+- [Version](https://api.pinax.network/v1/version): Build version, date, commit.
+- [Networks](https://api.pinax.network/v1/networks): Indexed chains and per-category indexing freshness.
+- [EVM DEXes](https://api.pinax.network/v1/evm/dexes): Supported EVM DEX protocols by network.
+- [SVM DEXes](https://api.pinax.network/v1/svm/dexes): Supported SVM DEX protocols by network.
+- [TVM DEXes](https://api.pinax.network/v1/tvm/dexes): Supported TVM DEX protocols by network.
+- [Polymarket markets](https://api.pinax.network/v1/polymarket/markets): Public prediction market discovery.
+- [Hyperliquid DEXes](https://api.pinax.network/v1/hyperliquid/dexes): Hyperliquid core perps, spot, and builder-deployed DEXes.
+- [Hyperliquid markets](https://api.pinax.network/v1/hyperliquid/markets): Public perp exchange market discovery.
