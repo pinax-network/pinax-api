@@ -43,7 +43,7 @@ If you then still feel the need to ask a question and need clarification, we rec
 
 A good bug report shouldn't leave others needing to chase you up for more information. Therefore, we ask you to investigate carefully, collect information and describe the issue in detail in your report. Please complete the following steps in advance to help fix any potential bug as fast as possible.
 
-- Make sure that you are using the [latest version](/releases). If you're using the binary, you can check with `token-api --version`.
+- Make sure that you are using the [latest version](/releases). If you're using the binary, you can check with `pinax-api --version`.
 - Determine if your bug is really a bug and not an error on your side e.g. using incompatible environment components/versions (make sure that you have read the [documentation](README.md). If you are looking for support, you might want to check [this section](#asking-questions)).
 - To see if other users have experienced (and potentially already solved) the same issue you are having, check if there is not already a bug report existing for your bug or error in the [bug tracker](/issues?q=label%3Abug).
 - Also make sure to search the internet (including Stack Overflow) to see if users outside the GitHub community have discussed the issue.
@@ -73,7 +73,7 @@ This section guides you through submitting an enhancement suggestion, **includin
 
 #### Before Submitting an Enhancement
 
-- Make sure that you are using the [latest version](/releases). If you're using the binary, you can check with `token-api --version`.
+- Make sure that you are using the [latest version](/releases). If you're using the binary, you can check with `pinax-api --version`.
 - Read the [documentation](README.md) carefully and find out if the functionality is already covered, maybe by an individual configuration.
 - Perform a [search](/issues) to see if the enhancement has already been suggested. If it has, add a comment to the existing issue instead of opening a new one.
 - Find out whether your idea fits with the scope and aims of the project. Keep in mind that features should be useful to the majority of users and not just a small subset.

@@ -1,6 +1,6 @@
 # Repo Navigation Guide
 
-This document captures stable, tool-agnostic navigation knowledge for the `token-api` codebase.
+This document captures stable, tool-agnostic navigation knowledge for the `pinax-api` codebase.
 
 ## 1) Workspace layout
 
@@ -74,7 +74,7 @@ From `package.json` scripts:
 
 - `bun dev`: start local API with watch mode.
 - `bun start`: start API once (no watch).
-- `bun build`: compile standalone binary (`token-api`).
+- `bun build`: compile standalone binary (`pinax-api`).
 - `bun test`: unit/integration tests with coverage.
 - `bun test:db`: DB-backed test run (`DB_TESTS=true`).
 - `bun lint`: TypeScript check + Biome check.
@@ -97,7 +97,7 @@ Primary source-of-truth directories:
 Generated or install/build artifacts:
 
 - `node_modules/`: dependency install artifact.
-- `token-api`: compiled binary output from `bun build`.
+- `pinax-api`: compiled binary output from `bun build`.
 - `coverage/` (when tests run with coverage): generated report artifact.
 - `dist/` (TypeScript outDir in config, if generated locally).
 

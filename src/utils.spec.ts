@@ -239,29 +239,35 @@ describe('validatorHook', () => {
             });
         });
 
-        describe('x-token-api-items-returned', () => {
+        describe('x-pinax-api-items-returned', () => {
             it('should allow limit within bounds', () => {
-                const ctx = createMockContext({ headers: { 'x-token-api-items-returned': '15' } });
+                const ctx = createMockContext({ headers: { 'x-pinax-api-items-returned': '15' } });
                 const parseResult = { success: true as const, data: { limit: 15 } };
                 expect(validatorHook(parseResult, ctx)).toBeUndefined();
             });
 
             it('should reject limit exceeding header cap', () => {
-                const ctx = createMockContext({ headers: { 'x-token-api-items-returned': '15' } });
+                const ctx = createMockContext({ headers: { 'x-pinax-api-items-returned': '15' } });
                 const parseResult = { success: true as const, data: { limit: 16 } };
                 expect(validatorHook(parseResult, ctx)).toBeDefined();
             });
 
             it('should treat 0 as unlimited', () => {
-                const ctx = createMockContext({ headers: { 'x-token-api-items-returned': '0' } });
+                const ctx = createMockContext({ headers: { 'x-pinax-api-items-returned': '0' } });
                 const parseResult = { success: true as const, data: { limit: 100_000 } };
                 expect(validatorHook(parseResult, ctx)).toBeUndefined();
             });
+
+            it('should accept the legacy x-token-api-items-returned header', () => {
+                const ctx = createMockContext({ headers: { 'x-token-api-items-returned': '15' } });
+                const parseResult = { success: true as const, data: { limit: 16 } };
+                expect(validatorHook(parseResult, ctx)).toBeDefined();
+            });
         });
 
-        describe('x-token-api-batch-size', () => {
+        describe('x-pinax-api-batch-size', () => {
             it('should allow batched parameters within bounds', () => {
-                const ctx = createMockContext({ headers: { 'x-token-api-batch-size': '3' } });
+                const ctx = createMockContext({ headers: { 'x-pinax-api-batch-size': '3' } });
                 const parseResult = {
                     success: true as const,
                     data: { limit: 10, addresses: ['0x1', '0x2', '0x3'] },
@@ -270,7 +276,7 @@ describe('validatorHook', () => {
             });
 
             it('should reject batched parameters exceeding header cap', () => {
-                const ctx = createMockContext({ headers: { 'x-token-api-batch-size': '3' } });
+                const ctx = createMockContext({ headers: { 'x-pinax-api-batch-size': '3' } });
                 const parseResult = {
                     success: true as const,
                     data: { limit: 10, addresses: ['0x1', '0x2', '0x3', '0x4'] },
@@ -279,7 +285,7 @@ describe('validatorHook', () => {
             });
 
             it('should report all exceeded batched parameters', () => {
-                const ctx = createMockContext({ headers: { 'x-token-api-batch-size': '3' } });
+                const ctx = createMockContext({ headers: { 'x-pinax-api-batch-size': '3' } });
                 const parseResult = {
                     success: true as const,
                     data: {
@@ -292,7 +298,7 @@ describe('validatorHook', () => {
             });
 
             it('should treat 0 as unlimited', () => {
-                const ctx = createMockContext({ headers: { 'x-token-api-batch-size': '0' } });
+                const ctx = createMockContext({ headers: { 'x-pinax-api-batch-size': '0' } });
                 const parseResult = {
                     success: true as const,
                     data: { addresses: new Array(500).fill('0x1') },
@@ -301,33 +307,33 @@ describe('validatorHook', () => {
             });
         });
 
-        describe('x-token-api-lowest-time-parameter', () => {
+        describe('x-pinax-api-lowest-time-parameter', () => {
             it('should allow interval equal to threshold', () => {
-                const ctx = createMockContext({ headers: { 'x-token-api-lowest-time-parameter': '4h' } });
+                const ctx = createMockContext({ headers: { 'x-pinax-api-lowest-time-parameter': '4h' } });
                 const parseResult = { success: true as const, data: { interval: 240 } };
                 expect(validatorHook(parseResult, ctx)).toBeUndefined();
             });
 
             it('should allow coarser interval than threshold', () => {
-                const ctx = createMockContext({ headers: { 'x-token-api-lowest-time-parameter': '4h' } });
+                const ctx = createMockContext({ headers: { 'x-pinax-api-lowest-time-parameter': '4h' } });
                 const parseResult = { success: true as const, data: { interval: 1440 } };
                 expect(validatorHook(parseResult, ctx)).toBeUndefined();
             });
 
             it('should reject finer interval than threshold', () => {
-                const ctx = createMockContext({ headers: { 'x-token-api-lowest-time-parameter': '4h' } });
+                const ctx = createMockContext({ headers: { 'x-pinax-api-lowest-time-parameter': '4h' } });
                 const parseResult = { success: true as const, data: { interval: 60 } };
                 expect(validatorHook(parseResult, ctx)).toBeDefined();
             });
 
             it('should ignore invalid header values', () => {
-                const ctx = createMockContext({ headers: { 'x-token-api-lowest-time-parameter': 'bogus' } });
+                const ctx = createMockContext({ headers: { 'x-pinax-api-lowest-time-parameter': 'bogus' } });
                 const parseResult = { success: true as const, data: { interval: 1 } };
                 expect(validatorHook(parseResult, ctx)).toBeUndefined();
             });
 
             it('should not check threshold when interval is absent', () => {
-                const ctx = createMockContext({ headers: { 'x-token-api-lowest-time-parameter': '1d' } });
+                const ctx = createMockContext({ headers: { 'x-pinax-api-lowest-time-parameter': '1d' } });
                 const parseResult = { success: true as const, data: { limit: 10 } };
                 expect(validatorHook(parseResult, ctx)).toBeUndefined();
             });
@@ -337,9 +343,9 @@ describe('validatorHook', () => {
             it('should enforce all three limits together', () => {
                 const ctx = createMockContext({
                     headers: {
-                        'x-token-api-items-returned': '100',
-                        'x-token-api-batch-size': '10',
-                        'x-token-api-lowest-time-parameter': '1h',
+                        'x-pinax-api-items-returned': '100',
+                        'x-pinax-api-batch-size': '10',
+                        'x-pinax-api-lowest-time-parameter': '1h',
                     },
                 });
                 const parseResult = {
@@ -355,7 +361,7 @@ describe('validatorHook', () => {
 
             it('should merge validatedData with existing context data', () => {
                 const ctx = createMockContext({
-                    headers: { 'x-token-api-items-returned': '50' },
+                    headers: { 'x-pinax-api-items-returned': '50' },
                     validatedData: { existing: 'data' },
                 });
                 const parseResult = {

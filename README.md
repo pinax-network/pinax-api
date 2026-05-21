@@ -1,13 +1,13 @@
 # Pinax API
 
-[![.github/workflows/bun-test.yml](https://github.com/pinax-network/token-api/actions/workflows/bun-test.yml/badge.svg)](https://github.com/pinax-network/token-api/actions/workflows/bun-test.yml)
-![license](https://img.shields.io/github/license/pinax-network/token-api)
+[![.github/workflows/bun-test.yml](https://github.com/pinax-network/pinax-api/actions/workflows/bun-test.yml/badge.svg)](https://github.com/pinax-network/pinax-api/actions/workflows/bun-test.yml)
+![license](https://img.shields.io/github/license/pinax-network/pinax-api)
 
 ### <https://api.pinax.network/>
 
 > Power your apps and AI agents with real-time Token API, prediction market, and perp exchange data.
 
-📚 **[Documentation](https://thegraph.com/docs/en/token-api/quick-start/)**
+📚 **[Documentation](https://thegraph.com/docs/en/pinax-api/quick-start/)**
 
 ![banner](public/banner.jpg)
 
@@ -71,8 +71,8 @@ The current Pinax API surface includes Token API data for EVM, SVM, and TVM netw
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/pinax-network/token-api.git
-   cd token-api
+   git clone https://github.com/pinax-network/pinax-api.git
+   cd pinax-api
    ```
 
 2. **Install dependencies**
@@ -239,7 +239,7 @@ When a client sends `Cache-Control: no-cache`, the API skips emitting cache head
     cache
 }
 
-token-api.example.com {
+pinax-api.example.com {
     cache
     reverse_proxy localhost:8000
 }
@@ -283,7 +283,7 @@ The API relies on Substreams data pipelines to populate the ClickHouse database.
 ## Authentication
 
 The API uses Bearer token authentication. For the live endpoint (`https://api.pinax.network`), you can get your API token at [The Graph Market](https://thegraph.market).
-Head over <https://thegraph.com/docs/en/token-api/quick-start/#authentication> for more information.
+Head over <https://thegraph.com/docs/en/pinax-api/quick-start/#authentication> for more information.
 
 For x402 clients, payment enforcement, verification, settlement, and metering are handled by the proxy layer before requests reach this API server. The API server exposes discovery metadata at `GET /.well-known/x402` and keeps request handling independent from x402 payment verification.
 
@@ -326,34 +326,34 @@ Supported networks are derived from `dbs-config.yaml` (`networks.*`) at startup.
 **Latest stable release:**
 
 ```bash
-docker pull ghcr.io/pinax-network/token-api:latest
+docker pull ghcr.io/pinax-network/pinax-api:latest
 docker run -it --rm \
   -v $(pwd)/dbs-config.yaml:/dbs-config.yaml \
   -e DBS_CONFIG_PATH=/dbs-config.yaml \
   -p 8000:8000 \
-  ghcr.io/pinax-network/token-api:latest
+  ghcr.io/pinax-network/pinax-api:latest
 ```
 
 **Development build:**
 
 ```bash
-docker pull ghcr.io/pinax-network/token-api:develop
+docker pull ghcr.io/pinax-network/pinax-api:develop
 docker run -it --rm \
   -v $(pwd)/dbs-config.yaml:/dbs-config.yaml \
   -e DBS_CONFIG_PATH=/dbs-config.yaml \
   -p 8000:8000 \
-  ghcr.io/pinax-network/token-api:develop
+  ghcr.io/pinax-network/pinax-api:develop
 ```
 
 ### Building from Source
 
 ```bash
-docker build -t token-api .
+docker build -t pinax-api .
 docker run -it --rm \
   -v $(pwd)/dbs-config.yaml:/dbs-config.yaml \
   -e DBS_CONFIG_PATH=/dbs-config.yaml \
   -p 8000:8000 \
-  token-api
+  pinax-api
 ```
 
 ## Development
@@ -401,7 +401,7 @@ AND (isNull({start_time:Nullable(UInt64)}) OR timestamp >= {start_time:Nullable(
 ### Project Structure
 
 ```
-token-api/
+pinax-api/
 ├── .github/workflows/   # CI/CD pipelines (test, release, docker publish)
 ├── scripts/             # Utility scripts (perf, query analysis, stablecoin checks)
 ├── queries/             # SQL breakdown/reference queries used by scripts
@@ -442,5 +442,5 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 ## Support
 
 - **Documentation**: [API Docs](https://api.pinax.network/)
-- **Issues**: [GitHub Issues](https://github.com/pinax-network/token-api/issues)
+- **Issues**: [GitHub Issues](https://github.com/pinax-network/pinax-api/issues)
 - **Community**: [The Graph Discord](https://discord.gg/thegraph)

@@ -144,7 +144,7 @@ describe('nativeContractRedirect middleware', () => {
 
     describe('redirect URL format', () => {
         it('should use relative path (no scheme/host) for redirect behind reverse proxy', async () => {
-            const url = `http://token-api-http-svc:80/v1/evm/transfers?network=mainnet&contract=${EVM_CONTRACT_NATIVE_EXAMPLE}`;
+            const url = `http://pinax-api-http-svc:80/v1/evm/transfers?network=mainnet&contract=${EVM_CONTRACT_NATIVE_EXAMPLE}`;
             const ctx = createMockContext(url);
             const next = createMockNext();
 

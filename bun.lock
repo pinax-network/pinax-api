@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "token-api",
+      "name": "pinax-api",
       "dependencies": {
         "@clickhouse/client": "^1.12.0",
         "@clickhouse/client-web": "^1.12.0",

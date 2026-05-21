@@ -4,23 +4,23 @@
 
 ### Minor Changes
 
-- Added batch query support and `total_transfers` field to `/tokens` endpoint for EVM/TVM ([#337](https://github.com/pinax-network/token-api/pull/337))
-- Added `indexed_to` per DB category to `/networks` response and simplified `/health` to DB connection verification ([#381](https://github.com/pinax-network/token-api/pull/381))
-- Refactored routes to flatten structure, colocate SQL files, and use single router ([#346](https://github.com/pinax-network/token-api/pull/346))
-- Added server init logging for clusters, networks, databases, and supported routes ([#352](https://github.com/pinax-network/token-api/pull/352), [#366](https://github.com/pinax-network/token-api/pull/366))
-- Replaced `readSQL` with Bun native text imports for SQL files ([#355](https://github.com/pinax-network/token-api/pull/355))
-- Added SQL route tests with `DB_TESTS` flag and performance testing script ([#356](https://github.com/pinax-network/token-api/pull/356), [#368](https://github.com/pinax-network/token-api/pull/368))
-- Removed inject logic (except Web3icons), moved stables/natives to `src/registry/` ([#353](https://github.com/pinax-network/token-api/pull/353))
-- Removed Changesets tooling ([#344](https://github.com/pinax-network/token-api/pull/344))
+- Added batch query support and `total_transfers` field to `/tokens` endpoint for EVM/TVM ([#337](https://github.com/pinax-network/pinax-api/pull/337))
+- Added `indexed_to` per DB category to `/networks` response and simplified `/health` to DB connection verification ([#381](https://github.com/pinax-network/pinax-api/pull/381))
+- Refactored routes to flatten structure, colocate SQL files, and use single router ([#346](https://github.com/pinax-network/pinax-api/pull/346))
+- Added server init logging for clusters, networks, databases, and supported routes ([#352](https://github.com/pinax-network/pinax-api/pull/352), [#366](https://github.com/pinax-network/pinax-api/pull/366))
+- Replaced `readSQL` with Bun native text imports for SQL files ([#355](https://github.com/pinax-network/pinax-api/pull/355))
+- Added SQL route tests with `DB_TESTS` flag and performance testing script ([#356](https://github.com/pinax-network/pinax-api/pull/356), [#368](https://github.com/pinax-network/pinax-api/pull/368))
+- Removed inject logic (except Web3icons), moved stables/natives to `src/registry/` ([#353](https://github.com/pinax-network/pinax-api/pull/353))
+- Removed Changesets tooling ([#344](https://github.com/pinax-network/pinax-api/pull/344))
 
 ### Patch Changes
 
-- Fixed wrong CTE alias in EVM tokens query ORDER BY ([#342](https://github.com/pinax-network/token-api/pull/342))
-- Replaced sentinel default values with NULL in SQL query parameters ([#364](https://github.com/pinax-network/token-api/pull/364))
-- Reuse EVM SQL for identical TVM routes ([#372](https://github.com/pinax-network/token-api/pull/372))
-- Removed all references to `injectSymbol` ([#338](https://github.com/pinax-network/token-api/pull/338))
-- Removed maximum bar rate limits from plans ([#340](https://github.com/pinax-network/token-api/pull/340))
-- Added Bun cache to test workflow ([#358](https://github.com/pinax-network/token-api/pull/358))
+- Fixed wrong CTE alias in EVM tokens query ORDER BY ([#342](https://github.com/pinax-network/pinax-api/pull/342))
+- Replaced sentinel default values with NULL in SQL query parameters ([#364](https://github.com/pinax-network/pinax-api/pull/364))
+- Reuse EVM SQL for identical TVM routes ([#372](https://github.com/pinax-network/pinax-api/pull/372))
+- Removed all references to `injectSymbol` ([#338](https://github.com/pinax-network/pinax-api/pull/338))
+- Removed maximum bar rate limits from plans ([#340](https://github.com/pinax-network/pinax-api/pull/340))
+- Added Bun cache to test workflow ([#358](https://github.com/pinax-network/pinax-api/pull/358))
 
 ## 3.9.0
 
@@ -124,40 +124,40 @@
 
 ### Fixed
 
-- Fix tron order by, include `block_hash` ([#265](https://github.com/pinax-network/token-api/pull/265))
+- Fix tron order by, include `block_hash` ([#265](https://github.com/pinax-network/pinax-api/pull/265))
 
 ## [3.5.2] - 2024-11-06
 
 ### Fixed
 
-- Fix TVM ORDER BY for swaps and transfers ([#263](https://github.com/pinax-network/token-api/pull/263))
+- Fix TVM ORDER BY for swaps and transfers ([#263](https://github.com/pinax-network/pinax-api/pull/263))
 
 ## [3.5.1] - 2024-11-05
 
 ### Added
 
-- Add indexes to TVM endpoint responses ([#262](https://github.com/pinax-network/token-api/pull/262))
+- Add indexes to TVM endpoint responses ([#262](https://github.com/pinax-network/pinax-api/pull/262))
 
 ## [3.5.0] - 2024-11-04
 
 ### Added
 
-- Add TVM endpoints ([#256](https://github.com/pinax-network/token-api/pull/256))
+- Add TVM endpoints ([#256](https://github.com/pinax-network/pinax-api/pull/256))
 
 ### Changed
 
-- Optimize query time windows to use latest ingested timestamp ([#258](https://github.com/pinax-network/token-api/pull/258))
-- Refactor spam scoring ([#259](https://github.com/pinax-network/token-api/pull/259))
+- Optimize query time windows to use latest ingested timestamp ([#258](https://github.com/pinax-network/pinax-api/pull/258))
+- Refactor spam scoring ([#259](https://github.com/pinax-network/pinax-api/pull/259))
 
 ## [3.4.1] - 2024-10-31
 
 ### Fixed
 
-- Fix sorting in `/evm/holders` ([#255](https://github.com/pinax-network/token-api/pull/255))
+- Fix sorting in `/evm/holders` ([#255](https://github.com/pinax-network/pinax-api/pull/255))
 
 ### Changed
 
-- Optimize `/evm/holders` ([#257](https://github.com/pinax-network/token-api/pull/257))
+- Optimize `/evm/holders` ([#257](https://github.com/pinax-network/pinax-api/pull/257))
 
 ## [3.4.0] - 2024-10-30
 
@@ -165,13 +165,13 @@
 
 ### Added
 
-- Add version mismatch check for GH release action ([#252](https://github.com/pinax-network/token-api/pull/252))
+- Add version mismatch check for GH release action ([#252](https://github.com/pinax-network/pinax-api/pull/252))
 
 ### Changed
 
-- Optimize `/evm/transfers` ([#250](https://github.com/pinax-network/token-api/pull/250))
-- Optimize `/svm/swaps` ([#253](https://github.com/pinax-network/token-api/pull/253))
-- Optimize `/evm/swaps` ([#254](https://github.com/pinax-network/token-api/pull/254))
+- Optimize `/evm/transfers` ([#250](https://github.com/pinax-network/pinax-api/pull/250))
+- Optimize `/svm/swaps` ([#253](https://github.com/pinax-network/pinax-api/pull/253))
+- Optimize `/evm/swaps` ([#254](https://github.com/pinax-network/pinax-api/pull/254))
 
 ## [3.3.3] - 2024-10-28
 

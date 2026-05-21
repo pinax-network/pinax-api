@@ -11,8 +11,8 @@
 - [OpenAPI specification](https://api.pinax.network/openapi): Authoritative machine-readable contract — use for schemas and parameters.
 - [x402 discovery](https://api.pinax.network/.well-known/x402): Machine-readable payment discovery metadata; x402 enforcement is handled at the proxy layer.
 - [Pinax API skill](https://api.pinax.network/SKILL.md): Endpoint catalog, conventions, and worked examples for agents.
-- [Quick start](https://thegraph.com/docs/en/token-api/quick-start/): Setup and first requests.
-- [FAQ](https://thegraph.com/docs/en/token-api/faq/): Plans, billing, authentication.
+- [Quick start](https://thegraph.com/docs/en/pinax-api/quick-start/): Setup and first requests.
+- [FAQ](https://thegraph.com/docs/en/pinax-api/faq/): Plans, billing, authentication.
 
 ## Free endpoints
 

@@ -1,9 +1,9 @@
 {
     "private": true,
-    "name": "token-api",
+    "name": "pinax-api",
     "description": "Pinax API",
     "version": "3.18.0",
-    "homepage": "https://github.com/pinax-network/token-api",
+    "homepage": "https://github.com/pinax-network/pinax-api",
     "license": "Apache-2.0",
     "type": "module",
     "authors": [
@@ -31,7 +31,7 @@
     "scripts": {
         "dev": "bun --watch index.ts",
         "start": "bun index.ts",
-        "build": "bun build --compile index.ts --outfile token-api",
+        "build": "bun build --compile index.ts --outfile pinax-api",
         "test": "bun test --coverage",
         "test:sql": "DB_TESTS=true bun test $(find src/routes -name '*.sql.spec.ts' | sort) --timeout 30000",
         "test:perf": "DB_TESTS=true bun test $(find src/routes -name '*.perf.spec.ts' | sort) --timeout 30000",
