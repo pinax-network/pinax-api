@@ -15,9 +15,12 @@ import {
 // Plan limits are injected by the upstream gateway on every authenticated
 // request. Requests without these headers (e.g. local development) bypass
 // enforcement.
-const HEADER_BATCH_SIZE = 'x-token-api-batch-size';
-const HEADER_ITEMS_RETURNED = 'x-token-api-items-returned';
-const HEADER_LOWEST_TIME_PARAMETER = 'x-token-api-lowest-time-parameter';
+const HEADER_BATCH_SIZE = 'x-pinax-api-batch-size';
+const HEADER_BATCH_SIZE_LEGACY = 'x-token-api-batch-size';
+const HEADER_ITEMS_RETURNED = 'x-pinax-api-items-returned';
+const HEADER_ITEMS_RETURNED_LEGACY = 'x-token-api-items-returned';
+const HEADER_LOWEST_TIME_PARAMETER = 'x-pinax-api-lowest-time-parameter';
+const HEADER_LOWEST_TIME_PARAMETER_LEGACY = 'x-token-api-lowest-time-parameter';
 
 function parseLimitHeader(raw: string | undefined): number | null {
     if (!raw) return null;
@@ -71,6 +74,10 @@ export function now() {
     return Math.floor(Date.now() / 1000);
 }
 
+function getGatewayHeader(ctx: Context, header: string, legacyHeader: string) {
+    return ctx.req.header(header) ?? ctx.req.header(legacyHeader);
+}
+
 export function validatorHook(
     parseResult:
         | {
@@ -89,9 +96,9 @@ export function validatorHook(
 ) {
     if (!parseResult.success) return APIErrorResponse(ctx, 400, 'bad_query_input', parseResult.error);
 
-    const maxItems = parseLimitHeader(ctx.req.header(HEADER_ITEMS_RETURNED));
-    const maxBatch = parseLimitHeader(ctx.req.header(HEADER_BATCH_SIZE));
-    const lowestInterval = ctx.req.header(HEADER_LOWEST_TIME_PARAMETER);
+    const maxItems = parseLimitHeader(getGatewayHeader(ctx, HEADER_ITEMS_RETURNED, HEADER_ITEMS_RETURNED_LEGACY));
+    const maxBatch = parseLimitHeader(getGatewayHeader(ctx, HEADER_BATCH_SIZE, HEADER_BATCH_SIZE_LEGACY));
+    const lowestInterval = getGatewayHeader(ctx, HEADER_LOWEST_TIME_PARAMETER, HEADER_LOWEST_TIME_PARAMETER_LEGACY);
     const data = parseResult.data;
 
     // `items-returned`: cap on `limit`. 0 = unlimited.

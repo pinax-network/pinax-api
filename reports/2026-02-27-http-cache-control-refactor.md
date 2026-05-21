@@ -1,8 +1,8 @@
 # HTTP Cache-Control Refactor Report
 
 **Date:** 2026-02-27
-**PR:** [#414](https://github.com/pinax-network/token-api/pull/414)
-**Issue:** [#413](https://github.com/pinax-network/token-api/issues/413)
+**PR:** [#414](https://github.com/pinax-network/pinax-api/pull/414)
+**Issue:** [#413](https://github.com/pinax-network/pinax-api/issues/413)
 
 ## Summary
 
@@ -102,7 +102,7 @@ This eliminates latency spikes on cache misses — the user always gets a fast r
     cache
 }
 
-token-api.example.com {
+pinax-api.example.com {
     cache
     reverse_proxy localhost:8000
 }
