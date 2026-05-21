@@ -13,6 +13,7 @@ description: >
 
 - **Base URL:** `https://api.pinax.network`
 - **OpenAPI spec:** `GET /openapi` — authoritative reference, use for schema details
+- **x402 discovery:** `GET /.well-known/x402` — payment discovery metadata; x402 enforcement is handled at the proxy layer
 - **Docs:** <https://thegraph.com/docs/en/token-api/quick-start/>
 - **FAQ:** <https://thegraph.com/docs/en/token-api/faq/>
 - **Canonical skill file:** `GET /SKILL.md`
@@ -31,6 +32,8 @@ An `X-Api-Key: <your-api-key>` header is accepted as an alternative.
 
 **Unauthenticated endpoints** (no header required, no usage charge):
 - `GET /llms.txt`
+- `GET /.well-known/x402`
+- `GET /x402.json` (alias)
 - `GET /SKILL.md`
 - `GET /skills/SKILL.md` (alias)
 - `GET /SKILLS.md` (alias)

@@ -6,6 +6,7 @@ import { APP_DESCRIPTION, APP_VERSION, config } from './src/config.js';
 import { logger } from './src/logger.js';
 import routes from './src/routes/index.js';
 import { APIErrorResponse } from './src/utils.js';
+import { createX402Discovery } from './src/x402/discovery.js';
 
 const app = new Hono();
 
@@ -28,6 +29,7 @@ app.get('/favicon.svg', () => new Response(Bun.file('./public/favicon.svg')));
 app.get('/banner.jpg', () => new Response(Bun.file('./public/banner.jpg')));
 
 const contentTypeMarkdown = 'text/markdown; charset=UTF-8';
+const contentTypeJson = 'application/json; charset=UTF-8';
 const skillsMarkdownFile = './skills/SKILL.md';
 const markdownResponse = (path: string) =>
     new Response(Bun.file(path), { headers: { 'Content-Type': contentTypeMarkdown } });
@@ -115,12 +117,49 @@ const openapiSpecOpenapi = describeRoute({
     },
 });
 
+const x402DiscoveryOpenapi = describeRoute({
+    operationId: 'getX402Discovery',
+    summary: 'x402 Discovery',
+    description:
+        'Returns the public x402 discovery document. Payment enforcement, verification, settlement, and metering are handled by the proxy layer.',
+    tags: ['Documentation'],
+    security: [],
+    responses: {
+        200: {
+            description: 'Successful Response',
+            content: {
+                [contentTypeJson]: {
+                    schema: {
+                        type: 'object',
+                        example: {
+                            x402Version: 2,
+                            name: 'Pinax API',
+                            resourceServer: 'https://api.pinax.network',
+                            payment: {
+                                enforcement: 'proxy',
+                            },
+                            discovery: {
+                                openapi: 'https://api.pinax.network/openapi',
+                                llms: 'https://api.pinax.network/llms.txt',
+                                skill: 'https://api.pinax.network/SKILL.md',
+                            },
+                            datasets: [],
+                        },
+                    },
+                },
+            },
+        },
+    },
+});
+
 app.get('/SKILL.md', skillsMarkdownOpenapi, () => markdownResponse(skillsMarkdownFile));
 app.get('/skills/SKILL.md', (c) => c.redirect('/SKILL.md', 301));
 app.get('/SKILLS.md', (c) => c.redirect('/SKILL.md', 301));
 app.get('/skills.md', (c) => c.redirect('/SKILL.md', 301));
 app.get('/skill.md', (c) => c.redirect('/SKILL.md', 301));
 app.get('/llms.txt', llmsTextOpenapi, () => markdownResponse('./public/llms.txt'));
+app.get('/.well-known/x402', x402DiscoveryOpenapi, (c) => c.json(createX402Discovery()));
+app.get('/x402.json', (c) => c.redirect('/.well-known/x402', 301));
 app.get(
     '/openapi',
     openapiSpecOpenapi,
