@@ -9,7 +9,7 @@
 ## Core references
 
 - [OpenAPI specification](https://token-api.thegraph.com/openapi): Authoritative machine-readable contract — use for schemas and parameters.
-- [Agent skills reference](https://token-api.thegraph.com/skills/SKILL.md): Endpoint catalog, conventions, and worked examples for agents.
+- [Pinax API skill](https://token-api.thegraph.com/skills/SKILL.md): Endpoint catalog, conventions, and worked examples for agents.
 - [Quick start](https://thegraph.com/docs/en/token-api/quick-start/): Setup and first requests.
 - [FAQ](https://thegraph.com/docs/en/token-api/faq/): Plans, billing, authentication.
 
@@ -18,7 +18,7 @@
 No authentication required, no usage charge.
 
 - [llms.txt](https://token-api.thegraph.com/llms.txt): This file.
-- [skills/SKILL.md](https://token-api.thegraph.com/skills/SKILL.md): Agent skills reference (`/SKILLS.md` and `/skills.md` aliases also work).
+- [skills/SKILL.md](https://token-api.thegraph.com/skills/SKILL.md): Pinax API skill (`/SKILLS.md` and `/skills.md` aliases also work).
 - [Health](https://token-api.thegraph.com/v1/health): Database connectivity status.
 - [Version](https://token-api.thegraph.com/v1/version): Build version, date, commit.
 - [Networks](https://token-api.thegraph.com/v1/networks): Indexed chains and per-category indexing freshness.

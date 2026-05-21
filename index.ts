@@ -34,8 +34,8 @@ const markdownResponse = (path: string) =>
 
 const skillsMarkdownOpenapi = describeRoute({
     operationId: 'getSkillsMarkdown',
-    summary: 'Agent Skills Reference',
-    description: 'Returns the public Markdown reference for AI agents integrating with Token API.',
+    summary: 'Pinax API Skill',
+    description: 'Returns the public Markdown reference for AI agents integrating with Pinax API.',
     tags: ['Documentation'],
     security: [],
     responses: {
@@ -46,13 +46,13 @@ const skillsMarkdownOpenapi = describeRoute({
                     schema: {
                         type: 'string',
                         example: `---
-name: Token API
-description: Real-time token, balance, transfer, holder, DEX, NFT, Polymarket, and Hyperliquid data across EVM, SVM, and TVM networks.
+name: pinax-api
+description: Query Pinax API data products, including Token API, prediction markets, and perp exchange data across EVM, SVM, and TVM networks.
 ---
 
-# Token API
+# Pinax API
 
-> Quick reference for AI agents using Token API. The authoritative machine-readable contract is \`GET /openapi\`.
+> Quick reference for AI agents using Pinax API. The authoritative machine-readable contract is \`GET /openapi\`.
 
 ...`,
                     },

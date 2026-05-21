@@ -1,15 +1,15 @@
 ---
-name: token-api
+name: pinax-api
 description: >
-  Query The Graph Token API for real-time token, balance, transfer, holder, DEX,
-  NFT, Polymarket, and Hyperliquid data across EVM, SVM, and TVM networks.
-  Use when: integrating with Token API, choosing endpoints, building API
-  requests, handling pagination, or discovering supported networks.
+  Query Pinax API data products, including Token API, prediction markets, and
+  perp exchange data across EVM, SVM, and TVM networks. Use when: integrating
+  with Pinax API, choosing endpoints, building API requests, handling
+  pagination, or discovering supported networks.
 ---
 
-# Token API
+# Pinax API
 
-> Quick reference for AI agents using Token API. The authoritative machine-readable contract is `GET /openapi`.
+> Quick reference for AI agents using Pinax API. The authoritative machine-readable contract is `GET /openapi`.
 
 - **Base URL:** `https://token-api.thegraph.com`
 - **OpenAPI spec:** `GET /openapi` — authoritative reference, use for schema details
