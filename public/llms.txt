@@ -19,8 +19,9 @@
 No authentication required, no usage charge.
 
 - [llms.txt](https://api.pinax.network/llms.txt): This file.
-- [x402 discovery](https://api.pinax.network/.well-known/x402): Proxy-layer x402 payment discovery metadata.
-- [SKILL.md](https://api.pinax.network/SKILL.md): Pinax API skill (`/skills/SKILL.md`, `/SKILLS.md`, and `/skills.md` aliases also work).
+- [OpenAPI](https://api.pinax.network/openapi): Authoritative machine-readable contract for all endpoints.
+- [x402 discovery](https://api.pinax.network/.well-known/x402): Proxy-layer x402 payment discovery metadata (`/x402.json` alias also works).
+- [SKILL.md](https://api.pinax.network/SKILL.md): Pinax API skill (`/skills/SKILL.md`, `/SKILLS.md`, `/skills.md`, and `/skill.md` aliases also work).
 - [Health](https://api.pinax.network/v1/health): Database connectivity status.
 - [Version](https://api.pinax.network/v1/version): Build version, date, commit.
 - [Networks](https://api.pinax.network/v1/networks): Indexed chains and per-category indexing freshness.

@@ -305,6 +305,15 @@ describe('validatorHook', () => {
                 };
                 expect(validatorHook(parseResult, ctx)).toBeUndefined();
             });
+
+            it('should accept the legacy x-token-api-batch-size header', () => {
+                const ctx = createMockContext({ headers: { 'x-token-api-batch-size': '3' } });
+                const parseResult = {
+                    success: true as const,
+                    data: { limit: 10, addresses: ['0x1', '0x2', '0x3', '0x4'] },
+                };
+                expect(validatorHook(parseResult, ctx)).toBeDefined();
+            });
         });
 
         describe('x-pinax-api-lowest-time-parameter', () => {
@@ -336,6 +345,12 @@ describe('validatorHook', () => {
                 const ctx = createMockContext({ headers: { 'x-pinax-api-lowest-time-parameter': '1d' } });
                 const parseResult = { success: true as const, data: { limit: 10 } };
                 expect(validatorHook(parseResult, ctx)).toBeUndefined();
+            });
+
+            it('should accept the legacy x-token-api-lowest-time-parameter header', () => {
+                const ctx = createMockContext({ headers: { 'x-token-api-lowest-time-parameter': '4h' } });
+                const parseResult = { success: true as const, data: { interval: 60 } };
+                expect(validatorHook(parseResult, ctx)).toBeDefined();
             });
         });
 
