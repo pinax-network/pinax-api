@@ -1022,8 +1022,8 @@ export const hyperliquidTokenSchema = z.coerce
     .meta({
         type: 'string',
         description:
-            'Spot token symbol (e.g. `HYPE`, `USDC`). Use to discover all spot pairs with this token on a given side via `/v1/hyperliquid/markets?base_token=...` or `?quote_token=...`.',
-        examples: ['HYPE', 'USDC', 'PURR'],
+            'Token symbol (e.g. `HYPE`, `USDC`, `BTC`). Use to discover markets with this token on a given side via `/v1/hyperliquid/markets?base_token=...` or `?quote_token=...`.',
+        examples: ['HYPE', 'USDC', 'BTC'],
     });
 
 export const hyperliquidCoinSchema = z.coerce

@@ -1,7 +1,9 @@
 SELECT
     oi.timestamp                                                  AS timestamp,
     oi.coin                                                       AS coin,
-    any(if(empty(n.market_name), oi.coin, n.market_name))         AS market_name,
+    any(if(empty(n.market_name),
+           substring(oi.coin, position(oi.coin, ':') + 1),
+           n.market_name))                                        AS market_name,
     dex_from_coin(oi.coin)                                        AS dex,
     oi.interval_min                                               AS interval_min,
     sum(oi.sum_abs_szi_observations)                              AS open_interest,
