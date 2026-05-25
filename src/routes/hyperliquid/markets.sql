@@ -51,29 +51,56 @@ WITH
         GROUP BY coin
     )
 SELECT
-    cur.coin                                                                 AS coin,
-    if(empty(n.market_name), cur.coin, n.market_name)                        AS market_name,
-    cur.dex                                                                  AS dex,
-    if(empty(n.base_token),  NULL, n.base_token)                             AS base_token,
-    if(empty(n.quote_token), NULL, n.quote_token)                            AS quote_token,
-    cur.price                                                                AS price,
-    prev.price_24h                                                           AS price_24h,
-    if(prev.price_24h > 0, (cur.price - prev.price_24h) / prev.price_24h, 0) AS price_24h_change,
-    cur.volume_24h                                                           AS volume_24h,
-    cur.buy_volume_24h                                                       AS buy_volume_24h,
-    cur.sell_volume_24h                                                      AS sell_volume_24h,
-    cur.trades_24h                                                           AS trades_24h,
-    coalesce(uu.unique_users_24h, 0)                                         AS unique_users_24h,
-    oi.open_interest                                                         AS open_interest,
-    oi.funding_rate                                                          AS funding_rate,
-    oi.funding_snapshot_time                                                 AS funding_snapshot_time
-FROM day_cur cur
-LEFT JOIN day_prev prev ON prev.coin = cur.coin
-LEFT JOIN oi_latest oi  ON oi.coin  = cur.coin
-LEFT JOIN uu_24h     uu ON uu.coin  = cur.coin
-LEFT JOIN {db_hypercore:Identifier}.state_spot_pair_names AS n FINAL ON n.coin = cur.coin
-WHERE (empty({base_token:Array(String)})  OR n.base_token  IN {base_token:Array(String)})
-  AND (empty({quote_token:Array(String)}) OR n.quote_token IN {quote_token:Array(String)})
-ORDER BY cur.volume_24h DESC
+    coin,
+    market_name,
+    dex,
+    base_token,
+    quote_token,
+    price,
+    price_24h,
+    price_24h_change,
+    volume_24h,
+    buy_volume_24h,
+    sell_volume_24h,
+    trades_24h,
+    unique_users_24h,
+    open_interest,
+    funding_rate,
+    funding_snapshot_time
+FROM (
+    SELECT
+        cur.coin                                                                 AS coin,
+        if(empty(n.market_name),
+           substring(cur.coin, position(cur.coin, ':') + 1),
+           n.market_name)                                                        AS market_name,
+        cur.dex                                                                  AS dex,
+        if(empty(n.base_token),
+           if(startsWith(cur.coin, '#'),
+              NULL,
+              substring(cur.coin, position(cur.coin, ':') + 1)),
+           n.base_token)                                                         AS base_token,
+        if(empty(n.quote_token),
+           if(startsWith(cur.coin, '#'), NULL, 'USDC'),
+           n.quote_token)                                                        AS quote_token,
+        cur.price                                                                AS price,
+        prev.price_24h                                                           AS price_24h,
+        if(prev.price_24h > 0, (cur.price - prev.price_24h) / prev.price_24h, 0) AS price_24h_change,
+        cur.volume_24h                                                           AS volume_24h,
+        cur.buy_volume_24h                                                       AS buy_volume_24h,
+        cur.sell_volume_24h                                                      AS sell_volume_24h,
+        cur.trades_24h                                                           AS trades_24h,
+        coalesce(uu.unique_users_24h, 0)                                         AS unique_users_24h,
+        oi.open_interest                                                         AS open_interest,
+        oi.funding_rate                                                          AS funding_rate,
+        oi.funding_snapshot_time                                                 AS funding_snapshot_time
+    FROM day_cur cur
+    LEFT JOIN day_prev prev ON prev.coin = cur.coin
+    LEFT JOIN oi_latest oi  ON oi.coin  = cur.coin
+    LEFT JOIN uu_24h     uu ON uu.coin  = cur.coin
+    LEFT JOIN {db_hypercore:Identifier}.state_spot_pair_names AS n FINAL ON n.coin = cur.coin
+)
+WHERE (empty({base_token:Array(String)})  OR base_token  IN {base_token:Array(String)})
+  AND (empty({quote_token:Array(String)}) OR quote_token IN {quote_token:Array(String)})
+ORDER BY volume_24h DESC
 LIMIT {limit:UInt64}
 OFFSET {offset:UInt64}

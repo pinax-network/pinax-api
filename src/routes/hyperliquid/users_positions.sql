@@ -1,7 +1,9 @@
 SELECT
     f.user                                                  AS user,
     f.coin                                                  AS coin,
-    any(if(empty(n.market_name), f.coin, n.market_name))    AS market_name,
+    any(if(empty(n.market_name),
+           substring(f.coin, position(f.coin, ':') + 1),
+           n.market_name))                                  AS market_name,
     dex_from_coin(f.coin)                                   AS dex,
     argMax(f.szi, f.event_time)                             AS position_size,
     argMax(f.funding_rate, f.event_time)                    AS funding_rate,

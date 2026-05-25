@@ -18,7 +18,9 @@ WITH bounds AS (
 SELECT
     candles.timestamp                                                                AS timestamp,
     candles.coin                                                                     AS coin,
-    if(empty(n.market_name), candles.coin, n.market_name)                            AS market_name,
+    if(empty(n.market_name),
+       substring(candles.coin, position(candles.coin, ':') + 1),
+       n.market_name)                                                                AS market_name,
     candles.dex                                                                      AS dex,
     candles.interval_min                                                             AS interval_min,
     candles.open                                                                     AS open,
