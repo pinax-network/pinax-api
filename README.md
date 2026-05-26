@@ -443,4 +443,4 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 
 - **Documentation**: [API Docs](https://api.pinax.network/)
 - **Issues**: [GitHub Issues](https://github.com/pinax-network/pinax-api/issues)
-- **Community**: [The Graph Discord](https://discord.gg/thegraph)
+- **Community**: [Discord](https://discord.gg/pinax)
