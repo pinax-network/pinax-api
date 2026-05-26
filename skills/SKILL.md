@@ -14,8 +14,8 @@ description: >
 - **Base URL:** `https://api.pinax.network`
 - **OpenAPI spec:** `GET /openapi` — authoritative reference, use for schema details
 - **x402 discovery:** `GET /.well-known/x402` — payment discovery metadata; x402 enforcement is handled at the proxy layer
-- **Docs:** <https://thegraph.com/docs/en/pinax-api/quick-start/>
-- **FAQ:** <https://thegraph.com/docs/en/pinax-api/faq/>
+- **Docs:** <https://app.pinax.network/docs>
+- **FAQ:** <https://app.pinax.network/help>
 - **Canonical skill file:** `GET /SKILL.md`
 
 All responses are JSON: `{ "data": [...], ... }` for data endpoints, or a top-level object for monitoring. Errors follow `{ "status": <code>, "code": "<slug>", "message": "<text>" }`.

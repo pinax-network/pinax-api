@@ -7,7 +7,7 @@
 
 > Power your apps and AI agents with real-time Token API, prediction market, and perp exchange data.
 
-📚 **[Documentation](https://thegraph.com/docs/en/pinax-api/quick-start/)**
+📚 **[Documentation](https://app.pinax.network/docs)**
 
 ![banner](public/banner.jpg)
 
@@ -283,7 +283,7 @@ The API relies on Substreams data pipelines to populate the ClickHouse database.
 ## Authentication
 
 The API uses Bearer token authentication. For the live endpoint (`https://api.pinax.network`), you can get your API token at [The Graph Market](https://thegraph.market).
-Head over <https://thegraph.com/docs/en/pinax-api/quick-start/#authentication> for more information.
+Head over <https://app.pinax.network/help#authentication> for more information.
 
 For x402 clients, payment enforcement, verification, settlement, and metering are handled by the proxy layer before requests reach this API server. The API server exposes discovery metadata at `GET /.well-known/x402` and keeps request handling independent from x402 payment verification.
 
