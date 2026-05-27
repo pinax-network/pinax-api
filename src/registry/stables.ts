@@ -41,6 +41,13 @@ export const stables = new Set([
     '0x078d782b760474a361dda0af3839290b0ef57ad6', // Unichain: USDC
     '0x9151434b16b9763660705744891fA906F660EcC5', // Unichain: USDT0 Tether USD
 
+    // HyperEVM
+    '0xb88339cb7199b77e23db6e890353e22632ba630f', // HyperEVM: USDC
+    '0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb', // HyperEVM: USDT0 (Tether USD)
+    '0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34', // HyperEVM: USDe (Ethena)
+    '0x02c6a2fa58cc01a18b8d9e00ea48d65e4df26c70', // HyperEVM: feUSD (Felix)
+    '0x111111a1a0667d36bd57c0a9f569b98057111111', // HyperEVM: USDH
+
     // Solana
     'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // Solana: USDC (USD Coin)
     'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', // Solana: USDT (Tether USD)
