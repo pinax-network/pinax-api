@@ -50,7 +50,7 @@ export const CHAIN_ID_MAP: Record<string, number> = {
     optimism: 10,
     bsc: 56,
     // unichain: 10000,
-    // 'hyper-evm': 999,
+    // hyperevm: 999,
 };
 const TIMEOUT_MS = 60000;
 const STALE_MS = 24 * 60 * 60 * 1000; // 1 day

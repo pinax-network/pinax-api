@@ -154,7 +154,7 @@ const nativeSymbols = new Map([
     ['polygon', 'POL'],
     ['unichain', 'ETH'],
     ['avalanche', 'AVAX'],
-    ['hyper-evm', 'HYPE'],
+    ['hyperevm', 'HYPE'],
     ['solana', 'SOL'],
 ]);
 
