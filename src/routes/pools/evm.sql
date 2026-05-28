@@ -1,20 +1,37 @@
 WITH
-output_pools AS (
-    SELECT DISTINCT pool
-    FROM {db_dex:Identifier}.state_pools_aggregating_by_token
-    WHERE token IN {output_token:Array(String)}
-),
+/* Materialize the token→pool maps as single-row scalar arrays so they are
+   computed at most once. pool_stats references each via IN (SELECT arrayJoin…),
+   and the analyzer inlines pool_stats into pool_tokens/fees as IN-subqueries —
+   without scalar materialization, every pool_stats inline re-runs the underlying
+   state_pools_aggregating_by_token scan for the token filter. */
 input_pools AS (
-    SELECT DISTINCT pool
-    FROM {db_dex:Identifier}.state_pools_aggregating_by_token
-    WHERE token IN {input_token:Array(String)}
+    SELECT groupArray(pool) AS pools FROM (
+        SELECT DISTINCT pool
+        FROM {db_dex:Identifier}.state_pools_aggregating_by_token
+        WHERE token IN {input_token:Array(String)}
+    )
 ),
-pools AS (
+output_pools AS (
+    SELECT groupArray(pool) AS pools FROM (
+        SELECT DISTINCT pool
+        FROM {db_dex:Identifier}.state_pools_aggregating_by_token
+        WHERE token IN {output_token:Array(String)}
+    )
+),
+pool_stats AS (
+    /* Rank pools using state_pools_aggregating_by_pool's prj_group_by_pool projection.
+       Each pool transaction increments transactions by 1 here, so sum() is the true
+       per-pool count — sourcing from state_pools_aggregating_by_token would multiply
+       by the number of tokens in the pool (2 for normal AMMs, 3+ for Curve/Balancer)
+       and re-order multi-token pools incorrectly.
+
+       Tiebreaker on (pool, factory, protocol) is required for deterministic pagination
+       — without it, pools with equal transaction counts can shuffle between pages. */
     SELECT
         pool,
         factory,
         protocol,
-        sum(transactions) as transactions
+        sum(transactions) AS transactions
     FROM {db_dex:Identifier}.state_pools_aggregating_by_pool
     WHERE
         /* cow and dodo are decoded from router/aggregator contracts, not liquidity pools —
@@ -22,46 +39,77 @@ pools AS (
            thousands of unrelated pairs. They belong in /v1/evm/swaps, not /v1/evm/pools.
            Tracked at https://github.com/pinax-network/substreams-evm */
         toString(protocol) NOT IN ('cow', 'dodo')
-    AND (empty({input_token:Array(String)}) OR pool IN input_pools)
-    AND (empty({output_token:Array(String)}) OR pool IN output_pools)
-    AND (empty({pool:Array(String)}) OR pool IN {pool:Array(String)})
-    AND (empty({factory:Array(String)}) OR factory IN {factory:Array(String)})
+    AND (empty({input_token:Array(String)})  OR pool IN (SELECT arrayJoin(pools) FROM input_pools))
+    AND (empty({output_token:Array(String)}) OR pool IN (SELECT arrayJoin(pools) FROM output_pools))
+    AND (empty({pool:Array(String)})         OR pool IN {pool:Array(String)})
+    AND (empty({factory:Array(String)})      OR factory IN {factory:Array(String)})
     AND (isNull({protocol:Nullable(String)}) OR toString(protocol) = {protocol:Nullable(String)})
 
     GROUP BY pool, factory, protocol
 
-    ORDER BY transactions DESC
+    ORDER BY transactions DESC, pool ASC, factory ASC, protocol ASC
     LIMIT   {limit:UInt64}
     OFFSET  {offset:UInt64}
 ),
-pools_with_tokens AS (
+pool_tokens AS (
+    /* Resolve token0/token1 for the top-N pools via state_pools_aggregating_by_token's
+       prj_group_by_pool projection. The projection's GROUP BY (pool, factory, protocol)
+       becomes its sort key, so (pool, factory, protocol) IN (top-N) is a tight index
+       lookup, not a full scan. */
     SELECT
         pool,
         factory,
         protocol,
-        arraySort(groupArrayDistinct(token)) as tokens,
-        arrayElement(tokens, 1) AS token0,
-        arrayElement(tokens, 2) AS token1
-
-    FROM {db_dex:Identifier}.state_pools_aggregating_by_token AS pt
-    JOIN pools AS p ON p.pool = pt.pool AND p.factory = pt.factory AND p.protocol = pt.protocol
+        arraySort(groupArrayDistinct(token))[1] AS token0,
+        arraySort(groupArrayDistinct(token))[2] AS token1
+    FROM {db_dex:Identifier}.state_pools_aggregating_by_token
+    WHERE (pool, factory, protocol) IN (SELECT pool, factory, protocol FROM pool_stats)
     GROUP BY pool, factory, protocol
+),
+pools AS (
+    SELECT
+        s.pool         AS pool,
+        s.factory      AS factory,
+        s.protocol     AS protocol,
+        s.transactions AS transactions,
+        t.token0       AS token0,
+        t.token1       AS token1
+    FROM pool_stats AS s
+    JOIN pool_tokens AS t USING (pool, factory, protocol)
+),
+fees AS (
+    /* Push the top-N (pool, factory, protocol) tuples as an index predicate on
+       state_pools_fees — its ORDER BY (pool, factory, protocol) primary key now
+       prunes the scan to just the matching granules instead of a full-table hash build. */
+    SELECT pool, factory, protocol, any(fee) AS fee
+    FROM {db_dex:Identifier}.state_pools_fees
+    WHERE (pool, factory, protocol) IN (SELECT pool, factory, protocol FROM pool_stats)
+    GROUP BY pool, factory, protocol
+),
+meta AS (
+    /* Resolve token symbol/decimals via a single point lookup against metadata.metadata's
+       (network, contract) primary key — replaces two independent full-table scans. */
+    SELECT contract, any(symbol) AS symbol, any(decimals) AS decimals
+    FROM metadata.metadata
+    WHERE network = {network:String}
+      AND contract IN (SELECT arrayJoin([token0, token1]) FROM pools)
+    GROUP BY contract
 )
 SELECT
     /* DEX */
-    p.pool AS pool,
-    p.factory AS factory,
+    p.pool     AS pool,
+    p.factory  AS factory,
     p.protocol AS protocol,
 
     /* tokens */
     CAST ((
-        pt.token0,
+        p.token0,
         m0.symbol,
         m0.decimals
     ) AS Tuple(address String, symbol String, decimals UInt8)) AS input_token,
 
     CAST ((
-        pt.token1,
+        p.token1,
         m1.symbol,
         m1.decimals
     ) AS Tuple(address String, symbol String, decimals UInt8)) AS output_token,
@@ -70,10 +118,9 @@ SELECT
     f.fee AS fee,
 
     /* Network */
-    {network: String} AS network
+    {network:String} AS network
 FROM pools AS p
-ANY LEFT JOIN {db_dex:Identifier}.state_pools_fees AS f ON p.pool = f.pool AND p.factory = f.factory AND p.protocol = f.protocol
-JOIN pools_with_tokens AS pt ON p.pool = pt.pool AND p.factory = pt.factory AND p.protocol = pt.protocol
-ANY LEFT JOIN metadata.metadata AS m0 ON {network: String} = m0.network AND pt.token0 = m0.contract
-ANY LEFT JOIN metadata.metadata AS m1 ON {network: String} = m1.network AND pt.token1 = m1.contract
-ORDER BY p.transactions DESC
+ANY LEFT JOIN fees AS f USING (pool, factory, protocol)
+ANY LEFT JOIN meta AS m0 ON m0.contract = p.token0
+ANY LEFT JOIN meta AS m1 ON m1.contract = p.token1
+ORDER BY p.transactions DESC, p.pool ASC, p.factory ASC, p.protocol ASC
