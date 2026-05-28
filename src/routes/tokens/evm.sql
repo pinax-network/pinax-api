@@ -1,31 +1,39 @@
 WITH transfers AS (
     SELECT
-        log_address as contract,
-        count() as total_transfers
+        log_address AS contract,
+        count() AS total_transfers
     FROM {db_transfers:Identifier}.transfers
-    WHERE contract IN {contract:Array(String)}
+    WHERE log_address IN {contract:Array(String)}
     GROUP BY log_address
-    ORDER BY total_transfers DESC
 ),
 circulating AS (
+    /* erc20_balances is a ReplicatedReplacingMergeTree keyed by (contract, address)
+       with block_num as the version column. FINAL collapses to the latest balance
+       per (contract, address) in a single merge pass — replaces the previous
+       (SELECT … argMax(balance, block_num) GROUP BY contract, address HAVING balance>0)
+       + outer GROUP BY contract two-stage aggregation. */
     SELECT
         contract,
-        count() AS holders,
-        sum(balance) AS circulating_supply,
-        max(block_num) AS block_num,
-        max(timestamp) AS timestamp
-    FROM (
-        SELECT
-            address,
-            contract,
-            max(block_num) AS block_num,
-            max(timestamp) AS timestamp,
-            argMax(balance, b.block_num) AS balance
-        FROM {db_balances:Identifier}.erc20_balances AS b
-        WHERE contract IN {contract:Array(String)}
-        GROUP BY contract, address
-        HAVING balance > 0
-    )
+        countIf(balance > 0)        AS holders,
+        sumIf(balance, balance > 0) AS circulating_supply,
+        max(block_num)              AS block_num,
+        max(timestamp)              AS timestamp
+    FROM {db_balances:Identifier}.erc20_balances FINAL
+    WHERE contract IN {contract:Array(String)}
+    GROUP BY contract
+),
+meta AS (
+    /* metadata.metadata is ORDER BY (network, contract); pushing contract IN (...)
+       here engages the full primary key instead of letting the JOIN scan all
+       contracts for the network. */
+    SELECT
+        contract,
+        argMax(name,     block_num) AS name,
+        argMax(symbol,   block_num) AS symbol,
+        argMax(decimals, block_num) AS decimals
+    FROM metadata.metadata
+    WHERE network = {network:String}
+      AND contract IN {contract:Array(String)}
     GROUP BY contract
 )
 SELECT
@@ -38,18 +46,18 @@ SELECT
     c.contract AS contract,
 
     /* amounts */
-    c.circulating_supply / pow(10, decimals) AS circulating_supply,
+    c.circulating_supply / pow(10, m.decimals) AS circulating_supply,
     c.holders AS holders,
     t.total_transfers AS total_transfers,
 
     /* token metadata */
-    name,
-    symbol,
-    decimals,
+    m.name     AS name,
+    m.symbol   AS symbol,
+    m.decimals AS decimals,
 
     /* network */
-    {network: String} AS network
+    {network:String} AS network
 FROM circulating AS c
 JOIN transfers AS t ON t.contract = c.contract
-JOIN metadata.metadata AS m FINAL ON m.network = {network:String} AND m.contract = c.contract
+JOIN meta      AS m ON m.contract = c.contract
 ORDER BY t.total_transfers DESC
