@@ -470,6 +470,40 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         expect(body.data.length).toBeGreaterThan(0);
     });
 
+    it('GET /v1/evm/holders is_contract is null when contracts table is empty', async () => {
+        const { response, body } = await fetchRoute(
+            `/v1/evm/holders?network=hyperevm&contract=0x5555555555555555555555555555555555555555&limit=1`
+        );
+        if (response.status === 400) return;
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        if (body.data.length > 0) {
+            expect(body.data[0].is_contract).toBeNull();
+        }
+    });
+
+    it('GET /v1/evm/holders is_contract is a boolean when contracts table is populated', async () => {
+        if (!hasEvmBalances || !hasEvmContracts) return;
+        const { response, body } = await fetchRoute(
+            `/v1/evm/holders?network=${evmNetwork}&contract=${EVM_CONTRACT_USDT_EXAMPLE}&limit=1`
+        );
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        if (body.data.length > 0) {
+            expect(typeof body.data[0].is_contract).toBe('boolean');
+        }
+    });
+
+    it('GET /v1/evm/holders/native is_contract is null when contracts table is empty', async () => {
+        const { response, body } = await fetchRoute(`/v1/evm/holders/native?network=hyperevm&limit=1`);
+        if (response.status === 400) return;
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        if (body.data.length > 0) {
+            expect(body.data[0].is_contract).toBeNull();
+        }
+    });
+
     // --- SVM Holders ---
     it('GET /v1/svm/holders', async () => {
         if (!hasSvmBalances) return;
@@ -639,6 +673,23 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         expect(response.status).toBe(200);
         expect(body.data).toBeArray();
         expect(body.data.length).toBeGreaterThan(0);
+        if (body.data.length > 0) {
+            expect(body.data[0].contract_creation).not.toBeNull();
+            expect(body.data[0].contract_creator).not.toBeNull();
+        }
+    });
+
+    it('GET /v1/evm/nft/collections contract_creation+creator are null when contracts table is empty', async () => {
+        const { response, body } = await fetchRoute(
+            `/v1/evm/nft/collections?network=avalanche&contract=0x3fed017ec0f5517cdf2e8a9a4156c64d74252146`
+        );
+        if (response.status === 400) return;
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        if (body.data.length > 0) {
+            expect(body.data[0].contract_creation).toBeNull();
+            expect(body.data[0].contract_creator).toBeNull();
+        }
     });
 
     it('GET /v1/evm/nft/holders', async () => {

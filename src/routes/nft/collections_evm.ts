@@ -25,8 +25,16 @@ const querySchema = createQuerySchema({
 const responseSchema = apiUsageResponseSchema.extend({
     data: z.array(
         z.object({
-            contract_creation: dateTimeSchema,
-            contract_creator: evmAddressSchema,
+            contract_creation: dateTimeSchema
+                .nullable()
+                .describe(
+                    'Block timestamp when the contract was deployed. Returns null on chains where contract-deployment data is unavailable (currently hyperevm and avalanche, which are extracted via the firehose RPC poller).'
+                ),
+            contract_creator: evmAddressSchema
+                .nullable()
+                .describe(
+                    'Address that deployed the contract. Returns null on chains where contract-deployment data is unavailable (currently hyperevm and avalanche, which are extracted via the firehose RPC poller).'
+                ),
             contract: evmContractSchema,
             name: z.string().nullable(),
             symbol: z.string().nullable(),

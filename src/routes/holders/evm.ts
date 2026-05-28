@@ -38,7 +38,12 @@ const responseSchema = apiUsageResponseSchema.extend({
             value: z.number().describe('Decimal-scaled token amount (= amount / 10^decimals). Not a USD value.'),
 
             // -- holder type --
-            is_contract: z.boolean(),
+            is_contract: z
+                .boolean()
+                .nullable()
+                .describe(
+                    'Whether the address is a smart contract. Returns null on chains where contract-deployment data is unavailable (currently hyperevm and avalanche, which are extracted via the firehose RPC poller).'
+                ),
 
             // -- contract --
             name: z.string().nullable(),
