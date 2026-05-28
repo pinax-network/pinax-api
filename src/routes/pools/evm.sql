@@ -1,13 +1,22 @@
 WITH
+/* Materialize the token→pool maps as single-row scalar arrays so they are
+   computed at most once. pool_stats references each via IN (SELECT arrayJoin…),
+   and the analyzer inlines pool_stats into pool_tokens/fees as IN-subqueries —
+   without scalar materialization, every pool_stats inline re-runs the underlying
+   state_pools_aggregating_by_token scan for the token filter. */
 input_pools AS (
-    SELECT DISTINCT pool
-    FROM {db_dex:Identifier}.state_pools_aggregating_by_token
-    WHERE token IN {input_token:Array(String)}
+    SELECT groupArray(pool) AS pools FROM (
+        SELECT DISTINCT pool
+        FROM {db_dex:Identifier}.state_pools_aggregating_by_token
+        WHERE token IN {input_token:Array(String)}
+    )
 ),
 output_pools AS (
-    SELECT DISTINCT pool
-    FROM {db_dex:Identifier}.state_pools_aggregating_by_token
-    WHERE token IN {output_token:Array(String)}
+    SELECT groupArray(pool) AS pools FROM (
+        SELECT DISTINCT pool
+        FROM {db_dex:Identifier}.state_pools_aggregating_by_token
+        WHERE token IN {output_token:Array(String)}
+    )
 ),
 pool_stats AS (
     /* Rank pools using state_pools_aggregating_by_pool's prj_group_by_pool projection.
@@ -30,8 +39,8 @@ pool_stats AS (
            thousands of unrelated pairs. They belong in /v1/evm/swaps, not /v1/evm/pools.
            Tracked at https://github.com/pinax-network/substreams-evm */
         toString(protocol) NOT IN ('cow', 'dodo')
-    AND (empty({input_token:Array(String)})  OR pool IN input_pools)
-    AND (empty({output_token:Array(String)}) OR pool IN output_pools)
+    AND (empty({input_token:Array(String)})  OR pool IN (SELECT arrayJoin(pools) FROM input_pools))
+    AND (empty({output_token:Array(String)}) OR pool IN (SELECT arrayJoin(pools) FROM output_pools))
     AND (empty({pool:Array(String)})         OR pool IN {pool:Array(String)})
     AND (empty({factory:Array(String)})      OR factory IN {factory:Array(String)})
     AND (isNull({protocol:Nullable(String)}) OR toString(protocol) = {protocol:Nullable(String)})
