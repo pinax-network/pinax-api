@@ -9,20 +9,21 @@ output_pools AS (
     FROM {db_dex:Identifier}.state_pools_aggregating_by_token
     WHERE token IN {output_token:Array(String)}
 ),
-pools AS (
-    /* One pass over state_pools_aggregating_by_token: its prj_group_by_pool projection
-       pre-aggregates sum(transactions) and arraySort(groupArrayDistinct(token)) GROUP BY
-       (pool, factory, protocol), so we get the top-N pools AND their token pair in a
-       single read — no separate state_pools_aggregating_by_pool scan, no pools_with_tokens
-       re-join, no double-evaluation of this CTE downstream. */
+pool_stats AS (
+    /* Rank pools using state_pools_aggregating_by_pool's prj_group_by_pool projection.
+       Each pool transaction increments transactions by 1 here, so sum() is the true
+       per-pool count — sourcing from state_pools_aggregating_by_token would multiply
+       by the number of tokens in the pool (2 for normal AMMs, 3+ for Curve/Balancer)
+       and re-order multi-token pools incorrectly.
+
+       Tiebreaker on (pool, factory, protocol) is required for deterministic pagination
+       — without it, pools with equal transaction counts can shuffle between pages. */
     SELECT
         pool,
         factory,
         protocol,
-        sum(transactions) AS transactions,
-        arraySort(groupArrayDistinct(token))[1] AS token0,
-        arraySort(groupArrayDistinct(token))[2] AS token1
-    FROM {db_dex:Identifier}.state_pools_aggregating_by_token
+        sum(transactions) AS transactions
+    FROM {db_dex:Identifier}.state_pools_aggregating_by_pool
     WHERE
         /* cow and dodo are decoded from router/aggregator contracts, not liquidity pools —
            their factory == pool address is a single settlement/routing contract handling
@@ -37,9 +38,35 @@ pools AS (
 
     GROUP BY pool, factory, protocol
 
-    ORDER BY transactions DESC
+    ORDER BY transactions DESC, pool ASC, factory ASC, protocol ASC
     LIMIT   {limit:UInt64}
     OFFSET  {offset:UInt64}
+),
+pool_tokens AS (
+    /* Resolve token0/token1 for the top-N pools via state_pools_aggregating_by_token's
+       prj_group_by_pool projection. The projection's GROUP BY (pool, factory, protocol)
+       becomes its sort key, so (pool, factory, protocol) IN (top-N) is a tight index
+       lookup, not a full scan. */
+    SELECT
+        pool,
+        factory,
+        protocol,
+        arraySort(groupArrayDistinct(token))[1] AS token0,
+        arraySort(groupArrayDistinct(token))[2] AS token1
+    FROM {db_dex:Identifier}.state_pools_aggregating_by_token
+    WHERE (pool, factory, protocol) IN (SELECT pool, factory, protocol FROM pool_stats)
+    GROUP BY pool, factory, protocol
+),
+pools AS (
+    SELECT
+        s.pool         AS pool,
+        s.factory      AS factory,
+        s.protocol     AS protocol,
+        s.transactions AS transactions,
+        t.token0       AS token0,
+        t.token1       AS token1
+    FROM pool_stats AS s
+    JOIN pool_tokens AS t USING (pool, factory, protocol)
 ),
 fees AS (
     /* Push the top-N (pool, factory, protocol) tuples as an index predicate on
@@ -47,7 +74,7 @@ fees AS (
        prunes the scan to just the matching granules instead of a full-table hash build. */
     SELECT pool, factory, protocol, any(fee) AS fee
     FROM {db_dex:Identifier}.state_pools_fees
-    WHERE (pool, factory, protocol) IN (SELECT pool, factory, protocol FROM pools)
+    WHERE (pool, factory, protocol) IN (SELECT pool, factory, protocol FROM pool_stats)
     GROUP BY pool, factory, protocol
 ),
 meta AS (
@@ -82,9 +109,9 @@ SELECT
     f.fee AS fee,
 
     /* Network */
-    {network: String} AS network
+    {network:String} AS network
 FROM pools AS p
 ANY LEFT JOIN fees AS f USING (pool, factory, protocol)
 ANY LEFT JOIN meta AS m0 ON m0.contract = p.token0
 ANY LEFT JOIN meta AS m1 ON m1.contract = p.token1
-ORDER BY p.transactions DESC
+ORDER BY p.transactions DESC, p.pool ASC, p.factory ASC, p.protocol ASC
