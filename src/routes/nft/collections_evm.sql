@@ -108,6 +108,9 @@ contract_creation AS (
     PREWHERE address = {contract: String}
 )
 SELECT
+    /* join_use_nulls = 1 (below) promotes these to NULL when the contracts
+       table has no row — chains extracted via the firehose RPC poller
+       (DETAILLEVEL_BASE) have no Create-call records. */
     timestamp AS contract_creation,
     creator AS contract_creator,
     contract,
@@ -121,3 +124,4 @@ SELECT
     network
 FROM combined
 LEFT JOIN contract_creation USING (contract)
+SETTINGS join_use_nulls = 1

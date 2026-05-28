@@ -10,6 +10,13 @@ WITH rows_arr AS (
         ORDER BY balance DESC, address
         LIMIT {limit:UInt64} OFFSET {offset:UInt64}
     )
+),
+/* Chains extracted via the firehose RPC poller produce DETAILLEVEL_BASE blocks
+   with no Create-call records, so the contracts table is empty. Probe once
+   to decide whether is_contract can be answered. */
+has_contracts AS (
+    SELECT count() > 0 AS available
+    FROM (SELECT 1 FROM {db_contracts:Identifier}.contracts LIMIT 1)
 )
 SELECT
     /* timestamps */
@@ -25,13 +32,16 @@ SELECT
     toString(t.2) AS amount,
     t.2 / pow(10, m.decimals) AS value,
 
-    /* holder type */
-    toBool(t.1 IN (
-        SELECT address FROM {db_contracts:Identifier}.contracts
-        WHERE address IN (
-            SELECT arrayJoin(arrayMap(x -> x.1, (SELECT r FROM rows_arr)))
-        )
-    )) AS is_contract,
+    /* holder type — null when the chain has no contract-deployment data */
+    if((SELECT available FROM has_contracts),
+        toBool(t.1 IN (
+            SELECT address FROM {db_contracts:Identifier}.contracts
+            WHERE address IN (
+                SELECT arrayJoin(arrayMap(x -> x.1, (SELECT r FROM rows_arr)))
+            )
+        )),
+        NULL
+    ) AS is_contract,
 
     /* decimals and metadata */
     nullIf(m.name, '') AS name,
