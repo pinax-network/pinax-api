@@ -7,6 +7,20 @@ WITH circulating AS (
     FROM {db_transfers:Identifier}.transfers
     WHERE log_address IN {contract:Array(String)}
     GROUP BY log_address
+),
+meta AS (
+    /* metadata.metadata is ORDER BY (network, contract); push contract IN (...)
+       here so the (network, contract) primary key fully engages instead of
+       letting the JOIN scan the entire network prefix. */
+    SELECT
+        contract,
+        argMax(name,     block_num) AS name,
+        argMax(symbol,   block_num) AS symbol,
+        argMax(decimals, block_num) AS decimals
+    FROM metadata.metadata
+    WHERE network = {network:String}
+      AND contract IN {contract:Array(String)}
+    GROUP BY contract
 )
 SELECT
     /* timestamps */
@@ -21,12 +35,12 @@ SELECT
     c.total_transfers AS total_transfers,
 
     /* token metadata */
-    name,
-    symbol,
-    decimals,
+    m.name     AS name,
+    m.symbol   AS symbol,
+    m.decimals AS decimals,
 
     /* network */
     {network: String} AS network
 FROM circulating AS c
-JOIN metadata.metadata AS m FINAL ON m.network = {network:String} AND m.contract = c.contract
+JOIN meta AS m ON m.contract = c.contract
 ORDER BY c.total_transfers DESC
