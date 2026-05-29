@@ -34,10 +34,9 @@ pool_stats AS (
         sum(transactions) AS transactions
     FROM {db_dex:Identifier}.state_pools_aggregating_by_pool
     WHERE
-        /* cow and dodo are decoded from router/aggregator contracts, not liquidity pools —
-           their factory == pool address is a single settlement/routing contract handling
-           thousands of unrelated pairs. They belong in /v1/evm/swaps, not /v1/evm/pools. */
-        toString(protocol) NOT IN ('cow', 'dodo')
+        /* Aggregator/router protocols (settlement contracts, not liquidity pools) belong
+           in /v1/evm/swaps and /v1/evm/dexes — exclude here. See config.AGGREGATOR_EVM_PROTOCOLS. */
+        toString(protocol) NOT IN {aggregator_protocols:Array(String)}
         /* Operator-controlled exclusions for protocols whose substreams decoders are known
            to emit duplicates of another protocol. See config.EXCLUDED_EVM_PROTOCOLS. */
     AND toString(protocol) NOT IN {excluded_protocols:Array(String)}
