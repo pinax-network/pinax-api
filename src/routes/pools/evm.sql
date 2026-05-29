@@ -35,10 +35,11 @@ pool_stats AS (
     FROM {db_dex:Identifier}.state_pools_aggregating_by_pool
     WHERE
         /* Aggregator/router protocols (settlement contracts, not liquidity pools) belong
-           in /v1/evm/swaps and /v1/evm/dexes — exclude here. See config.AGGREGATOR_EVM_PROTOCOLS. */
+           in /v1/evm/swaps and /v1/evm/dexes — exclude here. List maintained in
+           AGGREGATOR_EVM_PROTOCOLS in src/config.ts. */
         toString(protocol) NOT IN {aggregator_protocols:Array(String)}
-        /* Operator-controlled exclusions for protocols whose substreams decoders are known
-           to emit duplicates of another protocol. See config.EXCLUDED_EVM_PROTOCOLS. */
+        /* Protocols whose substreams decoders are known to emit duplicates of another
+           protocol. List maintained in EXCLUDED_EVM_PROTOCOLS in src/config.ts. */
     AND toString(protocol) NOT IN {excluded_protocols:Array(String)}
     AND (empty({input_token:Array(String)})  OR pool IN (SELECT arrayJoin(pools) FROM input_pools))
     AND (empty({output_token:Array(String)}) OR pool IN (SELECT arrayJoin(pools) FROM output_pools))

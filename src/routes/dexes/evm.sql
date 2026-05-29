@@ -7,8 +7,8 @@ SELECT
     uniqMerge(uniq_user) as uaw,
     {network: String} AS network
 FROM {db_dex:Identifier}.state_pools_aggregating_by_pool
-/* Operator-controlled exclusions for protocols whose substreams decoders are known
-   to emit duplicates of another protocol. See config.EXCLUDED_EVM_PROTOCOLS. */
+/* Protocols whose substreams decoders are known to emit duplicates of another
+   protocol. List maintained in EXCLUDED_EVM_PROTOCOLS in src/config.ts. */
 WHERE toString(protocol) NOT IN {excluded_protocols:Array(String)}
 GROUP BY
     protocol,

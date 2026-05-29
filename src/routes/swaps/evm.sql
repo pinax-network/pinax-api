@@ -172,8 +172,8 @@ filtered_swaps AS
         )
         AND (isNull({protocol:Nullable(String)})        OR protocol = {protocol:Nullable(String)})
 
-        /* Operator-controlled exclusions for protocols whose substreams decoders are known
-           to emit duplicates of another protocol. See config.EXCLUDED_EVM_PROTOCOLS. */
+        /* Protocols whose substreams decoders are known to emit duplicates of another
+           protocol. List maintained in EXCLUDED_EVM_PROTOCOLS in src/config.ts. */
         AND toString(protocol) NOT IN {excluded_protocols:Array(String)}
     ORDER BY minute DESC, timestamp DESC, block_num DESC
     LIMIT   {limit:UInt64}
