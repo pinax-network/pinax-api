@@ -117,6 +117,9 @@ SELECT
     /* Fees */
     f.fee AS fee,
 
+    /* Stats */
+    p.transactions AS transactions,
+
     /* Network */
     {network:String} AS network
 FROM pools AS p
