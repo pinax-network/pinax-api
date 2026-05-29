@@ -69,8 +69,8 @@ const responseSchema = apiUsageResponseSchema.extend({
             input_token: evmTokenResponseSchema,
             output_token: evmTokenResponseSchema,
 
-            // // -- stats --
-            // transactions: z.number(),
+            // -- stats --
+            transactions: z.number(),
             // uaw: z.number(),
             // fee: z.number(),
 
@@ -112,6 +112,7 @@ const openapi = describeRoute(
                                                 decimals: 18,
                                             },
                                             fee: 500,
+                                            transactions: 1234567,
                                             network: 'mainnet',
                                         },
                                     ],
