@@ -2,7 +2,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
-import { config } from '../../config.js';
+import { config, EXCLUDED_EVM_PROTOCOLS } from '../../config.js';
 import { handleUsageQueryError, makeUsageQueryJson } from '../../handleQuery.js';
 import {
     EVM_ADDRESS_SWAP_EXAMPLE,
@@ -203,6 +203,7 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
     const response = await makeUsageQueryJson(c, [query], {
         ...params,
         db_dex: dbDex.database,
+        excluded_protocols: EXCLUDED_EVM_PROTOCOLS,
     });
     return handleUsageQueryError(c, response);
 });

@@ -20,6 +20,10 @@ ohlc_raw AS (
         AND p.pool = {pool: String}
         AND (isNull({start_time:Nullable(UInt64)}) OR p.timestamp >= toDateTime({start_time:Nullable(UInt64)}))
         AND (isNull({end_time:Nullable(UInt64)})   OR p.timestamp <= toDateTime({end_time:Nullable(UInt64)}))
+
+        /* Protocols whose substreams decoders are known to emit duplicates of another
+           protocol. List maintained in EXCLUDED_EVM_PROTOCOLS in src/config.ts. */
+        AND toString(p.protocol) NOT IN {excluded_protocols:Array(String)}
     ORDER BY datetime DESC
     LIMIT   {limit:UInt64}
     OFFSET  {offset:UInt64}

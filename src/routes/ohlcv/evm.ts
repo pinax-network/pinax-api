@@ -2,7 +2,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
-import { config } from '../../config.js';
+import { config, EXCLUDED_EVM_PROTOCOLS } from '../../config.js';
 import { handleUsageQueryError, makeUsageQueryJson } from '../../handleQuery.js';
 import { stables } from '../../registry/stables.js';
 import { EVM_POOL_USDC_WETH_EXAMPLE } from '../../types/examples.js';
@@ -100,6 +100,7 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
         ...params,
         stablecoin_contracts: [...stables],
         db_dex: dbDex.database,
+        excluded_protocols: EXCLUDED_EVM_PROTOCOLS,
     });
     return handleUsageQueryError(c, response);
 });

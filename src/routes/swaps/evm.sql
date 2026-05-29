@@ -171,6 +171,10 @@ filtered_swaps AS
             OR if(protocol = 'uniswap_v3', input_contract, output_contract) IN {output_contract:Array(String)}
         )
         AND (isNull({protocol:Nullable(String)})        OR protocol = {protocol:Nullable(String)})
+
+        /* Protocols whose substreams decoders are known to emit duplicates of another
+           protocol. List maintained in EXCLUDED_EVM_PROTOCOLS in src/config.ts. */
+        AND toString(protocol) NOT IN {excluded_protocols:Array(String)}
     ORDER BY minute DESC, timestamp DESC, block_num DESC
     LIMIT   {limit:UInt64}
     OFFSET  {offset:UInt64}
