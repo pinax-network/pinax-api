@@ -33,6 +33,11 @@ export const DEFAULT_DEFAULT_EVM_NETWORK = 'mainnet';
 export const DEFAULT_DEFAULT_SVM_NETWORK = 'solana';
 export const DEFAULT_DEFAULT_TVM_NETWORK = 'tron';
 export const DEFAULT_LOW_LIQUIDITY_CHECK = 10000; // $10K USD
+// EVM DEX protocols to filter out at the API layer because the substreams
+// decoder emits them as duplicates of another protocol (currently kyber_elastic
+// mirrors uniswap_v3 1:1 across every chain). Remove an entry once the upstream
+// decoder is fixed. Tracked at https://github.com/pinax-network/substreams-evm
+export const EXCLUDED_EVM_PROTOCOLS: string[] = ['kyber_elastic'];
 export const DEFAULT_DISABLE_OPENAPI_SERVERS = false;
 export const DEFAULT_SKIP_NETWORKS_VALIDATION = false;
 // HTTP Cache-Control defaults (seconds)

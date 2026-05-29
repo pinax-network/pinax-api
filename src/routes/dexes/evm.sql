@@ -7,11 +7,9 @@ SELECT
     uniqMerge(uniq_user) as uaw,
     {network: String} AS network
 FROM {db_dex:Identifier}.state_pools_aggregating_by_pool
-/* kyber_elastic shares the Uniswap V3 swap event signature, so substreams emits a
-   duplicate row for every v3 pool labeled 'kyber_elastic'. Drop it here until the
-   substreams decoder disambiguates.
-   Tracked at https://github.com/pinax-network/substreams-evm */
-WHERE toString(protocol) != 'kyber_elastic'
+/* Operator-controlled exclusions for protocols whose substreams decoders are known
+   to emit duplicates of another protocol. See config.EXCLUDED_EVM_PROTOCOLS. */
+WHERE toString(protocol) NOT IN {excluded_protocols:Array(String)}
 GROUP BY
     protocol,
     factory

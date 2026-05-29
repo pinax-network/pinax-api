@@ -21,12 +21,9 @@ ohlc_raw AS (
         AND (isNull({start_time:Nullable(UInt64)}) OR p.timestamp >= toDateTime({start_time:Nullable(UInt64)}))
         AND (isNull({end_time:Nullable(UInt64)})   OR p.timestamp <= toDateTime({end_time:Nullable(UInt64)}))
 
-        /* kyber_elastic shares the Uniswap V3 swap event signature, so substreams writes a
-           duplicate OHLC bar for every v3 pool labeled 'kyber_elastic' (identical OHLC,
-           volume, tx count). Without this filter, /v1/evm/ohlc returns two rows per bar
-           for any v3 pool. Drop kyber_elastic until the substreams decoder disambiguates.
-           Tracked at https://github.com/pinax-network/substreams-evm */
-        AND p.protocol != 'kyber_elastic'
+        /* Operator-controlled exclusions for protocols whose substreams decoders are known
+           to emit duplicates of another protocol. See config.EXCLUDED_EVM_PROTOCOLS. */
+        AND toString(p.protocol) NOT IN {excluded_protocols:Array(String)}
     ORDER BY datetime DESC
     LIMIT   {limit:UInt64}
     OFFSET  {offset:UInt64}

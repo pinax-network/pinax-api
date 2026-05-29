@@ -172,12 +172,9 @@ filtered_swaps AS
         )
         AND (isNull({protocol:Nullable(String)})        OR protocol = {protocol:Nullable(String)})
 
-        /* kyber_elastic shares the Uniswap V3 swap event signature, so substreams emits a
-           duplicate row for every v3 swap labeled 'kyber_elastic' (identical tx_hash,
-           log_index, log_ordinal, pool, amounts). Drop kyber_elastic until the substreams
-           decoder disambiguates.
-           Tracked at https://github.com/pinax-network/substreams-evm */
-        AND protocol != 'kyber_elastic'
+        /* Operator-controlled exclusions for protocols whose substreams decoders are known
+           to emit duplicates of another protocol. See config.EXCLUDED_EVM_PROTOCOLS. */
+        AND toString(protocol) NOT IN {excluded_protocols:Array(String)}
     ORDER BY minute DESC, timestamp DESC, block_num DESC
     LIMIT   {limit:UInt64}
     OFFSET  {offset:UInt64}
