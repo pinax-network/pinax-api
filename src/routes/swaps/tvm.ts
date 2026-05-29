@@ -2,7 +2,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
-import { config } from '../../config.js';
+import { config, EXCLUDED_EVM_PROTOCOLS } from '../../config.js';
 import { handleUsageQueryError, makeUsageQueryJson } from '../../handleQuery.js';
 import {
     TVM_ADDRESS_SWAP_EXAMPLE,
@@ -101,6 +101,7 @@ function buildTvmSwapQueryParams(params: z.infer<typeof querySchema>, dbDex: str
         ...params,
         caller: [],
         db_dex: dbDex,
+        excluded_protocols: EXCLUDED_EVM_PROTOCOLS,
     };
 }
 
