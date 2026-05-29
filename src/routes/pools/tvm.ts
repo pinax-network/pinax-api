@@ -13,16 +13,12 @@ import {
 import {
     apiUsageResponseSchema,
     createQuerySchema,
-    evmFactorySchema,
-    evmNetworkIdSchema,
-    evmPoolSchema,
-    evmProtocolSchema,
-    evmTokenResponseSchema,
     tvmContractSchema,
     tvmFactorySchema,
     tvmNetworkIdSchema,
     tvmPoolSchema,
     tvmProtocolSchema,
+    tvmTokenResponseSchema,
 } from '../../types/zod.js';
 import { validatorHook, withErrorResponses } from '../../utils.js';
 
@@ -64,18 +60,18 @@ const responseSchema = apiUsageResponseSchema.extend({
             // transaction_id: z.string(),
 
             // -- pool --
-            factory: evmFactorySchema,
-            pool: evmPoolSchema,
-            input_token: evmTokenResponseSchema,
-            output_token: evmTokenResponseSchema,
+            factory: tvmFactorySchema,
+            pool: tvmPoolSchema,
+            input_token: tvmTokenResponseSchema,
+            output_token: tvmTokenResponseSchema,
             fee: z.number(),
-            protocol: evmProtocolSchema,
+            protocol: tvmProtocolSchema,
 
             // -- stats --
             transactions: z.number(),
 
             // -- chain --
-            network: evmNetworkIdSchema,
+            network: tvmNetworkIdSchema,
         })
     ),
 });
