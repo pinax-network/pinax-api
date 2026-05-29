@@ -37,8 +37,13 @@ pool_stats AS (
         /* cow and dodo are decoded from router/aggregator contracts, not liquidity pools —
            their factory == pool address is a single settlement/routing contract handling
            thousands of unrelated pairs. They belong in /v1/evm/swaps, not /v1/evm/pools.
+
+           kyber_elastic shares the Uniswap V3 swap event signature, so substreams emits a
+           duplicate row for every v3 pool with protocol='kyber_elastic' (verified across
+           mainnet/arb/base/polygon/op/bsc: the (pool, factory) sets are identical and tx
+           counts match). Drop kyber_elastic until the substreams decoder disambiguates.
            Tracked at https://github.com/pinax-network/substreams-evm */
-        toString(protocol) NOT IN ('cow', 'dodo')
+        toString(protocol) NOT IN ('cow', 'dodo', 'kyber_elastic')
     AND (empty({input_token:Array(String)})  OR pool IN (SELECT arrayJoin(pools) FROM input_pools))
     AND (empty({output_token:Array(String)}) OR pool IN (SELECT arrayJoin(pools) FROM output_pools))
     AND (empty({pool:Array(String)})         OR pool IN {pool:Array(String)})
