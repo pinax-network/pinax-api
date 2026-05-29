@@ -69,10 +69,12 @@ const responseSchema = apiUsageResponseSchema.extend({
             input_token: evmTokenResponseSchema,
             output_token: evmTokenResponseSchema,
 
+            // -- fees --
+            fee: z.number(),
+
             // -- stats --
             transactions: z.number(),
             // uaw: z.number(),
-            // fee: z.number(),
 
             // -- chain --
             network: evmNetworkIdSchema,

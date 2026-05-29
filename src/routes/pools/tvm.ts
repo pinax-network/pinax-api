@@ -71,6 +71,9 @@ const responseSchema = apiUsageResponseSchema.extend({
             fee: z.number(),
             protocol: evmProtocolSchema,
 
+            // -- stats --
+            transactions: z.number(),
+
             // -- chain --
             network: evmNetworkIdSchema,
         })
@@ -108,6 +111,7 @@ const openapi = describeRoute(
                                                 decimals: 6,
                                             },
                                             fee: 3000,
+                                            transactions: 1234567,
                                             network: 'tron',
                                         },
                                     ],
