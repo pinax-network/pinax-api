@@ -30,7 +30,7 @@ WITH
           AND (empty({amm:Array(String)}) OR amm IN {amm:Array(String)})
           AND (isNull({protocol:Nullable(String)}) OR protocol = {protocol:Nullable(String)})
         GROUP BY amm_pool, protocol, program_id, amm
-        ORDER BY transactions DESC
+        ORDER BY transactions DESC, amm_pool ASC, protocol ASC, program_id ASC, amm ASC
         LIMIT  {limit:UInt64}
         OFFSET {offset:UInt64}
     )
@@ -53,7 +53,7 @@ WITH
           AND (empty({amm:Array(String)}) OR amm IN {amm:Array(String)})
           AND (isNull({protocol:Nullable(String)}) OR protocol = {protocol:Nullable(String)})
         GROUP BY amm_pool, protocol, program_id, amm
-        ORDER BY transactions DESC
+        ORDER BY transactions DESC, amm_pool ASC, protocol ASC, program_id ASC, amm ASC
         LIMIT  {limit:UInt64}
         OFFSET {offset:UInt64}
     )
@@ -109,4 +109,4 @@ FROM pools AS p
 JOIN pools_with_tokens AS pt ON p.amm_pool = pt.amm_pool AND p.protocol = pt.protocol
 LEFT JOIN decimals AS d0 ON d0.mint = pt.token0
 LEFT JOIN decimals AS d1 ON d1.mint = pt.token1
-ORDER BY p.transactions DESC
+ORDER BY p.transactions DESC, p.amm_pool ASC, p.protocol ASC, p.program_id ASC, p.amm ASC
