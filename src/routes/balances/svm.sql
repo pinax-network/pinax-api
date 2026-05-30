@@ -37,6 +37,7 @@ metadata AS (
     SELECT mint, name, symbol, uri
     FROM {db_metadata:Identifier}.metadata
     WHERE mint IN mints
+    ORDER BY timestamp DESC
     LIMIT 1 BY mint
 )
 SELECT

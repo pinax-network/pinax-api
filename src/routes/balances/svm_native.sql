@@ -9,7 +9,7 @@ WITH balances AS
     WHERE account IN {address:Array(String)}
     GROUP BY account
     HAVING {include_null_balances:Bool} OR amount > 0
-    ORDER BY timestamp DESC
+    ORDER BY timestamp DESC, account ASC
     LIMIT  {limit:UInt64}
     OFFSET {offset:UInt64}
 )
@@ -34,4 +34,4 @@ SELECT
     'SOL' AS symbol,
     {network:String} AS network
 FROM balances AS b
-ORDER BY timestamp DESC
+ORDER BY timestamp DESC, account ASC

@@ -2,6 +2,7 @@ WITH metadata AS (
     SELECT mint, name, symbol, uri
     FROM {db_metadata:Identifier}.metadata
     WHERE mint = {mint:String}
+    ORDER BY timestamp DESC
     LIMIT 1
 ),
 balances AS (
