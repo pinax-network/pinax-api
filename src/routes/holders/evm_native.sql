@@ -17,17 +17,18 @@ WITH cutoff AS (
         )
 ),
 /* Candidate holders: addresses that have ever been above the cutoff, capped to the slice
-   the requested page can possibly need. Rank DISTINCT addresses by their peak balance
-   (+1000 buffer for addresses whose peak outranks their current balance) — ranking raw
-   rows instead would be dominated by whale balance-change history on busy chains and
-   silently under-fill the candidate set. The cutoff keeps this read tiny via the balance
-   min-max skip index; capping the candidates is what makes the argMax dedup below cheap. */
+   the requested page can possibly need. Rank DISTINCT addresses by their peak balance —
+   ranking raw rows instead would be dominated by whale balance-change history on busy chains
+   and silently under-fill the candidate set. The buffer (offset*2 + 1000) covers addresses
+   whose peak outranks their current balance; it scales with offset because that density grows
+   with depth, keeping deep pages correct while page 1 stays cheap. The cutoff keeps this read
+   tiny via the balance min-max skip index; capping the candidates makes the argMax dedup cheap. */
 addresses AS (
     SELECT address FROM {db_balances:Identifier}.native_balances
     WHERE balance >= (SELECT * FROM cutoff)
     GROUP BY address
     ORDER BY max(balance) DESC
-    LIMIT {limit:UInt64} + {offset:UInt64} + 1000
+    LIMIT {limit:UInt64} + {offset:UInt64} * 2 + 1000
 ),
 /* Materialize top-N balances once into a row array, then expand via arrayJoin.
    The address-array is reused to pre-filter the contracts lookup via primary key,
