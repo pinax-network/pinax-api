@@ -1,35 +1,27 @@
 WITH
-/* Accounts CURRENTLY owned by the requested owner(s), deduped to one row each.
-   The inner subquery finds every account ever associated with the owner (tight
-   lookup via the prj_owner projection, ORDER BY owner), then argMax(owner, version)
-   resolves each account's current owner (matching owner_view) and HAVING keeps only
-   those still owned by the requested owner(s). The previous version read owner_state
-   raw, returning every historical (owner, account) version — so a closed account
-   (latest owner '') or one reassigned to another owner would still be attributed to
-   the requested owner, and unmerged duplicate versions would duplicate in the join.
-   Bound as a cached scalar so the owner_state reads happen once. */
-(
-    SELECT groupArray((account, owner)) FROM (
-        SELECT account, argMax(owner, version) AS owner
+/* Accounts CURRENTLY owned by the requested owner(s) — account only. The inner subquery
+   finds every account ever associated with the owner(s) (tight lookup via the prj_owner
+   projection), then argMax(owner, version) resolves each account's current owner (matching
+   owner_view) and HAVING keeps only those still owned by the requested owner(s). A closed
+   account (latest owner '') or one reassigned to another owner is dropped here. Referenced
+   once below (the balances filter), so it streams as a normal IN-set instead of being
+   materialized — no large in-memory array even for owners with millions of accounts. */
+owner_accounts AS (
+    SELECT account
+    FROM {db_accounts:Identifier}.owner_state
+    WHERE account IN (
+        SELECT account
         FROM {db_accounts:Identifier}.owner_state
-        WHERE account IN (
-            SELECT account
-            FROM {db_accounts:Identifier}.owner_state
-            WHERE owner IN {owner:Array(String)}
-        )
-        GROUP BY account
-        HAVING owner IN {owner:Array(String)}
+        WHERE owner IN {owner:Array(String)}
     )
-) AS owners_arr,
-owners AS (
-    SELECT t.1 AS account, t.2 AS owner
-    FROM (SELECT arrayJoin(owners_arr) AS t)
+    GROUP BY account
+    HAVING argMax(owner, version) IN {owner:Array(String)}
 ),
 /* Resolve the balance page (filters + ORDER/LIMIT) and bind it as a cached scalar so
-   balances_by_account is read exactly once. Previously the `balances` CTE was inlined
-   at each reference — the final SELECT plus `mints` (which feeds both `decimals` and
-   `metadata`) — so balances_by_account (and the owner lookups it depends on) were
-   re-scanned ~3x. Now only the ~{limit} paged rows flow downstream. */
+   balances_by_account is read exactly once. Previously the `balances` CTE was inlined at
+   each reference — the final SELECT plus `mints` (which feeds both `decimals` and
+   `metadata`) — so balances_by_account was re-scanned ~3x. Now only the ~{limit} paged
+   rows flow downstream. */
 (
     SELECT groupArray((block_num, timestamp, program_id, account, amount, mint, decimals)) FROM (
         SELECT
@@ -41,7 +33,7 @@ owners AS (
             mint,
             decimals
         FROM {db_balances:Identifier}.balances_by_account AS b
-        WHERE b.account IN (SELECT account FROM owners)
+        WHERE b.account IN (SELECT account FROM owner_accounts)
             AND (empty({token_account:Array(String)}) OR b.account IN {token_account:Array(String)})
             AND (empty({mint:Array(String)}) OR b.mint IN {mint:Array(String)})
             AND (isNull({program_id:Nullable(String)}) OR b.program_id = {program_id:Nullable(String)})
@@ -62,6 +54,16 @@ balances AS (
         t.6 AS mint,
         t.7 AS decimals
     FROM (SELECT arrayJoin(page_arr) AS t)
+),
+/* Owner labels for the ~{limit} returned accounts only — resolved after paging (the
+   account set is tiny here), so the current-owner argMax never has to be cached for the
+   owner's full account set. */
+owners AS (
+    SELECT account, argMax(owner, version) AS owner
+    FROM {db_accounts:Identifier}.owner_state
+    WHERE account IN (SELECT account FROM balances)
+    GROUP BY account
+    HAVING owner IN {owner:Array(String)}
 ),
 mints AS (
     SELECT DISTINCT mint FROM balances
