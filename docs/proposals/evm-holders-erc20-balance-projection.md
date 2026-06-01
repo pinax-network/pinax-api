@@ -77,7 +77,7 @@ WITH candidates AS (              -- served by prj_contract_balance: range read,
     SELECT address
     FROM {db_balances:Identifier}.erc20_balances
     WHERE contract = {contract:String} AND balance > 0
-    ORDER BY balance DESC
+    ORDER BY balance DESC, address              -- address tie-breaker → deterministic paging
     LIMIT 1 BY address                          -- distinct per address (peak-balance row)
     LIMIT {limit:UInt64} + {offset:UInt64} * 2 + 1000
 )
