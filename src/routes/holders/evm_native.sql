@@ -16,10 +16,18 @@ WITH cutoff AS (
             toUInt256(100 * pow(10, 18))
         )
 ),
-/* find addresses above cutoff (ex: >=5000 ETH) */
+/* Candidate holders: addresses that have ever been above the cutoff, capped to the slice
+   the requested page can possibly need. Rank DISTINCT addresses by their peak balance
+   (+1000 buffer for addresses whose peak outranks their current balance) — ranking raw
+   rows instead would be dominated by whale balance-change history on busy chains and
+   silently under-fill the candidate set. The cutoff keeps this read tiny via the balance
+   min-max skip index; capping the candidates is what makes the argMax dedup below cheap. */
 addresses AS (
     SELECT address FROM {db_balances:Identifier}.native_balances
     WHERE balance >= (SELECT * FROM cutoff)
+    GROUP BY address
+    ORDER BY max(balance) DESC
+    LIMIT {limit:UInt64} + {offset:UInt64} + 1000
 ),
 /* Materialize top-N balances once into a row array, then expand via arrayJoin.
    The address-array is reused to pre-filter the contracts lookup via primary key,
