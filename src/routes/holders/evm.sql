@@ -1,13 +1,38 @@
-/* Materialize top-N balances once into a row array, then expand via arrayJoin.
-   The address-array is reused to pre-filter the contracts lookup via primary key,
-   avoiding the full-table hash build a plain JOIN would trigger. */
-WITH rows_arr AS (
-    SELECT groupArray(tuple(address, balance, timestamp, block_num)) AS r
+/* Top holders ranked by balance. The table is ORDER BY (contract, address), so a direct
+   `FINAL ... ORDER BY balance DESC LIMIT N` must read every holder of the contract (tens to
+   hundreds of millions of rows for popular tokens) just to sort the top N. Instead use a
+   two-pass approach:
+
+   1) candidates: grab an over-inclusive set of candidate addresses via the balance
+      skip-index top-k (no FINAL, so it may surface superseded/stale balances — that's fine,
+      it only over-includes). The +1000 buffer covers stale rows ranked above the requested
+      page; deep pages scale it via limit+offset.
+   2) rows_arr: resolve each candidate's CURRENT balance with argMax(block_num) — equivalent
+      to FINAL but only over the candidate addresses — then rank and page. The result is
+      materialized once into a row array (reused below for the contracts lookup) and expanded
+      via arrayJoin. */
+WITH candidates AS (
+    SELECT address
+    FROM {db_balances:Identifier}.erc20_balances
+    WHERE contract = {contract:String} AND balance > 0
+    ORDER BY balance DESC
+    LIMIT {limit:UInt64} + {offset:UInt64} + 1000
+    SETTINGS use_skip_indexes_for_top_k = 1, use_top_k_dynamic_filtering = 1
+),
+rows_arr AS (
+    SELECT groupArray(tuple(address, amount, ts, bn)) AS r
     FROM (
-        SELECT address, balance, timestamp, block_num
-        FROM {db_balances:Identifier}.erc20_balances FINAL
-        WHERE contract = {contract:String} AND balance > 0
-        ORDER BY balance DESC, address
+        SELECT
+            address,
+            argMax(balance, block_num)   AS amount,
+            argMax(timestamp, block_num) AS ts,
+            max(block_num)               AS bn
+        FROM {db_balances:Identifier}.erc20_balances
+        WHERE contract = {contract:String}
+          AND address IN (SELECT address FROM candidates)
+        GROUP BY address
+        HAVING amount > 0
+        ORDER BY amount DESC, address
         LIMIT {limit:UInt64} OFFSET {offset:UInt64}
     )
 ),
