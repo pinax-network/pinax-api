@@ -27,7 +27,7 @@ addresses AS (
     SELECT address FROM {db_balances:Identifier}.native_balances
     WHERE balance >= (SELECT * FROM cutoff)
     GROUP BY address
-    ORDER BY max(balance) DESC
+    ORDER BY max(balance) DESC, address
     LIMIT {limit:UInt64} + {offset:UInt64} * 2 + 1000
 ),
 /* Materialize top-N balances once into a row array, then expand via arrayJoin.
