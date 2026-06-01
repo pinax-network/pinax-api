@@ -21,7 +21,7 @@ SELECT
 FROM {db_polymarket:Identifier}.orderbook o
 LEFT JOIN {db_polymarket:Identifier}.fee f
     ON f.asset_id = o.asset_id AND f.timestamp = o.timestamp AND f.interval_min = o.interval_min
-LEFT JOIN {db_scraper:Identifier}.polymarket_markets_by_asset_id a
+LEFT JOIN {db_scraper:Identifier}.polymarket_markets_by_asset_id a FINAL
     ON a.asset_id = o.asset_id
 WHERE o.interval_min = {interval:UInt32}
   AND o.asset_id = toUInt256({token_id:String})
