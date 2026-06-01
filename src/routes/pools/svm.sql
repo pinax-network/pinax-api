@@ -11,10 +11,17 @@ WITH
    deterministic scan over only that mint's pools. This replaces the previous
    `SELECT DISTINCT amm_pool ... LIMIT 100000` (no ORDER BY), which ranked an
    arbitrary subset of pools for any mint appearing in >100k pools (wSOL/USDC/USDT)
-   and returned non-deterministic results. Per-(pool,protocol,program_id,amm)
-   transaction sums here are identical to state_pools_aggregating_by_pool, so the
-   ranking order and displayed counts match the unfiltered path. Scans nothing when
-   {mint} is empty (mint IN [] is an empty set). */
+   and returned non-deterministic results. Scans nothing when {mint} is empty
+   (mint IN [] is an empty set).
+
+   Aggregation is max(sum-per-mint), not a plain sum: state_pools_aggregating_by_mint
+   holds one (mint, pool, …) row per swap-side, and every requested mint that occurs in a
+   pool repeats that pool's transaction count. The inner GROUP BY collapses the (unmerged
+   AggregatingMergeTree) parts per mint; the outer max() then takes a single mint's value
+   instead of adding them, so a pool containing >1 requested mint (e.g. a USDC/wSOL pool
+   queried with mint IN (USDC, wSOL)) is not double-counted. For a single requested mint
+   this is identical to summing, and matches the per-(pool,protocol,program_id,amm) total
+   in state_pools_aggregating_by_pool used by the unfiltered path. */
 (
     SELECT groupArray((amm_pool, protocol, program_id, amm, transactions)) FROM (
         SELECT
@@ -22,13 +29,23 @@ WITH
             protocol,
             program_id,
             amm,
-            sum(transactions) AS transactions
-        FROM {db_dex:Identifier}.state_pools_aggregating_by_mint
-        WHERE mint IN {mint:Array(String)}
-          AND amm_pool != ''
-          AND (empty({amm_pool:Array(String)}) OR amm_pool IN {amm_pool:Array(String)})
-          AND (empty({amm:Array(String)}) OR amm IN {amm:Array(String)})
-          AND (isNull({protocol:Nullable(String)}) OR protocol = {protocol:Nullable(String)})
+            max(mint_transactions) AS transactions
+        FROM (
+            SELECT
+                amm_pool,
+                protocol,
+                program_id,
+                amm,
+                mint,
+                sum(transactions) AS mint_transactions
+            FROM {db_dex:Identifier}.state_pools_aggregating_by_mint
+            WHERE mint IN {mint:Array(String)}
+              AND amm_pool != ''
+              AND (empty({amm_pool:Array(String)}) OR amm_pool IN {amm_pool:Array(String)})
+              AND (empty({amm:Array(String)}) OR amm IN {amm:Array(String)})
+              AND (isNull({protocol:Nullable(String)}) OR protocol = {protocol:Nullable(String)})
+            GROUP BY amm_pool, protocol, program_id, amm, mint
+        )
         GROUP BY amm_pool, protocol, program_id, amm
         ORDER BY transactions DESC, amm_pool ASC, protocol ASC, program_id ASC, amm ASC
         LIMIT  {limit:UInt64}
@@ -106,7 +123,11 @@ SELECT
     /* Network */
     {network: String} AS network
 FROM pools AS p
-JOIN pools_with_tokens AS pt ON p.amm_pool = pt.amm_pool AND p.protocol = pt.protocol
+JOIN pools_with_tokens AS pt
+  ON  p.amm_pool   = pt.amm_pool
+  AND p.protocol   = pt.protocol
+  AND p.program_id = pt.program_id
+  AND p.amm        = pt.amm
 LEFT JOIN decimals AS d0 ON d0.mint = pt.token0
 LEFT JOIN decimals AS d1 ON d1.mint = pt.token1
 ORDER BY p.transactions DESC, p.amm_pool ASC, p.protocol ASC, p.program_id ASC, p.amm ASC
