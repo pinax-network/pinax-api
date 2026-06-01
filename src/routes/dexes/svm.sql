@@ -9,6 +9,6 @@ FROM {db_dex:Identifier}.state_pools_aggregating_by_pool AS p
 GROUP BY
     p.program_id,
     p.amm
-ORDER BY transactions DESC
+ORDER BY transactions DESC, program_id ASC, amm ASC
 LIMIT   {limit:UInt64}
 OFFSET  {offset:UInt64}

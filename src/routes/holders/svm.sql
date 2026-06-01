@@ -2,6 +2,7 @@ WITH metadata AS (
     SELECT mint, name, symbol, uri
     FROM {db_metadata:Identifier}.metadata
     WHERE mint = {mint:String}
+    ORDER BY timestamp DESC
     LIMIT 1
 ),
 balances AS (
@@ -15,10 +16,36 @@ close_accounts AS (
     FROM {db_accounts:Identifier}.close_account_view
     WHERE account IN (SELECT account FROM balances)
 ),
+/* Resolve the page (closed-account filter + ORDER/LIMIT) BEFORE looking up owners,
+   and bind it as a cached scalar array so the close_account_view aggregation runs
+   exactly once. `owner` is a display-only column (never filtered or ordered on), so
+   the owner_view lookup — which aggregates the 7.5B-row owner_state — then only needs
+   the ~{limit} returned accounts instead of all 1000 holder candidates. */
+(
+    SELECT groupArray((account, block_num, timestamp, program_id, amount, decimals)) FROM (
+        SELECT b.account, b.block_num, b.timestamp, b.program_id, b.amount, b.decimals
+        FROM balances AS b
+        LEFT JOIN close_accounts AS c USING (account)
+        WHERE c.closed IS NULL OR c.closed = false
+        ORDER BY b.amount DESC, b.account
+        LIMIT {limit:UInt64}
+        OFFSET {offset:UInt64}
+    )
+) AS page_arr,
+page AS (
+    SELECT
+        r.1 AS account,
+        r.2 AS block_num,
+        r.3 AS timestamp,
+        r.4 AS program_id,
+        r.5 AS amount,
+        r.6 AS decimals
+    FROM (SELECT arrayJoin(page_arr) AS r)
+),
 owners AS (
     SELECT account, owner
     FROM {db_accounts:Identifier}.owner_view
-    WHERE account IN (SELECT account FROM balances)
+    WHERE account IN (SELECT account FROM page)
 )
 SELECT
     /* block */
@@ -27,8 +54,8 @@ SELECT
     toUnixTimestamp(b.timestamp) AS last_update_timestamp,
 
     /* token */
-    program_id,
-    mint,
+    b.program_id AS program_id,
+    {mint:String} AS mint,
 
     /* token account */
     b.account AS token_account,
@@ -46,11 +73,7 @@ SELECT
 
     /* network */
     {network:String} as network
-FROM balances b
-LEFT JOIN metadata m USING (mint)
+FROM page b
+LEFT JOIN metadata m ON m.mint = {mint:String}
 LEFT JOIN owners o USING (account)
-LEFT JOIN close_accounts c USING (account)
-WHERE mint = {mint:String} AND (closed IS NULL OR closed = false)
 ORDER BY b.amount DESC, b.account
-LIMIT {limit:UInt64}
-OFFSET {offset:UInt64}

@@ -14,6 +14,7 @@ metadata AS
     SELECT mint, name, symbol, uri
     FROM {db_metadata:Identifier}.metadata
     WHERE mint IN {mint:Array(String)}
+    ORDER BY timestamp DESC
     LIMIT 1 BY mint
 ),
 decimals AS
