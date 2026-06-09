@@ -1200,4 +1200,162 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         expect(response.status).toBe(400);
         expect(body.code).toBe('bad_query_input');
     });
+
+    // --- Kalshi ---
+    // Tickers / series sourced from the local ingest window (see
+    // .temp/kalshi/harness/fixtures/fixtures.md). KXNBAGAME is the highest-volume
+    // series; the strike-price ticker exercises the `.` character in the regex.
+    const KALSHI_TICKER = 'KXNBAGAME-26APR30NYKATL-ATL';
+    const KALSHI_SERIES = 'KXNBAGAME';
+    const KALSHI_SETTLED_TICKER = 'KXDOGE15M-26APR302000-00';
+    const KALSHI_STRIKE_TICKER = 'KXBTCD-26APR3020-T76299.99';
+    const KALSHI_EVENT_TICKER = 'KXBTCD-26APR3020';
+
+    let hasKalshi: boolean;
+
+    it('detect kalshi config', async () => {
+        const { config } = await import('../config.js');
+        hasKalshi = !!config.kalshiDatabases?.kalshi;
+    });
+
+    it('GET /v1/kalshi/markets (by ticker)', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute(`/v1/kalshi/markets?ticker=${KALSHI_SETTLED_TICKER}&limit=1`);
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBe(1);
+        expect(body.data[0]).toHaveProperty('ticker', KALSHI_SETTLED_TICKER);
+        expect(body.data[0]).toHaveProperty('series');
+        expect(body.data[0]).toHaveProperty('event_ticker');
+        expect(body.data[0]).toHaveProperty('status');
+        expect(body.data[0]).toHaveProperty('settlement_value');
+        // expiration_value lands as Nullable(Float64) — either a number or null.
+        expect(['number', 'object']).toContain(typeof body.data[0].expiration_value);
+    });
+
+    it('GET /v1/kalshi/markets (strike-price ticker — `.` accepted)', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute(`/v1/kalshi/markets?ticker=${KALSHI_STRIKE_TICKER}&limit=1`);
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+    });
+
+    it('GET /v1/kalshi/markets (by event_ticker)', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute(`/v1/kalshi/markets?event_ticker=${KALSHI_EVENT_TICKER}&limit=10`);
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+    });
+
+    it('GET /v1/kalshi/markets/trades (by ticker)', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute(`/v1/kalshi/markets/trades?ticker=${KALSHI_TICKER}&limit=3`);
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('trade_id');
+        expect(body.data[0]).toHaveProperty('timestamp_us');
+        // timestamp_us is stringified to dodge JS Number-precision drift.
+        expect(typeof body.data[0].timestamp_us).toBe('string');
+        expect(body.data[0]).toHaveProperty('count');
+        expect(typeof body.data[0].count).toBe('number');
+        expect(body.data[0]).toHaveProperty('taker_outcome_side');
+    });
+
+    it('GET /v1/kalshi/markets/trades requires filter', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute('/v1/kalshi/markets/trades?limit=3');
+        expect(response.status).toBe(400);
+        expect(body.code).toBe('bad_query_input');
+    });
+
+    it('GET /v1/kalshi/markets/ohlc (1m)', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute(
+            `/v1/kalshi/markets/ohlc?ticker=${KALSHI_TICKER}&interval=1m&limit=3`
+        );
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('open');
+        expect(body.data[0]).toHaveProperty('high');
+        expect(body.data[0]).toHaveProperty('low');
+        expect(body.data[0]).toHaveProperty('close');
+        expect(body.data[0]).toHaveProperty('mean');
+        expect(body.data[0]).toHaveProperty('volume');
+        expect(body.data[0]).toHaveProperty('interval_min', 1);
+    });
+
+    it('GET /v1/kalshi/markets/ohlc requires ticker', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute('/v1/kalshi/markets/ohlc');
+        expect(response.status).toBe(400);
+        expect(body.code).toBe('bad_query_input');
+    });
+
+    it('GET /v1/kalshi/markets/settlement (by series)', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute('/v1/kalshi/markets/settlement?series=KXDOGE15M&limit=3');
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('ticker');
+        expect(body.data[0]).toHaveProperty('kind', 'market_settled');
+        expect(body.data[0]).toHaveProperty('status');
+        expect(body.data[0]).toHaveProperty('settlement_value');
+    });
+
+    it('GET /v1/kalshi/series (top by volume)', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute('/v1/kalshi/series?limit=5');
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('series');
+        expect(body.data[0]).toHaveProperty('market_count');
+        expect(body.data[0]).toHaveProperty('volume');
+        expect(body.data[0]).toHaveProperty('first_trade');
+    });
+
+    it('GET /v1/kalshi/series (by series filter)', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute(`/v1/kalshi/series?series=${KALSHI_SERIES}`);
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBe(1);
+        expect(body.data[0].series).toBe(KALSHI_SERIES);
+    });
+
+    it('GET /v1/kalshi/platform (1m)', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute('/v1/kalshi/platform?interval=1m&limit=3');
+        expect(response.status).toBe(200);
+        expect(body.data).toBeArray();
+        expect(body.data.length).toBeGreaterThan(0);
+        expect(body.data[0]).toHaveProperty('volume');
+        expect(body.data[0]).toHaveProperty('trades');
+        expect(body.data[0]).toHaveProperty('unique_markets');
+        expect(body.data[0]).toHaveProperty('unique_series');
+    });
+
+    it('kalshi rejects unsupported interval', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute(`/v1/kalshi/markets/ohlc?ticker=${KALSHI_TICKER}&interval=4h`);
+        expect(response.status).toBe(400);
+        expect(body.code).toBe('bad_query_input');
+    });
+
+    it('kalshi rejects malformed ticker', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute('/v1/kalshi/markets?ticker=bad%20ticker');
+        expect(response.status).toBe(400);
+        expect(body.code).toBe('bad_query_input');
+    });
+
+    it('kalshi rejects invalid market status filter', async () => {
+        if (!hasKalshi) return;
+        const { response, body } = await fetchRoute('/v1/kalshi/markets?status=garbage');
+        expect(response.status).toBe(400);
+        expect(body.code).toBe('bad_query_input');
+    });
 });

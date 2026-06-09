@@ -11,7 +11,7 @@ const ClusterConfigSchema = z.object({
 
 const NetworkConfigSchema = z
     .object({
-        type: z.enum(['evm', 'svm', 'tvm', 'polymarket', 'hyperliquid']),
+        type: z.enum(['evm', 'svm', 'tvm', 'polymarket', 'hyperliquid', 'kalshi']),
         cluster: z.string(),
     })
     .catchall(z.string());
@@ -51,6 +51,7 @@ export interface ParsedDbsConfig {
     polymarketDatabases: DatabaseMap;
     scraperDatabases: DatabaseMap;
     hypercoreDatabases: DatabaseMap;
+    kalshiDatabases: DatabaseMap;
 }
 
 function emptyConfig(): ParsedDbsConfig {
@@ -67,6 +68,7 @@ function emptyConfig(): ParsedDbsConfig {
         polymarketDatabases: {},
         scraperDatabases: {},
         hypercoreDatabases: {},
+        kalshiDatabases: {},
     };
 }
 
