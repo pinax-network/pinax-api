@@ -20,14 +20,21 @@ SELECT
     m.volume_num AS volume,
     m.start_date,
     m.end_date
-FROM {db_scraper:Identifier}.polymarket_markets m FINAL
+FROM (
+    SELECT
+        condition_id, market_slug, question, description,
+        outcomes, clob_token_ids,
+        closed, neg_risk, accepting_orders, fees_enabled,
+        volume_num, start_date, end_date
+    FROM {db_scraper:Identifier}.polymarket_markets FINAL
+    WHERE (empty({condition_id:Array(String)}) OR condition_id IN {condition_id:Array(String)})
+      AND (empty({market_slug:Array(String)})  OR market_slug  IN {market_slug:Array(String)})
+      AND (empty({token_id:Array(String)})     OR condition_id IN (SELECT condition_id FROM token_condition_ids))
+      AND (isNull({closed:Nullable(Bool)})     OR closed = {closed:Nullable(Bool)})
+) m
 LEFT JOIN {db_scraper:Identifier}.polymarket_events e FINAL
     ON e.condition_id = m.condition_id
-WHERE (empty({condition_id:Array(String)}) OR m.condition_id IN {condition_id:Array(String)})
-  AND (empty({market_slug:Array(String)})  OR m.market_slug  IN {market_slug:Array(String)})
-  AND (empty({token_id:Array(String)})     OR m.condition_id IN (SELECT condition_id FROM token_condition_ids))
-  AND (empty({event_slug:Array(String)})   OR e.slug         IN {event_slug:Array(String)})
-  AND (isNull({closed:Nullable(UInt8)})    OR m.closed = {closed:Nullable(UInt8)})
+WHERE (empty({event_slug:Array(String)}) OR e.slug IN {event_slug:Array(String)})
 ORDER BY m.volume_num DESC
 LIMIT {limit:UInt64}
 OFFSET {offset:UInt64}
