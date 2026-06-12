@@ -1036,3 +1036,72 @@ export const hyperliquidCoinSchema = z.coerce
             'Hyperliquid coin identifier. Core perps have no prefix (`BTC`, `HYPE`); spot pairs use `@N` (`@107`); builder DEXs prefix the symbol with the DEX name (`xyz:SILVER`).',
         example: 'BTC',
     });
+
+// ── Kalshi Schemas ──
+
+// Kalshi tickers are dash-segmented identifiers: market tickers are typically
+// SERIES-EVENT-OUTCOME but real data has 2–5 segments and strike values
+// embedded as decimals (`KXBTCD-26APR3020-T76299.99`). Event tickers are the
+// market ticker with the trailing outcome stripped — they share the same
+// character set, so a single regex covers both schemas; the filter column
+// (`ticker` vs `event_ticker`) disambiguates downstream.
+const KALSHI_TICKER_PATTERN = /^[A-Z0-9][A-Z0-9.-]*$/;
+
+export const kalshiTickerSchema = z.coerce
+    .string()
+    .min(1)
+    .refine((val) => KALSHI_TICKER_PATTERN.test(val), 'Invalid Kalshi ticker')
+    .meta({
+        type: 'string',
+        description:
+            'Kalshi market ticker. Typically `SERIES-EVENT-OUTCOME` (e.g. `KXNBAGAME-26APR30BOSPHI-PHI`); strike-price markets carry the strike in the trailing segment (`KXBTCD-26APR3020-T76299.99`).',
+        example: 'KXNBAGAME-26APR30BOSPHI-PHI',
+    });
+
+export const kalshiEventTickerSchema = z.coerce
+    .string()
+    .min(1)
+    .refine((val) => KALSHI_TICKER_PATTERN.test(val), 'Invalid Kalshi event ticker')
+    .meta({
+        type: 'string',
+        description:
+            'Kalshi event ticker (the market ticker with the trailing outcome segment stripped). Groups one or more markets that resolve together.',
+        example: 'KXNBAGAME-26APR30BOSPHI',
+    });
+
+export const kalshiSeriesSchema = z.coerce
+    .string()
+    .min(1)
+    .refine((val) => /^[A-Z0-9]+$/.test(val), 'Invalid Kalshi series (uppercase + digits only, no dashes)')
+    .meta({
+        type: 'string',
+        description: "Kalshi series ticker — the leading dash-segment of a market ticker. Identifies a contract template (e.g. `KXBTC15M` = '15-minute BTC price' recurring series).",
+        example: 'KXNBAGAME',
+    });
+
+// Kalshi /markets/candlesticks publishes only 1m, 1h, 1d — our state stores
+// the same three; OHLCV view filters by minute. Keep the schema tight to what
+// the materialized view actually has rows for.
+const kalshiIntervals = ['1m', '1h', '1d'] as const;
+const kalshiIntervalMinutes: Record<(typeof kalshiIntervals)[number], number> = {
+    '1m': 1,
+    '1h': 60,
+    '1d': 1440,
+};
+export const kalshiIntervalSchema = z
+    .enum(kalshiIntervals)
+    .transform((interval) => kalshiIntervalMinutes[interval])
+    .meta({
+        type: 'string',
+        enum: kalshiIntervals,
+        default: '1d',
+        description:
+            'OHLCV bar interval. Matches Kalshi `/markets/candlesticks` granularities — 1-minute, 1-hour, 1-day.',
+    });
+
+const kalshiMarketStatuses = ['initialized', 'active', 'inactive', 'closed', 'determined', 'finalized'] as const;
+export const kalshiMarketStatusSchema = z.enum(kalshiMarketStatuses).meta({
+    type: 'string',
+    enum: kalshiMarketStatuses,
+    description: 'Kalshi market lifecycle status. Substreams emits only settled snapshots (`determined`/`finalized`); the scraper will fill the rest.',
+});

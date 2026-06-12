@@ -62,6 +62,13 @@ import svmOhlcv from './ohlcv/svm.js';
 import tvmOhlcv from './ohlcv/tvm.js';
 // Owner
 import svmOwner from './owner/svm.js';
+// Kalshi
+import kalshiMarkets from './kalshi/markets.js';
+import kalshiOhlc from './kalshi/ohlc.js';
+import kalshiPlatform from './kalshi/platform.js';
+import kalshiSeries from './kalshi/series.js';
+import kalshiSettlement from './kalshi/settlement.js';
+import kalshiTrades from './kalshi/trades.js';
 // Polymarket
 import polymarketActivity from './polymarket/activity.js';
 import polymarketMarketPositions from './polymarket/market_positions.js';
@@ -192,6 +199,15 @@ router.route('/v1/hyperliquid/users/activity', hyperliquidUsersActivity);
 router.route('/v1/hyperliquid/vaults', hyperliquidVaults);
 router.route('/v1/hyperliquid/vaults/depositors', hyperliquidVaultsDepositors);
 router.route('/v1/hyperliquid/platform', hyperliquidPlatform);
+
+// Kalshi
+router.use('/v1/kalshi/*', cacheControl());
+router.route('/v1/kalshi/markets', kalshiMarkets);
+router.route('/v1/kalshi/markets/ohlc', kalshiOhlc);
+router.route('/v1/kalshi/markets/trades', kalshiTrades);
+router.route('/v1/kalshi/markets/settlement', kalshiSettlement);
+router.route('/v1/kalshi/series', kalshiSeries);
+router.route('/v1/kalshi/platform', kalshiPlatform);
 
 // Polymarket
 router.use('/v1/polymarket/*', cacheControl());
