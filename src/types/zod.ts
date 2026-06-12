@@ -1036,7 +1036,7 @@ export const hyperliquidCoinSchema = z.coerce
     .meta({
         type: 'string',
         description:
-            'Hyperliquid coin identifier. Core perps have no prefix (`BTC`, `HYPE`); spot pairs use `@N` (`@107`); builder DEXs prefix the symbol with the DEX name (`xyz:SILVER`). Outcome coins (`#N`) are not accepted here — use `/v1/hyperliquid/outcomes/*`.',
+            'Hyperliquid coin id. Perps: `BTC`. Spot: `@N` (`@107`). Builder DEXs: `xyz:SILVER`. Outcome coins (`#N`) are rejected — use `/v1/hyperliquid/outcomes/*`.',
         example: 'BTC',
     });
 
@@ -1054,20 +1054,28 @@ export const hyperliquidOutcomeCoinSchema = z.coerce
         example: '#1720',
     });
 
-// Outcome id (UInt64) for filtering across outcomes' two side coins.
-export const hyperliquidOutcomeIdSchema = z.coerce.number().int().nonnegative().meta({
-    type: 'integer',
-    description: 'HIP-4 outcome id (UInt64). One outcome has two side coins, `#<id*10>` and `#<id*10+1>`.',
-    example: 172,
-});
+// Outcome id (UInt64) for filtering across outcomes' two side coins. Accepted
+// as a numeric string so it round-trips through the ClickHouse `Array(UInt64)`
+// parameter type without losing precision on large values.
+export const hyperliquidOutcomeIdSchema = z.coerce
+    .string()
+    .regex(/^\d+$/, 'Outcome id must be a non-negative integer')
+    .meta({
+        type: 'integer',
+        description: 'HIP-4 outcome id (UInt64). One outcome has two side coins, `#<id*10>` and `#<id*10+1>`.',
+        example: '172',
+    });
 
 // Question id (UInt64) for filtering to a multi-outcome question's siblings.
-export const hyperliquidQuestionIdSchema = z.coerce.number().int().nonnegative().meta({
-    type: 'integer',
-    description:
-        'HIP-4 question id (UInt64). Groups multi-outcome questions (e.g. World Cup). Binary single-outcome markets have no question id.',
-    example: 32,
-});
+export const hyperliquidQuestionIdSchema = z.coerce
+    .string()
+    .regex(/^\d+$/, 'Question id must be a non-negative integer')
+    .meta({
+        type: 'integer',
+        description:
+            'HIP-4 question id (UInt64). Groups multi-outcome questions (e.g. World Cup). Binary single-outcome markets have no question id.',
+        example: '32',
+    });
 
 // Outcome status filter for `/v1/hyperliquid/outcomes`.
 const hyperliquidOutcomeStatusValues = ['live', 'settled', 'all'] as const;
