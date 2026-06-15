@@ -4,7 +4,7 @@ WITH
             coin,
             dex_from_coin(coin)                                AS dex,
             argMaxMerge(close)                                 AS price,
-            sum(side_buy_volume)                               AS volume_24h,
+            sum(taker_buy_volume + taker_sell_volume)          AS volume_24h,
             sum(taker_buy_volume)                              AS buy_volume_24h,
             sum(taker_sell_volume)                             AS sell_volume_24h,
             sum(transactions)                                  AS trades_24h
