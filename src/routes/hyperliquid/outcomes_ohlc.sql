@@ -47,8 +47,6 @@ SELECT
     candles.gross_volume                                           AS gross_volume,
     candles.net_volume                                             AS net_volume,
     candles.transactions                                           AS transactions,
-    candles.buys                                                   AS buys,
-    candles.sells                                                  AS sells,
     candles.total_fees                                             AS total_fees
 FROM (
     SELECT
@@ -59,13 +57,11 @@ FROM (
         quantilesDeterministicMerge(0.05, 0.95)(t.quantile)[2]     AS high_quantile,
         quantilesDeterministicMerge(0.05, 0.95)(t.quantile)[1]     AS low_quantile,
         argMaxMerge(t.close)                                       AS close,
-        sum(t.side_buy_volume)                                     AS buy_volume,
-        sum(t.side_ask_volume)                                     AS sell_volume,
-        sum(t.side_buy_volume) + sum(t.side_ask_volume)            AS gross_volume,
-        sum(t.side_buy_volume) - sum(t.side_ask_volume)            AS net_volume,
+        sum(t.taker_buy_volume)                                    AS buy_volume,
+        sum(t.taker_sell_volume)                                   AS sell_volume,
+        sum(t.taker_buy_volume) + sum(t.taker_sell_volume)         AS gross_volume,
+        sum(t.taker_buy_volume) - sum(t.taker_sell_volume)         AS net_volume,
         sum(t.transactions)                                        AS transactions,
-        sum(t.buy_count)                                           AS buys,
-        sum(t.sell_count)                                          AS sells,
         sum(t.total_fees)                                          AS total_fees
     FROM {db_hypercore:Identifier}.state_ohlcv_outcomes AS t
     WHERE t.coin = {coin:String}

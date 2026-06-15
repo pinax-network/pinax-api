@@ -42,8 +42,6 @@ const responseSchema = apiUsageResponseSchema.extend({
             gross_volume: z.number(),
             net_volume: z.number(),
             transactions: z.number().int(),
-            buys: z.number().int(),
-            sells: z.number().int(),
             total_fees: z.number(),
         })
     ),
@@ -83,8 +81,6 @@ const openapi = describeRoute(
                                             gross_volume: 48008.52,
                                             net_volume: 48008.52,
                                             transactions: 60,
-                                            buys: 60,
-                                            sells: 0,
                                             total_fees: 0,
                                         },
                                     ],

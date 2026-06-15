@@ -11,7 +11,7 @@ WITH
     rollup AS (
         SELECT
             intDiv(toUInt64(splitByChar('#', coin)[2]), 10) AS outcome_id,
-            sum(side_buy_volume + side_ask_volume)          AS volume_24h,
+            sum(taker_buy_volume + taker_sell_volume)       AS volume_24h,
             sum(transactions)                               AS trades_24h,
             max(max_timestamp)                              AS last_trade
         FROM {db_hypercore:Identifier}.state_ohlcv_outcomes
