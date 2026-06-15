@@ -70,7 +70,7 @@ Map a goal to the relevant dataset and endpoint family:
 - **Token API: trace DEX swaps and liquidity pools** — `/v1/{evm,svm,tvm}/swaps`, `/v1/{evm,svm,tvm}/pools`, `/v1/{evm,svm,tvm}/dexes`
 - **Token API: get OHLC time-series** — `/v1/{evm,svm,tvm}/pools/ohlc`
 - **Token API: list a wallet's NFT holdings and activity** — `/v1/evm/nft/ownerships`, `/v1/evm/nft/transfers`, `/v1/evm/nft/sales`, `/v1/evm/nft/items`, `/v1/evm/nft/collections`
-- **Prediction Markets: discover markets, OI, and per-user PNL** — `/v1/polymarket/markets`, `/v1/polymarket/markets/ohlc`, `/v1/polymarket/markets/oi`, `/v1/polymarket/markets/activity`, `/v1/polymarket/users`, `/v1/polymarket/users/positions`
+- **Prediction Markets: discover markets, OI, and per-user PNL** — `/v1/polymarket/markets`, `/v1/polymarket/markets/ohlc`, `/v1/polymarket/markets/oi`, `/v1/polymarket/markets/activity`, `/v1/polymarket/users`, `/v1/polymarket/users/positions`, `/v1/hyperliquid/outcomes`, `/v1/hyperliquid/outcomes/ohlc`, `/v1/hyperliquid/outcomes/trades`, `/v1/hyperliquid/outcomes/users`
 - **Perp Exchanges: discover markets, OHLC, OI, liquidations, and per-user PnL** — `/v1/hyperliquid/markets`, `/v1/hyperliquid/markets/ohlc`, `/v1/hyperliquid/markets/oi`, `/v1/hyperliquid/markets/liquidations`, `/v1/hyperliquid/users`, `/v1/hyperliquid/users/positions`, `/v1/hyperliquid/vaults`
 - **Discover supported chains and protocols** (free) — `/v1/networks`, `/v1/{evm,svm,tvm}/dexes`, `/v1/hyperliquid/dexes`
 
@@ -312,19 +312,21 @@ Aggregate volume, open interest, and fees across all Polymarket markets.
 
 ## Hyperliquid
 
-Trading data for the Hyperliquid L1 — core perps, `@N`-indexed spot pairs, and builder-deployed DEXes (`xyz`, `cash`, …). The `coin` parameter is the canonical identifier across all `/v1/hyperliquid/*` endpoints: unprefixed for core perps (`BTC`), `@N` for spot (`@107`), and `<dex>:<symbol>` for builder DEXes (`xyz:SILVER`). Discover the live DEX set via `GET /v1/hyperliquid/dexes`.
+Trading data for the Hyperliquid L1 — core perps, `@N`-indexed spot pairs, builder-deployed DEXes (`xyz`, `cash`, …), and HIP-4 prediction-market outcomes. The `coin` parameter is the canonical identifier across all `/v1/hyperliquid/markets/*` and `/v1/hyperliquid/users/*` endpoints: unprefixed for core perps (`BTC`), `@N` for spot (`@107`), and `<dex>:<symbol>` for builder DEXes (`xyz:SILVER`). Discover the live DEX set via `GET /v1/hyperliquid/dexes`.
+
+HIP-4 outcome markets are served by the dedicated `/v1/hyperliquid/outcomes/*` family — `#N` coin values and `dex=outcome` are rejected on the markets/users endpoints. Outcome coins use `#<outcome_id*10 + side_index>` encoding (side_index is `0` or `1`, e.g. `#1720` = outcome 172 / "Yes", `#1721` = outcome 172 / "No").
 
 ### Markets
 
 | Endpoint | Required | Optional | Notes |
 |----------|----------|----------|-------|
 | `GET /v1/hyperliquid/dexes` | — | — | **Unauthenticated.** All supported DEX ids. |
-| `GET /v1/hyperliquid/markets` | — | `coin`, `dex`, `base_token`, `quote_token` | **Unauthenticated.** Latest snapshot per market: last price, 24h change, volume by side, OI, funding rate. `base_token` / `quote_token` are spot-discovery filters. |
-| `GET /v1/hyperliquid/markets/ohlc` | `coin` | `dex`, `interval`, `start_time`, `end_time` | OHLCV per coin (and optional dex). |
+| `GET /v1/hyperliquid/markets` | — | `coin`, `dex`, `base_token`, `quote_token` | **Unauthenticated.** Latest snapshot per market: last price, 24h change, taker buy/sell volume, OI, funding rate. `base_token` / `quote_token` are spot-discovery filters. |
+| `GET /v1/hyperliquid/markets/ohlc` | `coin` | `dex`, `interval`, `start_time`, `end_time` | OHLCV per coin (and optional dex). Volume fields (`buy_volume`, `sell_volume`, `gross_volume`, `net_volume`) carry the crossed-taker directional split; `transactions` is the true match count. |
 | `GET /v1/hyperliquid/markets/oi` | `coin` | `dex`, `interval`, `start_time`, `end_time` | Open-interest time-series. Default `interval=1h`. |
 | `GET /v1/hyperliquid/markets/activity` | — | `coin`, `dex`, `user`, `start_time`, `end_time` | Trade-fill stream. |
 | `GET /v1/hyperliquid/markets/liquidations` | — | `coin`, `dex`, `liquidated_user`, `sort_by` (`notional` \| `time`), `start_time`, `end_time` | Per-fill liquidation feed. |
-| `GET /v1/hyperliquid/markets/liquidations/ohlc` | `coin` | `dex`, `interval`, `start_time`, `end_time` | OHLCV of liquidation notional. |
+| `GET /v1/hyperliquid/markets/liquidations/ohlc` | `coin` | `dex`, `interval`, `start_time`, `end_time` | OHLCV of liquidation notional. Same taker-derived volume semantics as `/markets/ohlc`. |
 
 ### Users
 
@@ -341,10 +343,19 @@ Trading data for the Hyperliquid L1 — core perps, `@N`-indexed spot pairs, and
 | `GET /v1/hyperliquid/vaults` | — | `vault`, `sort_by` (`lifetime_deposits` \| `lifetime_withdrawals` \| `lifetime_distributions` \| `depositor_count` \| `last_activity_at`) | Lifetime flow stats. Vaults predating the indexer cutover have null `leader` / `created_at`. |
 | `GET /v1/hyperliquid/vaults/depositors` | `vault` | `sort_by` (`deposits` \| `withdrawals` \| `distributions_received` \| `last_activity_at`) | Per-depositor stake in a vault. |
 
+### Outcomes (HIP-4 prediction markets)
+
+| Endpoint | Required | Optional | Notes |
+|----------|----------|----------|-------|
+| `GET /v1/hyperliquid/outcomes` | — | `outcome_id`, `question_id`, `status` (`live` \| `settled` \| `all`, default `live`), `quote_token`, `sort_by` (`volume_24h` \| `last_trade` \| `outcome_id`) | Outcome listing with 24h trading rollup. Each row carries `sides[]` (the two side coins), `question` (or `null` for binary single-outcome markets), `price_yes`, `volume_24h`, `trades_24h`, `last_trade`. |
+| `GET /v1/hyperliquid/outcomes/ohlc` | `coin` (`#N`) | `interval`, `start_time`, `end_time` | Per-leg OHLCV. Same taker-derived volume semantics as `/markets/ohlc` minus the perp-only `open_long_volume`/`close_long_volume` fields. |
+| `GET /v1/hyperliquid/outcomes/trades` | One of: `coin`, `outcome_id`, `question_id`, `user` | The other identifiers, `start_time`, `end_time` | Fill stream over `outcome_fills` joined to outcome metadata. Surfaces all seven directions: `BUY`, `SELL`, `SETTLEMENT`, `SPLIT_OUTCOME`, `MERGE_OUTCOME`, `MERGE_QUESTION`, `NEGATE_OUTCOME`. Defaults to last 24h. |
+| `GET /v1/hyperliquid/outcomes/users` | `user` | `outcome_id`, `question_id`, `interval` (`1h` \| `1d` \| `1w` \| `30d`) | Per-outcome trading aggregates for a single user, with Yes+No side legs collapsed into one row per outcome. Refreshed hourly. |
+
 ### Platform
 
 | Endpoint | Required | Optional |
 |----------|----------|----------|
 | `GET /v1/hyperliquid/platform` | — | `interval`, `start_time`, `end_time` |
 
-Cross-coin, cross-DEX time-series of volume, fees, trade counts, and a liquidation slice.
+Cross-coin, cross-DEX time-series of volume (taker-derived `buy_volume` / `sell_volume`), fees, trade counts (true match count), and a liquidation slice.

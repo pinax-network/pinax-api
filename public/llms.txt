@@ -30,4 +30,4 @@ No authentication required, no usage charge.
 - [TVM DEXes](https://api.pinax.network/v1/tvm/dexes): Supported TVM DEX protocols by network.
 - [Polymarket markets](https://api.pinax.network/v1/polymarket/markets): Public prediction market discovery.
 - [Hyperliquid DEXes](https://api.pinax.network/v1/hyperliquid/dexes): Hyperliquid core perps, spot, and builder-deployed DEXes.
-- [Hyperliquid markets](https://api.pinax.network/v1/hyperliquid/markets): Public perp exchange market discovery.
+- [Hyperliquid markets](https://api.pinax.network/v1/hyperliquid/markets): Public market discovery across Hyperliquid core perps, spot, and builder-deployed DEXes.
