@@ -1050,7 +1050,7 @@ export const hyperliquidOutcomeCoinSchema = z.coerce
     .meta({
         type: 'string',
         description:
-            'Outcome coin identifier in HIP-4 encoding: `#<outcome_id*10 + side_index>`. Side index is 0 or 1 indexing into `state_outcome_meta.side_specs`. Use `/v1/hyperliquid/outcomes` to discover outcomes and their side coins.',
+            'Outcome coin (`#<outcome_id*10 + side_index>`). Side index = 0 or 1. Discover via `/v1/hyperliquid/outcomes`.',
         example: '#1720',
     });
 
