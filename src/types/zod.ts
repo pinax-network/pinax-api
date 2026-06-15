@@ -935,22 +935,22 @@ export const userLookbackIntervalSchema = z
 
 // ── Hyperliquid Schemas ──
 
-// `dex` values returned by the substreams `dex_from_coin(coin)` UDF.
-// `perps` = unprefixed core perps (BTC, ETH, HYPE, ...). `spot` = `@N`-indexed
-// spot pairs. Named DEXs are builder-deployed perp venues with permissionless
-// onboarding — represented as an open lowercase-alphanumeric string so new
-// builder DEXs work without a release. Discovery is via `/v1/hyperliquid/dexes`.
-const knownHyperliquidDexes = ['perps', 'spot', 'xyz', 'cash', 'km', 'hyna', 'flx', 'vntl', 'para'] as const;
-export const hyperliquidDexIdSchema = z.coerce
-    .string()
-    .min(1)
-    .refine((val) => /^[a-z0-9]+$/.test(val), 'Invalid DEX id (lowercase alphanumeric only)')
-    .meta({
-        type: 'string',
-        description:
-            'DEX identifier. `perps` for core perps, `spot` for `@N` spot pairs, or a builder DEX name (`xyz`, `cash`, …). Call `/v1/hyperliquid/dexes` for the live set.',
-        examples: knownHyperliquidDexes,
-    });
+// `dex` values exposed on the perps/spot/builder endpoints. `perps` =
+// unprefixed core perps (BTC, ETH, HYPE, …). `spot` = `@N`-indexed spot pairs.
+// Named DEXs are builder-deployed perp venues; the live set is rarely changing
+// (~9 since launch) so a strict enum drives OpenAPI + SDK autocomplete and
+// catches typos. Outcome markets (`#N` coins) are deliberately NOT a valid
+// `dex` value here — they go through the dedicated `/v1/hyperliquid/outcomes/*`
+// family. Call `/v1/hyperliquid/dexes` for the live set; bump this enum when
+// a new builder DEX lands.
+const hyperliquidDexValues = ['perps', 'spot', 'xyz', 'cash', 'km', 'hyna', 'flx', 'vntl', 'para'] as const;
+export const hyperliquidDexIdSchema = z.enum(hyperliquidDexValues).meta({
+    type: 'string',
+    enum: hyperliquidDexValues,
+    description:
+        'DEX identifier. `perps` for core perps, `spot` for `@N` spot pairs, or a builder DEX name (`xyz`, `cash`, …). Outcome markets are served separately under `/v1/hyperliquid/outcomes/*`.',
+    examples: hyperliquidDexValues,
+});
 
 const hyperliquidLiquidationSortFields = ['notional', 'time'] as const;
 export const hyperliquidLiquidationSortBySchema = z.enum(hyperliquidLiquidationSortFields).meta({
@@ -1026,13 +1026,68 @@ export const hyperliquidTokenSchema = z.coerce
         examples: ['HYPE', 'USDC', 'BTC'],
     });
 
+// Coin identifier for the perps/spot/builder endpoint family. Outcome coins
+// (`#N`) are rejected — they go through `/v1/hyperliquid/outcomes/*` instead.
 export const hyperliquidCoinSchema = z.coerce
     .string()
     .min(1)
     .refine((val) => !/[,\s]/.test(val), 'Invalid coin identifier (no commas or whitespace)')
+    .refine((val) => !val.startsWith('#'), 'Outcome coins (`#N`) are served by `/v1/hyperliquid/outcomes/*`')
     .meta({
         type: 'string',
         description:
-            'Hyperliquid coin identifier. Core perps have no prefix (`BTC`, `HYPE`); spot pairs use `@N` (`@107`); builder DEXs prefix the symbol with the DEX name (`xyz:SILVER`).',
+            'Hyperliquid coin id. Perps: `BTC`. Spot: `@N` (`@107`). Builder DEXs: `xyz:SILVER`. Outcome coins (`#N`) are rejected — use `/v1/hyperliquid/outcomes/*`.',
         example: 'BTC',
     });
+
+// Outcome coin identifier (`#<outcome_id*10 + side_index>`) for the
+// `/v1/hyperliquid/outcomes/*` family. Two coins per outcome — one per side
+// (Yes/No or custom labels per `state_outcome_meta.side_specs`).
+export const hyperliquidOutcomeCoinSchema = z.coerce
+    .string()
+    .min(2)
+    .refine(
+        (val) => /^#\d+[01]$/.test(val),
+        'Invalid outcome coin (must match `#<outcome_id*10 + side_index>` with side_index in {0,1})'
+    )
+    .meta({
+        type: 'string',
+        description:
+            'Outcome coin (`#<outcome_id*10 + side_index>`). Side index = 0 or 1. Discover via `/v1/hyperliquid/outcomes`.',
+        example: '#1720',
+    });
+
+// Outcome id (UInt64) for filtering across outcomes' two side coins. Accepted
+// as a numeric string so it round-trips through the ClickHouse `Array(UInt64)`
+// parameter type without losing precision on large values.
+export const hyperliquidOutcomeIdSchema = z.coerce
+    .string()
+    .regex(/^\d+$/, 'Outcome id must be a non-negative integer')
+    .meta({
+        type: 'string',
+        format: 'uint64',
+        description: 'HIP-4 outcome id (UInt64). One outcome has two side coins, `#<id*10>` and `#<id*10+1>`.',
+        example: '172',
+    });
+
+// Question id (UInt64) for filtering to a multi-outcome question's siblings.
+export const hyperliquidQuestionIdSchema = z.coerce
+    .string()
+    .regex(/^\d+$/, 'Question id must be a non-negative integer')
+    .meta({
+        type: 'string',
+        format: 'uint64',
+        description:
+            'HIP-4 question id (UInt64). Groups multi-outcome questions (e.g. World Cup). Binary single-outcome markets have no question id.',
+        example: '32',
+    });
+
+// Outcome status filter for `/v1/hyperliquid/outcomes`.
+const hyperliquidOutcomeStatusValues = ['live', 'settled', 'all'] as const;
+export const hyperliquidOutcomeStatusSchema = z.enum(hyperliquidOutcomeStatusValues).meta({
+    type: 'string',
+    enum: hyperliquidOutcomeStatusValues,
+    default: 'live',
+    description:
+        '`live` (still trading) or `settled` (resolution captured via `settledOutcome` probe). `all` returns both.',
+});
