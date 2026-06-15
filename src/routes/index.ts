@@ -44,6 +44,7 @@ import hyperliquidMarketsLiquidationsOhlc from './hyperliquid/markets_liquidatio
 import hyperliquidMarketsOhlc from './hyperliquid/markets_ohlc.js';
 import hyperliquidMarketsOi from './hyperliquid/markets_oi.js';
 import hyperliquidOutcomes from './hyperliquid/outcomes.js';
+import hyperliquidOutcomesOhlc from './hyperliquid/outcomes_ohlc.js';
 import hyperliquidPlatform from './hyperliquid/platform.js';
 import hyperliquidUsers from './hyperliquid/users.js';
 import hyperliquidUsersActivity from './hyperliquid/users_activity.js';
@@ -189,6 +190,7 @@ router.route('/v1/hyperliquid/markets/activity', hyperliquidMarketsActivity);
 router.route('/v1/hyperliquid/markets/liquidations', hyperliquidMarketsLiquidations);
 router.route('/v1/hyperliquid/markets/liquidations/ohlc', hyperliquidMarketsLiquidationsOhlc);
 router.route('/v1/hyperliquid/outcomes', hyperliquidOutcomes);
+router.route('/v1/hyperliquid/outcomes/ohlc', hyperliquidOutcomesOhlc);
 router.route('/v1/hyperliquid/users', hyperliquidUsers);
 router.route('/v1/hyperliquid/users/positions', hyperliquidUsersPositions);
 router.route('/v1/hyperliquid/users/activity', hyperliquidUsersActivity);
