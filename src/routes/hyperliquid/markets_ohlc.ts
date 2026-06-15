@@ -46,8 +46,6 @@ const responseSchema = apiUsageResponseSchema.extend({
             open_short_volume: z.number(),
             close_short_volume: z.number(),
             transactions: z.number().int(),
-            buys: z.number().int(),
-            sells: z.number().int(),
             unique_users: z.number().int(),
             total_fees: z.number(),
         })
@@ -90,8 +88,6 @@ const openapi = describeRoute(
                                             open_short_volume: 13640171.56,
                                             close_short_volume: 5181222.62,
                                             transactions: 5544,
-                                            buys: 2170,
-                                            sells: 3374,
                                             unique_users: 1183,
                                             total_fees: 111.23,
                                         },

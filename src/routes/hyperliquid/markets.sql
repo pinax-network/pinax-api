@@ -2,12 +2,12 @@ WITH
     day_cur AS (
         SELECT
             coin,
-            dex_from_coin(coin)                         AS dex,
-            argMaxMerge(close)                          AS price,
-            sum(side_buy_volume + side_ask_volume)      AS volume_24h,
-            sum(side_ask_volume)                        AS buy_volume_24h,
-            sum(side_buy_volume)                        AS sell_volume_24h,
-            sum(transactions)                           AS trades_24h
+            dex_from_coin(coin)                                AS dex,
+            argMaxMerge(close)                                 AS price,
+            sum(side_buy_volume)                               AS volume_24h,
+            sum(taker_buy_volume)                              AS buy_volume_24h,
+            sum(taker_sell_volume)                             AS sell_volume_24h,
+            sum(transactions)                                  AS trades_24h
         FROM {db_hypercore:Identifier}.state_ohlcv_fills
         WHERE interval_min = 60
           AND timestamp >= now() - INTERVAL 24 HOUR
