@@ -1046,7 +1046,10 @@ export const hyperliquidCoinSchema = z.coerce
 export const hyperliquidOutcomeCoinSchema = z.coerce
     .string()
     .min(2)
-    .refine((val) => /^#\d+$/.test(val), 'Invalid outcome coin (must match `#<integer>`)')
+    .refine(
+        (val) => /^#\d+[01]$/.test(val),
+        'Invalid outcome coin (must match `#<outcome_id*10 + side_index>` with side_index in {0,1})'
+    )
     .meta({
         type: 'string',
         description:
@@ -1061,7 +1064,8 @@ export const hyperliquidOutcomeIdSchema = z.coerce
     .string()
     .regex(/^\d+$/, 'Outcome id must be a non-negative integer')
     .meta({
-        type: 'integer',
+        type: 'string',
+        format: 'uint64',
         description: 'HIP-4 outcome id (UInt64). One outcome has two side coins, `#<id*10>` and `#<id*10+1>`.',
         example: '172',
     });
@@ -1071,7 +1075,8 @@ export const hyperliquidQuestionIdSchema = z.coerce
     .string()
     .regex(/^\d+$/, 'Question id must be a non-negative integer')
     .meta({
-        type: 'integer',
+        type: 'string',
+        format: 'uint64',
         description:
             'HIP-4 question id (UInt64). Groups multi-outcome questions (e.g. World Cup). Binary single-outcome markets have no question id.',
         example: '32',

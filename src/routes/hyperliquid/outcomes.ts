@@ -117,7 +117,8 @@ const openapi = describeRoute(
                                             question: {
                                                 question_id: 32,
                                                 name: '2026 World Cup Champion',
-                                                description: 'Each associated outcome corresponds to a team confirmed to be participating ...',
+                                                description:
+                                                    'Each associated outcome corresponds to a team confirmed to be participating ...',
                                                 fallback_outcome_id: 171,
                                                 named_outcome_ids: [172, 173, 174],
                                                 settled_outcome_ids: [],

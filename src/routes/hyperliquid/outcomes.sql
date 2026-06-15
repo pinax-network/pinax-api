@@ -41,6 +41,7 @@ WITH
         SELECT question_id, name, description, fallback_outcome_id,
                named_outcome_ids, settled_outcome_ids
         FROM {db_hypercore:Identifier}.state_question_meta FINAL
+        WHERE question_id IN (SELECT question_id FROM meta WHERE question_id IS NOT NULL)
     )
 SELECT
     m.outcome_id                                                          AS outcome_id,
