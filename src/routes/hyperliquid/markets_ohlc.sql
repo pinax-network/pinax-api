@@ -36,8 +36,6 @@ SELECT
     candles.open_short_volume                                      AS open_short_volume,
     candles.close_short_volume                                     AS close_short_volume,
     candles.transactions                                           AS transactions,
-    candles.buys                                                   AS buys,
-    candles.sells                                                  AS sells,
     candles.unique_users                                           AS unique_users,
     candles.total_fees                                             AS total_fees
 FROM (
@@ -50,17 +48,15 @@ FROM (
         quantilesDeterministicMerge(0.05, 0.95)(t.quantile)[2]     AS high_quantile,
         quantilesDeterministicMerge(0.05, 0.95)(t.quantile)[1]     AS low_quantile,
         argMaxMerge(t.close)                                       AS close,
-        sum(t.side_ask_volume)                                     AS buy_volume,
-        sum(t.side_buy_volume)                                     AS sell_volume,
-        sum(t.side_buy_volume) + sum(t.side_ask_volume)            AS gross_volume,
-        sum(t.side_ask_volume) - sum(t.side_buy_volume)            AS net_volume,
+        sum(t.taker_buy_volume)                                    AS buy_volume,
+        sum(t.taker_sell_volume)                                   AS sell_volume,
+        sum(t.taker_buy_volume) + sum(t.taker_sell_volume)         AS gross_volume,
+        sum(t.taker_buy_volume) - sum(t.taker_sell_volume)         AS net_volume,
         sum(t.open_long_volume)                                    AS open_long_volume,
         sum(t.close_long_volume)                                   AS close_long_volume,
         sum(t.open_short_volume)                                   AS open_short_volume,
         sum(t.close_short_volume)                                  AS close_short_volume,
         sum(t.transactions)                                        AS transactions,
-        sum(t.buy_count)                                           AS buys,
-        sum(t.sell_count)                                          AS sells,
         coalesce(any(u.uniq_user), 0)                              AS unique_users,
         sum(t.total_fees)                                          AS total_fees
     FROM {db_hypercore:Identifier}.state_ohlcv_fills AS t

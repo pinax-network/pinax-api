@@ -13,14 +13,12 @@ WITH
     sums AS (
         SELECT
             timestamp,
-            sum(side_buy_volume + side_ask_volume)            AS volume,
-            sum(side_ask_volume)                              AS buy_volume,
-            sum(side_buy_volume)                              AS sell_volume,
+            sum(total_volume)                                 AS volume,
+            sum(taker_buy_volume)                             AS buy_volume,
+            sum(taker_sell_volume)                            AS sell_volume,
             sum(transactions)                                 AS transactions,
-            sum(buys)                                         AS buys,
-            sum(sells)                                        AS sells,
             sum(total_fees)                                   AS total_fees,
-            sum(liq_side_buy_volume + liq_side_ask_volume)    AS liquidations_volume,
+            sum(liq_total_volume)                             AS liquidations_volume,
             sum(liq_transactions)                             AS liquidations_count
         FROM {db_hypercore:Identifier}.state_platform
         WHERE interval_min = {interval:UInt32}
@@ -48,8 +46,6 @@ SELECT
     sums.buy_volume                                     AS buy_volume,
     sums.sell_volume                                    AS sell_volume,
     sums.transactions                                   AS transactions,
-    sums.buys                                           AS buys,
-    sums.sells                                          AS sells,
     coalesce(active.active_coins, 0)                    AS active_coins,
     sums.total_fees                                     AS total_fees,
     sums.liquidations_volume                            AS liquidations_volume,
