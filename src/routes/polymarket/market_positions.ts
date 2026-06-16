@@ -56,7 +56,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Market Positions',
         description:
-            "Returns all user positions for a specific outcome token — a leaderboard view. Each row is one user's cumulative position: cost basis, PNL, shares held, and current value.\n\nFor a user's portfolio across all markets, use `/v1/polymarket/positions` instead.",
+            "Returns all user positions for a specific outcome token, as a leaderboard view. Each row is one user's cumulative position: cost basis, PNL, shares held, and current value.\n\nFor a user's portfolio across all markets, use `/v1/polymarket/positions` instead.",
         tags: ['Polymarket Markets'],
         security: [{ bearerAuth: [] }],
         responses: {

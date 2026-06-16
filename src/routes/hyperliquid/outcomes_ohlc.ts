@@ -51,7 +51,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Outcome OHLCV',
         description:
-            'Returns OHLCV candles for a single outcome leg (one Yes/No side) over the requested interval. Trade-side (`buy_volume`/`sell_volume`) carries the directional split — `buy_volume` counts taker buys of this leg, `sell_volume` counts taker sells. Composition events (SPLIT_OUTCOME, MERGE_OUTCOME, MERGE_QUESTION, NEGATE_OUTCOME) and SETTLEMENT payouts are excluded from candles by design — query them via `/v1/hyperliquid/outcomes/trades` for the raw stream.\n\n`total_fees` is currently always zero on outcomes — HL does not charge per-trade fees on HIP-4 markets. Field retained for forward-compat.',
+            'Returns OHLCV candles for a single outcome leg (one Yes/No side) over the requested interval. Trade-side fields (`buy_volume`, `sell_volume`) carry the directional split: `buy_volume` counts taker buys of this leg, `sell_volume` counts taker sells. Composition events (SPLIT_OUTCOME, MERGE_OUTCOME, MERGE_QUESTION, NEGATE_OUTCOME) and SETTLEMENT payouts are excluded from candles by design; query them via `/v1/hyperliquid/outcomes/trades` for the raw stream.\n\n`total_fees` is currently always zero on outcomes since Hyperliquid does not charge per-trade fees on HIP-4 markets. Field retained for forward compatibility.',
         tags: ['Hyperliquid Outcomes'],
         security: [{ bearerAuth: [] }],
         responses: {

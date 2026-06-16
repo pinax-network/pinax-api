@@ -52,7 +52,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Market Open Interest',
         description:
-            'Returns the historical open-interest and funding-rate time series for a coin at the requested interval. `open_interest` is the sum of absolute signed position sizes across all users at each funding snapshot.\n\nEach row also exposes the directional positioning split (`long_size`, `short_size`, `net_position`, plus `long_positions` and `short_positions` as user counts) and funding aggregates (`funding_rate`, `total_funding`, `positive_funding`, `negative_funding`) — useful for detecting crowded sides, funding pressure, and position flushes.',
+            'Returns the historical open-interest and funding-rate time series for a coin at the requested interval. `open_interest` is the sum of absolute signed position sizes across all users at each funding snapshot.\n\nEach row also exposes the directional positioning split (`long_size`, `short_size`, `net_position`, plus `long_positions` and `short_positions` as user counts) and funding aggregates (`funding_rate`, `total_funding`, `positive_funding`, `negative_funding`), useful for detecting crowded sides, funding pressure, and position flushes.',
         tags: ['Hyperliquid Markets'],
         security: [{ bearerAuth: [] }],
         responses: {

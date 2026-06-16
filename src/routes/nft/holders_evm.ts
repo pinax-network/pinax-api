@@ -39,8 +39,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'NFT Holders',
-        description:
-            'Returns wallet addresses holding NFT collection tokens with quantity and percentage distribution.',
+        description: 'Returns wallet addresses holding NFTs from a collection, with quantity and distribution share.',
         tags: ['EVM NFTs'],
         security: [{ bearerAuth: [] }],
         responses: {

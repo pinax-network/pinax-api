@@ -53,7 +53,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Market Open Interest',
         description:
-            'Returns open interest time-series for a market. Open interest is the USDC collateral locked into conditional token positions — it increases on splits (deposit USDC to mint Yes+No pairs) and decreases on merges (return pairs to withdraw USDC) or redemptions.\n\nProvide **one** of `condition_id` or `market_slug`.',
+            'Returns the open-interest time series for a market. Open interest is the USDC collateral locked into conditional token positions. It increases on splits (deposit USDC to mint Yes+No pairs) and decreases on merges (return pairs to withdraw USDC) or redemptions.\n\nProvide exactly one of `condition_id` or `market_slug`.',
         tags: ['Polymarket Markets'],
         security: [{ bearerAuth: [] }],
         responses: {

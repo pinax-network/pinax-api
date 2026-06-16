@@ -56,7 +56,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Market Activity',
         description:
-            'Returns a chronological feed of on-chain trades, position splits, merges, and redemptions. Each row includes the transaction hash, block number, and scaled amounts.\n\nFor trades, `market.token_id` and `market.outcome_label` identify the specific outcome token. For splits, merges, and redemptions, these are null because the operation applies to the market as a whole.\n\nAt least one of `user`, `token_id`, or `condition_id` is required. Defaults to the last 24 hours when no time range is specified — provide `start_time` and `end_time` to query older data.',
+            'Returns a chronological feed of on-chain trades, position splits, merges, and redemptions. Each row includes the transaction hash, block number, and scaled amounts.\n\nFor trades, `market.token_id` and `market.outcome_label` identify the specific outcome token. For splits, merges, and redemptions, these are null because the operation applies to the market as a whole.\n\nAt least one of `user`, `token_id`, or `condition_id` is required. Defaults to the last 24 hours when no time range is specified. Pass `start_time` and `end_time` to query older data.',
         tags: ['Polymarket Markets'],
         security: [{ bearerAuth: [] }],
         responses: {

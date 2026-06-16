@@ -60,7 +60,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Supported Networks',
         description:
-            'Returns supported blockchain networks with identifiers, metadata, and indexed block information per database category.',
+            'Returns supported blockchain networks with identifiers, metadata, and per-category indexing freshness.',
         tags: ['Monitoring'],
         responses: {
             200: {

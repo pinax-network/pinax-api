@@ -52,8 +52,8 @@ const responseSchema = apiUsageResponseSchema.extend({
 
 const openapi = describeRoute(
     withErrorResponses({
-        summary: 'NFT Ownerships by Address',
-        description: 'Returns NFT tokens owned by a wallet address with metadata and ownership information.',
+        summary: 'NFT Ownerships',
+        description: 'Returns NFTs owned by a wallet address, with metadata and ownership context.',
         tags: ['EVM NFTs'],
         security: [{ bearerAuth: [] }],
         responses: {

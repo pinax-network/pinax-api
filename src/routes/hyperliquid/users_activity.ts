@@ -44,7 +44,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'User Activity',
         description:
-            'Returns a chronological feed of balance-changing events for a user — bridge deposits/withdrawals, on-chain account deposits/withdrawals, vault deposits/withdrawals, liquidations, and funding payments. Each row carries an `event_type` discriminator and a `notes` field with type-specific extras (e.g. funding rate and position size for funding events).\n\nFor trade fills, use `/v1/hyperliquid/markets/activity` instead.\n\nSupply `event_types` (comma-separated) to filter to a subset. Defaults to the last 30 days when no time range is specified — provide `start_time` and `end_time` to query older data.',
+            'Returns a chronological feed of balance-changing events for a user: bridge deposits and withdrawals, on-chain account deposits and withdrawals, vault deposits and withdrawals, liquidations, and funding payments. Each row carries an `event_type` discriminator and a `notes` field with type-specific extras (e.g. funding rate and position size for funding events).\n\nFor trade fills, use `/v1/hyperliquid/markets/activity` instead.\n\nSupply `event_types` (comma-separated) to filter to a subset. Defaults to the last 30 days when no time range is specified. Pass `start_time` and `end_time` to query older data.',
         tags: ['Hyperliquid Users'],
         security: [{ bearerAuth: [] }],
         responses: {

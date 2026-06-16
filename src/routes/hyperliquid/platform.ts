@@ -43,7 +43,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Platform Activity',
         description:
-            'Returns a platform-wide time series aggregating all coins and DEXs into one row per `timestamp`. Each row carries trade volume (split by side), trade and counterparty counts, distinct active coins, total fees, and a liquidation slice (`liquidations_volume`, `liquidations_count`, `unique_liquidated_users`).\n\nUse this endpoint instead of summing per-coin or per-DEX data client-side when you need cross-market totals. Per-coin OHLCV lives on `/v1/hyperliquid/markets/ohlc`; per-DEX on `/v1/hyperliquid/dexes`.',
+            'Returns a platform-wide time series aggregating all coins and DEXs into one row per `timestamp`. Each row carries total trade volume (`volume`) and its taker-buy / taker-sell split, transaction count, distinct active coins, total fees, and a liquidation slice (`liquidations_volume`, `liquidations_count`, `unique_liquidated_users`).\n\nUse this endpoint instead of summing per-coin or per-DEX data client-side when you need cross-market totals. Per-coin OHLCV lives on `/v1/hyperliquid/markets/ohlc`; per-DEX on `/v1/hyperliquid/dexes`.',
         tags: ['Hyperliquid Platform'],
         security: [{ bearerAuth: [] }],
         responses: {

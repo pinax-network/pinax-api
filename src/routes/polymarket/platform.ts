@@ -51,7 +51,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Platform Aggregates',
         description:
-            'Returns platform-wide time-series combining trading volume, open interest, and fee aggregates across all Polymarket markets.',
+            'Returns a platform-wide time series combining trading volume, open interest, and fee aggregates across all Polymarket markets.',
         tags: ['Polymarket Platform'],
         security: [{ bearerAuth: [] }],
         responses: {

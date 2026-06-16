@@ -55,7 +55,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Token Metadata',
-        description: 'Provides SVM token contract metadata.',
+        description: 'Returns SPL token metadata including supply, mint authority, and holder count.',
         tags: ['SVM Tokens'],
         security: [{ bearerAuth: [] }],
         responses: {

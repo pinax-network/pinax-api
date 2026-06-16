@@ -50,7 +50,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Market Lookup',
         description:
-            'Returns the latest snapshot per market: last trade price, 24h change versus the prior-day close, 24h volume (split by side), trade and unique-user counts, and the most recent open interest and funding rate observed at the last funding snapshot.\n\nFilters compose additively — pass `coin`, `dex`, `base_token`, and/or `quote_token` to narrow the scope. A mismatched combination (e.g. `coin=cash:TSLA&dex=xyz`) returns empty. Omit all for a full listing sorted by 24h volume.\n\n`base_token` and `quote_token` are discovery filters across spot and perp markets: `?base_token=HYPE` returns every market with HYPE on the base side. Use the `coin` from the result as the identifier on the rest of the `/v1/hyperliquid/*` endpoints.',
+            'Returns the latest snapshot per market: last trade price, 24h change versus the prior-day close, 24h volume (split by side), trade and unique-user counts, and the most recent open interest and funding rate observed at the last funding snapshot.\n\nFilters compose additively. Pass `coin`, `dex`, `base_token`, and/or `quote_token` to narrow the scope. A mismatched combination (e.g. `coin=cash:TSLA&dex=xyz`) returns empty. Omit all for a full listing sorted by 24h volume.\n\n`base_token` and `quote_token` are discovery filters across spot and perp markets: `?base_token=HYPE` returns every market with HYPE on the base side. Use the `coin` from the result as the identifier on the rest of the `/v1/hyperliquid/*` endpoints.',
         tags: ['Hyperliquid Markets'],
         security: [],
         responses: {

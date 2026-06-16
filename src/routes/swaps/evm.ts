@@ -124,7 +124,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Swap Events',
-        description: 'Returns DEX swaps events with input & output token amounts.',
+        description: 'Returns DEX swap events with input and output token amounts.',
         tags: ['EVM DEXs'],
         security: [{ bearerAuth: [] }],
         responses: {

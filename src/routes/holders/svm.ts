@@ -59,7 +59,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Token Holders',
-        description: 'Returns top token holders ranked by balance.',
+        description: 'Returns the top holders of an SPL token, ranked by balance.',
 
         tags: ['SVM Tokens'],
         security: [{ bearerAuth: [] }],

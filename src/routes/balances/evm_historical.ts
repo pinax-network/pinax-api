@@ -57,7 +57,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Historical Token Balances',
         description:
-            'Returns wallet ERC-20 token balance changes over time in OHLCV format.\n\nOHLCV historical depth is subject to plan restrictions.',
+            'Returns wallet ERC-20 token balance changes over time in OHLCV format.\n\nHistorical depth is subject to plan restrictions.',
         tags: ['EVM Tokens (ERC-20)'],
         security: [{ bearerAuth: [] }],
         responses: {

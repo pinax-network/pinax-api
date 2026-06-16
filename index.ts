@@ -37,7 +37,7 @@ const markdownResponse = (path: string) =>
 const skillsMarkdownOpenapi = describeRoute({
     operationId: 'getSkillsMarkdown',
     summary: 'Pinax API Skill',
-    description: 'Returns the public Markdown reference for AI agents integrating with Pinax API.',
+    description: 'Returns the Markdown reference for AI agents integrating with Pinax API.',
     tags: ['Documentation'],
     security: [],
     responses: {
@@ -67,7 +67,7 @@ description: Query Pinax API datasets including Token API, prediction markets, a
 const llmsTextOpenapi = describeRoute({
     operationId: 'getLlmsText',
     summary: 'LLM Documentation Index',
-    description: 'Returns the public llms.txt documentation index for AI tools discovering Pinax API.',
+    description: 'Returns the llms.txt documentation index for AI tools discovering Pinax API.',
     tags: ['Documentation'],
     security: [],
     responses: {
@@ -92,7 +92,7 @@ const llmsTextOpenapi = describeRoute({
 const openapiSpecOpenapi = describeRoute({
     operationId: 'getOpenapiSpec',
     summary: 'OpenAPI Specification',
-    description: 'Returns the public OpenAPI specification for Pinax API.',
+    description: 'Returns the OpenAPI specification for Pinax API.',
     tags: ['Documentation'],
     security: [],
     responses: {
@@ -121,7 +121,7 @@ const x402DiscoveryOpenapi = describeRoute({
     operationId: 'getX402Discovery',
     summary: 'x402 Discovery',
     description:
-        'Returns the public x402 discovery document. Payment enforcement, verification, settlement, and metering are handled by the proxy layer.',
+        'Returns the x402 discovery document. Payment enforcement, verification, settlement, and metering are handled by the proxy layer.',
     tags: ['Documentation'],
     security: [],
     responses: {
@@ -196,6 +196,7 @@ app.get(
                 { name: 'Polymarket Users' },
                 // Hyperliquid
                 { name: 'Hyperliquid Markets' },
+                { name: 'Hyperliquid Outcomes' },
                 { name: 'Hyperliquid Users' },
                 { name: 'Hyperliquid Vaults' },
                 { name: 'Hyperliquid Platform' },

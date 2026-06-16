@@ -60,7 +60,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Market OHLCV',
         description:
-            'Returns OHLCV price data for a single outcome token. Each market has two outcome tokens (e.g. Yes and No) — use `/v1/polymarket/markets` to discover them.\n\nPrices are in USD per share (0 to 1). Volume and fees are in USDC.',
+            'Returns OHLCV price candles for a single outcome token. Each market has two outcome tokens (e.g. Yes and No); use `/v1/polymarket/markets` to discover them.\n\nPrices are in USD per share (0 to 1). Volume and fees are in USDC.',
         tags: ['Polymarket Markets'],
         security: [{ bearerAuth: [] }],
         responses: {

@@ -49,7 +49,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Pool OHLCV',
         description:
-            'Returns OHLCV price data for liquidity pools.\n\nOHLCV historical depth is subject to plan restrictions.',
+            'Returns OHLCV price candles for DEX liquidity pools.\n\nHistorical depth is subject to plan restrictions.',
         tags: ['TVM DEXs'],
         security: [{ bearerAuth: [] }],
         responses: {

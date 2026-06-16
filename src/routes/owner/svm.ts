@@ -46,8 +46,8 @@ const responseSchema = apiUsageResponseSchema.extend({
 
 const openapi = describeRoute(
     withErrorResponses({
-        summary: 'Account Owner Lookup',
-        description: 'Returns owner address of an associated token account (ATA) with closure status.',
+        summary: 'ATA Owner Lookup',
+        description: 'Returns the owner of an Associated Token Account (ATA), including closure status.',
 
         tags: ['SVM Tokens'],
         security: [{ bearerAuth: [] }],

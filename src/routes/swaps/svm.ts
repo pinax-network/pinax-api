@@ -102,7 +102,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Swap Events',
-        description: 'Returns AMM swap events from Solana DEXs with input/output tokens and amounts.',
+        description: 'Returns Solana DEX swap events with input and output tokens and amounts.',
 
         tags: ['SVM DEXs'],
         security: [{ bearerAuth: [] }],

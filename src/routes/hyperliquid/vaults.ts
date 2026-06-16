@@ -52,7 +52,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Vault Listings',
         description:
-            'Returns vault summaries — leader, lifetime flow totals (deposits, withdrawals, distributions, leader commissions), depositor and event counts, and last-activity timestamp.\n\nVault trading PnL/volume is exposed via `/v1/hyperliquid/users` with the vault address as `user` (vaults trade as normal accounts on Hyperliquid). Per-depositor breakdowns live on `/v1/hyperliquid/vaults/depositors`.\n\nVaults predating our indexer cutover (2026-02-02) have no `ledger_vault_creates` row and come back with `leader`/`created_at` as null and `initial_deposit`/`create_fee` as 0.',
+            'Returns vault summaries: leader, lifetime flow totals (deposits, withdrawals, distributions, leader commissions), depositor and event counts, and last-activity timestamp.\n\nVault trading PnL and volume are exposed via `/v1/hyperliquid/users` with the vault address as `user` (vaults trade as normal accounts on Hyperliquid). Per-depositor breakdowns live on `/v1/hyperliquid/vaults/depositors`.\n\nVaults predating our indexer cutover (2026-02-02) have no `ledger_vault_creates` row and come back with `leader` and `created_at` as null, and `initial_deposit` and `create_fee` as 0.',
         tags: ['Hyperliquid Vaults'],
         security: [{ bearerAuth: [] }],
         responses: {

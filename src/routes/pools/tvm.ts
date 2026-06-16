@@ -79,7 +79,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Liquidity Pools',
-        description: 'Returns DEX pool metadata including tokens, fees and protocol.',
+        description: 'Returns DEX pool metadata including tokens, fees, and protocol.',
         tags: ['TVM DEXs'],
         security: [{ bearerAuth: [] }],
         responses: {

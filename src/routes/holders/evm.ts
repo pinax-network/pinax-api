@@ -59,7 +59,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Token Holders',
-        description: 'Returns top token holders ranked by ERC-20 balance.',
+        description: 'Returns the top holders of an ERC-20 token, ranked by balance.',
 
         tags: ['EVM Tokens (ERC-20)'],
         security: [{ bearerAuth: [] }],

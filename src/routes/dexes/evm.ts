@@ -35,7 +35,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Supported DEXs',
-        description: 'Returns all supported EVM DEXs.',
+        description: 'Returns the catalog of supported EVM DEX protocols.',
 
         tags: ['EVM DEXs'],
         responses: {

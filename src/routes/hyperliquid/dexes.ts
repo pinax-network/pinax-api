@@ -24,7 +24,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Supported DEXs',
         description:
-            'Returns the list of perpetuals DEXs and spot, each with 24h activity stats (volume, trade count, unique users, asset count). Hyperliquid hosts a core perpetuals venue (`dex=perps`) alongside builder-deployed perpetuals DEXs that each list their own asset universe — `xyz` (commodities and macro indices), `cash` (tokenized equities), `km`, and others.\n\nUse this endpoint to discover valid `dex` filter values for venue-scoped queries on `/markets`, `/markets/activity`, `/markets/liquidations`, `/users`, and `/users/positions`.\n\nFor platform-wide totals across all DEXs over arbitrary intervals, use `/v1/hyperliquid/platform`.\n\n**Public — no auth required.**',
+            'Returns the list of perpetuals DEXs and spot, each with 24h activity stats (volume, trade count, unique users, asset count). Hyperliquid hosts a core perpetuals venue (`dex=perps`) alongside builder-deployed perpetuals DEXs that each list their own asset universe: `xyz` (commodities and macro indices), `cash` (tokenized equities), `km`, and others.\n\nUse this endpoint to discover valid `dex` filter values for venue-scoped queries on `/markets`, `/markets/activity`, `/markets/liquidations`, `/users`, and `/users/positions`.\n\nFor platform-wide totals across all DEXs over arbitrary intervals, use `/v1/hyperliquid/platform`.',
         tags: ['Hyperliquid Markets'],
         security: [],
         responses: {

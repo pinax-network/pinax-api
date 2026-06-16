@@ -46,7 +46,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Native Holders',
-        description: 'Returns top token holders ranked by Native balance.',
+        description: 'Returns the top holders of the native token, ranked by balance.',
 
         tags: ['TVM Tokens (Native)'],
         security: [{ bearerAuth: [] }],
