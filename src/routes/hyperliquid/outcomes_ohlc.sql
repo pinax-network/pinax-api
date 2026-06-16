@@ -29,9 +29,9 @@ WITH
 SELECT
     candles.timestamp                                              AS timestamp,
     candles.coin                                                   AS coin,
-    intDiv(toUInt64(splitByChar('#', candles.coin)[2]), 10)        AS outcome_id,
-    toUInt8(toUInt64(splitByChar('#', candles.coin)[2]) % 10)      AS side_index,
-    coalesce(m.side_specs[toUInt8(toUInt64(splitByChar('#', candles.coin)[2]) % 10) + 1], '') AS side_label,
+    candles.outcome_id                                             AS outcome_id,
+    candles.side_index                                             AS side_index,
+    coalesce(m.side_specs[candles.side_index + 1], '')             AS side_label,
     coalesce(m.outcome_name, '')                                   AS outcome_name,
     candles.interval_min                                           AS interval_min,
     candles.open                                                   AS open,
@@ -48,6 +48,8 @@ FROM (
     SELECT
         t.timestamp                                                AS timestamp,
         t.coin                                                     AS coin,
+        intDiv(toUInt64(splitByChar('#', t.coin)[2]), 10)          AS outcome_id,
+        toUInt8(toUInt64(splitByChar('#', t.coin)[2]) % 10)        AS side_index,
         t.interval_min                                             AS interval_min,
         argMinMerge(t.open)                                        AS open,
         quantilesDeterministicMerge(0.05, 0.95)(t.quantile)[2]     AS high_quantile,
@@ -67,5 +69,5 @@ FROM (
     GROUP BY t.interval_min, t.coin, t.timestamp
     SETTINGS optimize_aggregation_in_order = 1
 ) AS candles
-LEFT JOIN meta AS m ON m.outcome_id = intDiv(toUInt64(splitByChar('#', candles.coin)[2]), 10)
+LEFT JOIN meta AS m ON m.outcome_id = candles.outcome_id
 ORDER BY candles.timestamp DESC, candles.coin

@@ -1,4 +1,9 @@
 WITH
+    all_questions AS (
+        SELECT question_id, name, description, fallback_outcome_id,
+               named_outcome_ids, settled_outcome_ids
+        FROM {db_hypercore:Identifier}.state_question_meta FINAL
+    ),
     meta AS (
         SELECT outcome_id, question_id, name, description, side_specs, quote_token,
                status, settle_fraction, settle_details
@@ -8,9 +13,7 @@ WITH
           AND ({status:String} = 'all' OR status = {status:String})
           AND (isNull({quote_token:Nullable(String)}) OR quote_token = {quote_token:Nullable(String)})
           AND ({include_fallback:Bool} OR outcome_id NOT IN (
-              SELECT fallback_outcome_id
-              FROM {db_hypercore:Identifier}.state_question_meta FINAL
-              WHERE fallback_outcome_id IS NOT NULL
+              SELECT fallback_outcome_id FROM all_questions WHERE fallback_outcome_id IS NOT NULL
           ))
     ),
     rollup AS (
@@ -75,9 +78,7 @@ WITH
         GROUP BY coin
     ),
     questions AS (
-        SELECT question_id, name, description, fallback_outcome_id,
-               named_outcome_ids, settled_outcome_ids
-        FROM {db_hypercore:Identifier}.state_question_meta FINAL
+        SELECT * FROM all_questions
         WHERE question_id IN (SELECT question_id FROM meta WHERE question_id IS NOT NULL)
     )
 SELECT
