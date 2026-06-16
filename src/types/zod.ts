@@ -97,7 +97,7 @@ export const dateTimeSchema = z
     .meta({
         type: 'string',
         description:
-            'UTC datetime. Returned in SQL form (`YYYY-MM-DD HH:MM:SS`) for ClickHouse-backed responses; ISO-8601 form (`YYYY-MM-DDTHH:MM:SS.sssZ`) is also accepted on parse.',
+            'Datetime. Returned in SQL form (`YYYY-MM-DD HH:MM:SS`) on ClickHouse-backed responses, in the server timezone (UTC). See `pattern` for accepted input formats.',
         example: '2026-06-16 03:40:59',
     });
 
