@@ -44,7 +44,6 @@ const responseSchema = apiUsageResponseSchema.extend({
             volume_bought: z.number(),
             volume_sold: z.number(),
             total_volume: z.number(),
-            total_fees: z.number(),
             realized_pnl: z.number(),
             first_trade: dateTimeSchema,
             last_trade: dateTimeSchema,
@@ -57,7 +56,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Outcome User Activity',
         description:
-            'Returns trading aggregates per outcome for a given user, with both side legs (Yes/No or custom labels) collapsed into one row per outcome. Includes fill count, buys/sells split, volume bought/sold, realized PnL, and first/last trade times across all seven outcome directions (BUY/SELL/SETTLEMENT/SPLIT_OUTCOME/MERGE_OUTCOME/MERGE_QUESTION/NEGATE_OUTCOME).\n\n`user` is required; `outcome_id` and `question_id` narrow further. Sorted by `total_volume` descending. Backed by `state_user_by_coin` (hourly refresh; `interval=1h` lags up to 1h).\n\n`total_fees` is currently always zero on outcomes since Hyperliquid does not charge per-trade fees on HIP-4 markets.\n\n`question.question_id IS NULL` indicates a binary single-outcome market (no parent question grouping in HL `outcomeMeta`).',
+            'Returns trading aggregates per outcome for a given user, with both side legs (Yes/No or custom labels) collapsed into one row per outcome. Includes fill count, buys/sells split, volume bought/sold, realized PnL, and first/last trade times across all seven outcome directions (BUY/SELL/SETTLEMENT/SPLIT_OUTCOME/MERGE_OUTCOME/MERGE_QUESTION/NEGATE_OUTCOME).\n\n`user` is required; `outcome_id` and `question_id` narrow further. Sorted by `total_volume` descending. Backed by `state_user_by_coin` (hourly refresh; `interval=1h` lags up to 1h).\n\n`question.question_id IS NULL` indicates a binary single-outcome market (no parent question grouping in HL `outcomeMeta`).',
         tags: ['Hyperliquid Outcomes'],
         security: [{ bearerAuth: [] }],
         responses: {
@@ -82,7 +81,6 @@ const openapi = describeRoute(
                                             volume_bought: 62980.97,
                                             volume_sold: 194043.55,
                                             total_volume: 257024.52,
-                                            total_fees: 0,
                                             realized_pnl: 61796.11,
                                             first_trade: '2026-06-12 09:36:14',
                                             last_trade: '2026-06-14 18:15:01',

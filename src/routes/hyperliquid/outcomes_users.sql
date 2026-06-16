@@ -14,7 +14,6 @@ WITH
             volume_bought,
             volume_sold,
             total_volume,
-            total_fees,
             realized_pnl,
             first_trade,
             last_trade
@@ -35,7 +34,6 @@ SELECT
     sum(r.volume_bought)                                     AS volume_bought,
     sum(r.volume_sold)                                       AS volume_sold,
     sum(r.total_volume)                                      AS total_volume,
-    sum(r.total_fees)                                        AS total_fees,
     sum(r.realized_pnl)                                      AS realized_pnl,
     min(r.first_trade)                                       AS first_trade,
     max(r.last_trade)                                        AS last_trade,

@@ -1051,7 +1051,8 @@ export const hyperliquidCoinSchema = z.coerce
 // (Yes/No or custom labels per `state_outcome_meta.side_specs`).
 export const hyperliquidOutcomeCoinSchema = z.coerce
     .string()
-    .min(2)
+    .min(1)
+    .transform((val) => (val.startsWith('#') ? val : `#${val}`))
     .refine(
         (val) => /^#\d+[01]$/.test(val),
         'Invalid outcome coin (must match `#<outcome_id*10 + side_index>` with side_index in {0,1})'
@@ -1059,7 +1060,7 @@ export const hyperliquidOutcomeCoinSchema = z.coerce
     .meta({
         type: 'string',
         description:
-            'Outcome coin (`#<outcome_id*10 + side_index>`). Side index = 0 or 1. Discover via `/v1/hyperliquid/outcomes`.',
+            'Outcome coin (`#<outcome_id*10 + side_index>`). Side index = 0 or 1. Discover via `/v1/hyperliquid/outcomes`. Bare digits are accepted and prefixed with `#` server-side — useful when a browser strips the literal `#` as a URL fragment.',
         example: '#1720',
     });
 
