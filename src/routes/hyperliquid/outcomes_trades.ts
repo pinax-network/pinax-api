@@ -41,7 +41,11 @@ const responseSchema = apiUsageResponseSchema.extend({
             side_label: z.string(),
             outcome_name: z.string(),
             user: z.string(),
-            side: z.string(),
+            side: z
+                .string()
+                .describe(
+                    '`BID` = user bought this leg, `ASK` = user sold this leg. Composition events (`SPLIT_OUTCOME`/`MERGE_OUTCOME`/`MERGE_QUESTION`/`NEGATE_OUTCOME`) emit one row per leg involved; both legs of a SPLIT mint show as `BID`, both legs of a MERGE redeem show as `ASK`.'
+                ),
             direction: z.string(),
             price: z.number(),
             size: z.number(),
