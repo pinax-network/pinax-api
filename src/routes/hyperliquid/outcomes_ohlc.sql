@@ -1,11 +1,4 @@
 WITH
-    coin_parts AS (
-        SELECT
-            {coin:String}                                              AS coin,
-            toUInt64(splitByChar('#', {coin:String})[2])               AS coin_id,
-            intDiv(toUInt64(splitByChar('#', {coin:String})[2]), 10)   AS outcome_id,
-            toUInt8(toUInt64(splitByChar('#', {coin:String})[2]) % 10) AS side_index
-    ),
     bounds AS (
         SELECT
             min(timestamp) AS start_ts,
@@ -13,7 +6,7 @@ WITH
         FROM (
             SELECT timestamp
             FROM {db_hypercore:Identifier}.state_ohlcv_outcomes
-            WHERE coin = {coin:String}
+            WHERE coin IN {coin:Array(String)}
               AND interval_min = {interval:UInt32}
               AND (isNull({start_time:Nullable(UInt64)}) OR timestamp >= toDateTime({start_time:Nullable(UInt64)}))
               AND (isNull({end_time:Nullable(UInt64)})   OR timestamp <  toDateTime({end_time:Nullable(UInt64)}))
@@ -25,17 +18,20 @@ WITH
     meta AS (
         SELECT
             outcome_id,
-            name                                                       AS outcome_name,
+            name AS outcome_name,
             side_specs
         FROM {db_hypercore:Identifier}.state_outcome_meta FINAL
-        WHERE outcome_id = (SELECT outcome_id FROM coin_parts)
+        WHERE outcome_id IN (
+            SELECT intDiv(toUInt64(splitByChar('#', c)[2]), 10)
+            FROM (SELECT arrayJoin({coin:Array(String)}) AS c)
+        )
     )
 SELECT
     candles.timestamp                                              AS timestamp,
     candles.coin                                                   AS coin,
-    (SELECT outcome_id FROM coin_parts)                            AS outcome_id,
-    (SELECT side_index FROM coin_parts)                            AS side_index,
-    coalesce(m.side_specs[(SELECT side_index FROM coin_parts) + 1], '') AS side_label,
+    intDiv(toUInt64(splitByChar('#', candles.coin)[2]), 10)        AS outcome_id,
+    toUInt8(toUInt64(splitByChar('#', candles.coin)[2]) % 10)      AS side_index,
+    coalesce(m.side_specs[toUInt8(toUInt64(splitByChar('#', candles.coin)[2]) % 10) + 1], '') AS side_label,
     coalesce(m.outcome_name, '')                                   AS outcome_name,
     candles.interval_min                                           AS interval_min,
     candles.open                                                   AS open,
@@ -64,12 +60,12 @@ FROM (
         sum(t.transactions)                                        AS transactions,
         sum(t.total_fees)                                          AS total_fees
     FROM {db_hypercore:Identifier}.state_ohlcv_outcomes AS t
-    WHERE t.coin = {coin:String}
+    WHERE t.coin IN {coin:Array(String)}
       AND t.interval_min = {interval:UInt32}
       AND t.timestamp >= (SELECT start_ts FROM bounds)
       AND t.timestamp <= (SELECT end_ts FROM bounds)
     GROUP BY t.interval_min, t.coin, t.timestamp
     SETTINGS optimize_aggregation_in_order = 1
 ) AS candles
-LEFT JOIN meta AS m ON 1 = 1
-ORDER BY candles.timestamp DESC
+LEFT JOIN meta AS m ON m.outcome_id = intDiv(toUInt64(splitByChar('#', candles.coin)[2]), 10)
+ORDER BY candles.timestamp DESC, candles.coin
