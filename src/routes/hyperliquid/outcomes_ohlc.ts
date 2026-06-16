@@ -54,7 +54,6 @@ const responseSchema = apiUsageResponseSchema.extend({
             gross_volume: z.number(),
             net_volume: z.number(),
             transactions: z.number().int(),
-            total_fees: z.number(),
         })
     ),
 });
@@ -63,7 +62,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Outcome OHLCV',
         description:
-            "Returns OHLCV candles for one or more outcome legs over the requested interval. Provide either `coin` (full Hyperliquid coin identifier, e.g. `#1730`) or `outcome_id` (UInt64); both accept CSV for batched grid views. With `outcome_id`, the `side` selector resolves to side_index 0 (`yes`, default), 1 (`no`), or returns both (`both`).\n\nTrade-side fields (`buy_volume`, `sell_volume`) carry the directional split: `buy_volume` counts taker buys of this leg, `sell_volume` counts taker sells. Composition events (SPLIT_OUTCOME, MERGE_OUTCOME, MERGE_QUESTION, NEGATE_OUTCOME) and SETTLEMENT payouts are excluded from candles by design; query them via `/v1/hyperliquid/outcomes/trades` for the raw stream.\n\nWhen multiple legs are requested, each timestamp bucket is paginated as a unit — the response contains every requested leg's candle for the most recent `limit` distinct timestamps. `total_fees` is currently always zero on outcomes since Hyperliquid does not charge per-trade fees on HIP-4 markets. Field retained for forward compatibility.",
+            "Returns OHLCV candles for one or more outcome legs over the requested interval. Provide either `coin` (full Hyperliquid coin identifier, e.g. `#1730`) or `outcome_id` (UInt64); both accept CSV for batched grid views. With `outcome_id`, the `side` selector resolves to side_index 0 (`yes`, default), 1 (`no`), or returns both (`both`).\n\nTrade-side fields (`buy_volume`, `sell_volume`) carry the directional split: `buy_volume` counts taker buys of this leg, `sell_volume` counts taker sells. Composition events (SPLIT_OUTCOME, MERGE_OUTCOME, MERGE_QUESTION, NEGATE_OUTCOME) and SETTLEMENT payouts are excluded from candles by design; query them via `/v1/hyperliquid/outcomes/trades` for the raw stream.\n\nWhen multiple legs are requested, each timestamp bucket is paginated as a unit — the response contains every requested leg's candle for the most recent `limit` distinct timestamps.",
         tags: ['Hyperliquid Outcomes'],
         security: [{ bearerAuth: [] }],
         responses: {
@@ -93,7 +92,6 @@ const openapi = describeRoute(
                                             gross_volume: 7336.03,
                                             net_volume: 1706.61,
                                             transactions: 18,
-                                            total_fees: 0,
                                         },
                                     ],
                                 },
@@ -119,7 +117,6 @@ const openapi = describeRoute(
                                             gross_volume: 7336.03,
                                             net_volume: 1706.61,
                                             transactions: 18,
-                                            total_fees: 0,
                                         },
                                         {
                                             timestamp: '2026-06-16 15:00:00',
@@ -138,7 +135,6 @@ const openapi = describeRoute(
                                             gross_volume: 4925.43,
                                             net_volume: -1284.33,
                                             transactions: 12,
-                                            total_fees: 0,
                                         },
                                     ],
                                 },

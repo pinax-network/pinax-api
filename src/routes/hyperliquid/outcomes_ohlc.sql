@@ -42,8 +42,7 @@ SELECT
     candles.sell_volume                                            AS sell_volume,
     candles.gross_volume                                           AS gross_volume,
     candles.net_volume                                             AS net_volume,
-    candles.transactions                                           AS transactions,
-    candles.total_fees                                             AS total_fees
+    candles.transactions                                           AS transactions
 FROM (
     SELECT
         t.timestamp                                                AS timestamp,
@@ -59,8 +58,7 @@ FROM (
         sum(t.taker_sell_volume)                                   AS sell_volume,
         sum(t.taker_buy_volume) + sum(t.taker_sell_volume)         AS gross_volume,
         sum(t.taker_buy_volume) - sum(t.taker_sell_volume)         AS net_volume,
-        sum(t.transactions)                                        AS transactions,
-        sum(t.total_fees)                                          AS total_fees
+        sum(t.transactions)                                        AS transactions
     FROM {db_hypercore:Identifier}.state_ohlcv_outcomes AS t
     WHERE t.coin IN {coin:Array(String)}
       AND t.interval_min = {interval:UInt32}
