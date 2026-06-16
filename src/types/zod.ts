@@ -96,7 +96,6 @@ export const dateTimeSchema = z
     .regex(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/, 'Invalid datetime format')
     .meta({
         type: 'string',
-        format: 'date-time',
         description:
             'UTC datetime. Returned in SQL form (`YYYY-MM-DD HH:MM:SS`) for ClickHouse-backed responses; ISO-8601 form (`YYYY-MM-DDTHH:MM:SS.sssZ`) is also accepted on parse.',
         example: '2026-06-16 03:40:59',

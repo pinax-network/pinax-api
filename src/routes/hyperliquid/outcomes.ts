@@ -78,7 +78,7 @@ const responseSchema = apiUsageResponseSchema.extend({
                 .number()
                 .nullable()
                 .describe(
-                    'Last traded price on the Yes leg (side_index=0) over the last 24h. Independent of other legs in the same question. Null when the Yes leg has no recent activity even if the No leg traded — read `1 - price_no` via `/v1/hyperliquid/outcomes/ohlc` on `sides[1].coin` as a workaround. Sum across legs reflects market overround, not a normalized probability.'
+                    'Last traded price on the Yes leg (side_index=0) over the last 24h. Independent of other legs in the same question; sum across legs reflects market overround, not a normalized probability. Null when the Yes leg has no recent activity even if the No leg traded — query `/v1/hyperliquid/outcomes/ohlc` on `sides[1].coin` for the No-leg close.'
                 ),
             volume_24h: z
                 .number()
