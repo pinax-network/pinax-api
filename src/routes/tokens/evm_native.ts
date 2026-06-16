@@ -51,7 +51,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Native Metadata',
-        description: 'Returns Native metadata including supply and holder count.',
+        description: 'Returns native token metadata including supply and holder count.',
 
         tags: ['EVM Tokens (Native)'],
         security: [{ bearerAuth: [] }],

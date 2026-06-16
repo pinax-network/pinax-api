@@ -46,7 +46,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Vault Depositors',
         description:
-            'Returns the per-depositor breakdown for a single vault — one row per `(user, vault)` pair with lifetime deposits, lifetime net withdrawals (after vault commission and closing cost), distributions received, deposit and withdrawal counts, and last-activity timestamp.\n\nFor the vault-level summary, see `/v1/hyperliquid/vaults`.',
+            'Returns the per-depositor breakdown for a single vault, with one row per `(user, vault)` pair: lifetime deposits, lifetime net withdrawals (after vault commission and closing cost), distributions received, deposit and withdrawal counts, and last-activity timestamp.\n\nFor the vault-level summary, see `/v1/hyperliquid/vaults`.',
         tags: ['Hyperliquid Vaults'],
         security: [{ bearerAuth: [] }],
         responses: {

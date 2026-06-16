@@ -17,7 +17,7 @@ const errorResponseSchema = z.object({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Health Check',
-        description: 'Verifies that all database connections are established.',
+        description: 'Returns the status of all database connections used by the API.',
         tags: ['Monitoring'],
         responses: {
             200: {

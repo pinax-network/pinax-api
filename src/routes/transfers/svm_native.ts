@@ -106,7 +106,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Native Transfers',
-        description: 'Returns Native transfers with transaction and block data.',
+        description: 'Returns native SOL transfers with transaction and block data.',
         tags: ['SVM Tokens (Native)'],
         security: [{ bearerAuth: [] }],
         responses: {

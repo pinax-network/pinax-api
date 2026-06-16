@@ -57,7 +57,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Token Metadata',
-        description: 'Provides ERC-20 token contract metadata.',
+        description: 'Returns ERC-20 token metadata including supply and holder count.',
 
         tags: ['TVM Tokens (ERC-20)'],
         security: [{ bearerAuth: [] }],

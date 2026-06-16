@@ -63,7 +63,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Token Balances',
-        description: 'Returns SPL token balances for Solana token owners with mint and program data.',
+        description: 'Returns SPL token balances for a token owner, including mint and program metadata.',
 
         tags: ['SVM Tokens'],
         security: [{ bearerAuth: [] }],

@@ -54,7 +54,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Market Liquidations',
         description:
-            "Returns one row per liquidation event, aggregated across the multiple fills that walk the book during a liquidation. Only the liquidated user's side is returned — counterparty fills are excluded.\n\nEach row surfaces the coin, liquidated user, transaction hash, liquidation kind (`CROSS_LONG`, `ISOLATED_SHORT`, and others), total size and notional, size-weighted average fill price, the mark price at liquidation, and the liquidation method reported by the venue (`backstop` and others).\n\nFilter by `coin`, `dex`, and/or `liquidated_user` — filters compose additively. Sort by `notional` (default — largest events first) or `time` (most recent first).",
+            "Returns one row per liquidation event, aggregated across the multiple fills that walk the book during a liquidation. Only the liquidated user's side is returned; counterparty fills are excluded.\n\nEach row surfaces the coin, liquidated user, transaction hash, liquidation kind (`CROSS_LONG`, `ISOLATED_SHORT`, and others), total size and notional, size-weighted average fill price, the mark price at liquidation, and the liquidation method reported by the venue (`backstop` and others).\n\nFilter by `coin`, `dex`, and/or `liquidated_user`. Filters compose additively. Sort by `notional` (default, largest events first) or `time` (most recent first).",
         tags: ['Hyperliquid Markets'],
         security: [{ bearerAuth: [] }],
         responses: {

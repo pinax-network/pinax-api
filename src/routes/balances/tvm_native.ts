@@ -52,7 +52,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Native Balances',
-        description: 'Returns TVM Native balances for wallet addresses.',
+        description: 'Returns native token balances for a wallet address.',
 
         tags: ['TVM Tokens (Native)'],
         security: [{ bearerAuth: [] }],

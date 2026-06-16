@@ -49,8 +49,8 @@ const responseSchema = apiUsageResponseSchema.extend({
 
 const openapi = describeRoute(
     withErrorResponses({
-        summary: 'NFT Collection',
-        description: 'Returns NFT collection metadata, supply stats, owner count, and transfer history.',
+        summary: 'NFT Collections',
+        description: 'Returns NFT collection metadata, supply, owner count, and transfer history.',
         tags: ['EVM NFTs'],
         security: [{ bearerAuth: [] }],
         responses: {

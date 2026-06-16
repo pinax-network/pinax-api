@@ -150,7 +150,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Swap Events',
         description:
-            'Returns DEX swaps events with input & output token amounts.\n\nAddress semantics: `transaction_from` is the onchain transaction initiator and `user` is the normalized user-oriented swap address. `sender` and `recipient` remain available for legacy compatibility, but new integrations should prefer `user` and plan for `sender`/`recipient` deprecation in a future major release.',
+            'Returns DEX swap events with input and output token amounts.\n\nAddress semantics: `transaction_from` is the on-chain transaction initiator and `user` is the normalized swap address. `sender` and `recipient` remain available for legacy compatibility; new integrations should prefer `user` and plan for `sender` and `recipient` deprecation in a future major release.',
 
         tags: ['TVM DEXs'],
         security: [{ bearerAuth: [] }],

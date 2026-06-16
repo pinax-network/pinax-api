@@ -56,7 +56,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Market OHLCV',
         description:
-            'Returns OHLCV candles for a single coin and interval, derived from regular trade fills. Volume is broken down both by side (`buy_volume`, `ask_volume`) and — on perpetuals — by directional intent (`open_long_volume`, `close_long_volume`, `open_short_volume`, `close_short_volume`) so consumers can distinguish whether price moves are driven by fresh exposure or position unwinds. On spot markets the directional-intent fields are zero; the side-volume fields carry the buy/sell breakdown directly.\n\nFor liquidation-only candles (with mark-price OHLC), use `/v1/hyperliquid/markets/liquidations/ohlc`.',
+            'Returns OHLCV candles for a single coin and interval, derived from regular trade fills. Volume is split into taker-buy and taker-sell (`buy_volume`, `sell_volume`) for the directional flow. On perpetuals, the four directional-intent fields (`open_long_volume`, `close_long_volume`, `open_short_volume`, `close_short_volume`) further classify whether price moves are driven by fresh exposure or position unwinds. On spot markets the directional-intent fields are zero; the side-volume fields carry the buy/sell breakdown directly.\n\nFor liquidation-only candles (with mark-price OHLC), use `/v1/hyperliquid/markets/liquidations/ohlc`.',
         tags: ['Hyperliquid Markets'],
         security: [{ bearerAuth: [] }],
         responses: {

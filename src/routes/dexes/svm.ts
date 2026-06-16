@@ -35,7 +35,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Supported DEXs',
-        description: 'Returns all supported Solana DEXs.',
+        description: 'Returns the catalog of supported Solana DEX protocols.',
 
         tags: ['SVM DEXs'],
         responses: {

@@ -61,7 +61,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Market Liquidations OHLCV',
         description:
-            'Returns liquidation-only OHLCV candles for a single coin and interval. Adds mark-price OHLC (`mark_price_open`, `mark_price_high`, `mark_price_low`, `mark_price_close`) — the price feed used for margining at liquidation time — alongside the standard trade-price OHLC. Volume and counts cover the liquidation fills only.\n\nFor all-fill candles, use `/v1/hyperliquid/markets/ohlc`.',
+            'Returns liquidation-only OHLCV candles for a single coin and interval. Adds mark-price OHLC (`mark_price_open`, `mark_price_high`, `mark_price_low`, `mark_price_close`), the price feed used for margining at liquidation time, alongside the standard trade-price OHLC. Volume and counts cover the liquidation fills only.\n\nFor all-fill candles, use `/v1/hyperliquid/markets/ohlc`.',
         tags: ['Hyperliquid Markets'],
         security: [{ bearerAuth: [] }],
         responses: {

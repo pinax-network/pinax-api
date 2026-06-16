@@ -36,7 +36,7 @@ const responseSchema = apiUsageResponseSchema.extend({
 const openapi = describeRoute(
     withErrorResponses({
         summary: 'Supported DEXs',
-        description: 'Returns all supported TVM DEXs.',
+        description: 'Returns the catalog of supported TVM DEX protocols.',
 
         tags: ['TVM DEXs'],
         responses: {
