@@ -27,7 +27,7 @@ WITH
         FROM rollup
         GROUP BY outcome_id
     ),
-    price_yes AS (
+    price_yes_cur AS (
         SELECT
             intDiv(toUInt64(splitByChar('#', coin)[2]), 10) AS outcome_id,
             toNullable(argMaxMerge(close))                  AS price_yes
@@ -35,6 +35,38 @@ WITH
         WHERE interval_min = 60
           AND (toUInt64(splitByChar('#', coin)[2]) % 10) = 0
           AND timestamp >= now() - INTERVAL 24 HOUR
+        GROUP BY coin
+    ),
+    price_no_cur AS (
+        SELECT
+            intDiv(toUInt64(splitByChar('#', coin)[2]), 10) AS outcome_id,
+            toNullable(argMaxMerge(close))                  AS price_no
+        FROM {db_hypercore:Identifier}.state_ohlcv_outcomes
+        WHERE interval_min = 60
+          AND (toUInt64(splitByChar('#', coin)[2]) % 10) = 1
+          AND timestamp >= now() - INTERVAL 24 HOUR
+        GROUP BY coin
+    ),
+    price_yes_prev AS (
+        SELECT
+            intDiv(toUInt64(splitByChar('#', coin)[2]), 10) AS outcome_id,
+            toNullable(argMaxMerge(close))                  AS price_yes_24h
+        FROM {db_hypercore:Identifier}.state_ohlcv_outcomes
+        WHERE interval_min = 60
+          AND (toUInt64(splitByChar('#', coin)[2]) % 10) = 0
+          AND timestamp >= now() - INTERVAL 48 HOUR
+          AND timestamp <  now() - INTERVAL 24 HOUR
+        GROUP BY coin
+    ),
+    price_no_prev AS (
+        SELECT
+            intDiv(toUInt64(splitByChar('#', coin)[2]), 10) AS outcome_id,
+            toNullable(argMaxMerge(close))                  AS price_no_24h
+        FROM {db_hypercore:Identifier}.state_ohlcv_outcomes
+        WHERE interval_min = 60
+          AND (toUInt64(splitByChar('#', coin)[2]) % 10) = 1
+          AND timestamp >= now() - INTERVAL 48 HOUR
+          AND timestamp <  now() - INTERVAL 24 HOUR
         GROUP BY coin
     ),
     questions AS (
@@ -63,7 +95,16 @@ SELECT
         )
         AS Array(Tuple(label String, coin String, side_index UInt8))
     )                                                                     AS sides,
-    py.price_yes                                                          AS price_yes,
+    pyc.price_yes                                                         AS price_yes,
+    pnc.price_no                                                          AS price_no,
+    pyp.price_yes_24h                                                     AS price_yes_24h,
+    pnp.price_no_24h                                                      AS price_no_24h,
+    if(isNotNull(pyp.price_yes_24h) AND pyp.price_yes_24h > 0 AND isNotNull(pyc.price_yes),
+       (pyc.price_yes - pyp.price_yes_24h) / pyp.price_yes_24h,
+       NULL)                                                              AS price_yes_24h_change,
+    if(isNotNull(pnp.price_no_24h) AND pnp.price_no_24h > 0 AND isNotNull(pnc.price_no),
+       (pnc.price_no - pnp.price_no_24h) / pnp.price_no_24h,
+       NULL)                                                              AS price_no_24h_change,
     coalesce(r.volume_24h, 0)                                             AS volume_24h,
     coalesce(r.trades_24h, 0)                                             AS trades_24h,
     r.last_trade                                                          AS last_trade,
@@ -86,9 +127,12 @@ SELECT
         )
     )                                                                     AS question
 FROM meta AS m
-LEFT JOIN rollup_agg AS r USING (outcome_id)
-LEFT JOIN price_yes  AS py USING (outcome_id)
-LEFT JOIN questions  AS q ON q.question_id = m.question_id
+LEFT JOIN rollup_agg    AS r   USING (outcome_id)
+LEFT JOIN price_yes_cur AS pyc USING (outcome_id)
+LEFT JOIN price_no_cur  AS pnc USING (outcome_id)
+LEFT JOIN price_yes_prev AS pyp USING (outcome_id)
+LEFT JOIN price_no_prev  AS pnp USING (outcome_id)
+LEFT JOIN questions      AS q ON q.question_id = m.question_id
 ORDER BY
     if({sort_by:String} = 'volume_24h', coalesce(r.volume_24h, 0), 0)     DESC,
     if({sort_by:String} = 'outcome_id', -toInt64(m.outcome_id), 0)        DESC,

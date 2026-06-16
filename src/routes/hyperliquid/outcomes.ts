@@ -78,12 +78,39 @@ const responseSchema = apiUsageResponseSchema.extend({
                 .number()
                 .nullable()
                 .describe(
-                    'Last traded price on the Yes leg (side_index=0) over the last 24h. Independent of other legs in the same question; sum across legs reflects market overround, not a normalized probability. Null when the Yes leg has no recent activity even if the No leg traded — query `/v1/hyperliquid/outcomes/ohlc` on `sides[1].coin` for the No-leg close.'
+                    'Last traded price on the Yes leg (side_index=0) within the last 24h. Independent of `price_no`; sum across legs reflects market overround, not a normalized probability. Null when the Yes leg has no activity in the window even if the No leg traded — read `price_no` for the No-leg quote.'
                 ),
+            price_no: z
+                .number()
+                .nullable()
+                .describe(
+                    'Last traded price on the No leg (side_index=1) within the last 24h. Independent of `price_yes`. Null when the No leg has no activity in the window.'
+                ),
+            price_yes_24h: z
+                .number()
+                .nullable()
+                .describe(
+                    'Close on the Yes leg from 24–48h ago (matches `/v1/hyperliquid/markets`' +
+                        ' `price_24h` convention). Null when no trades occurred in that window.'
+                ),
+            price_no_24h: z
+                .number()
+                .nullable()
+                .describe('Close on the No leg from 24–48h ago. Null when no trades occurred in that window.'),
+            price_yes_24h_change: z
+                .number()
+                .nullable()
+                .describe(
+                    'Decimal price change on the Yes leg over the last 24h, computed as `(price_yes - price_yes_24h) / price_yes_24h`. Null when either anchor is missing.'
+                ),
+            price_no_24h_change: z
+                .number()
+                .nullable()
+                .describe('Decimal price change on the No leg over the last 24h. Null when either anchor is missing.'),
             volume_24h: z
                 .number()
                 .describe(
-                    'Combined Yes+No leg taker notional over the last 24h, denominated in the outcome `quote_token`.'
+                    'Combined Yes+No leg taker notional over the last 24h, denominated in the outcome `quote_token`. Direction is signalled via `price_yes_24h_change` / `price_no_24h_change`, mirroring the convention used by Polymarket and Kalshi.'
                 ),
             trades_24h: z.number().int().describe('Number of BUY/SELL taker fills across both legs in the last 24h.'),
             last_trade: dateTimeSchema.nullable(),
@@ -110,7 +137,7 @@ const openapi = describeRoute(
                                 value: {
                                     data: [
                                         {
-                                            outcome_id: 172,
+                                            outcome_id: 173,
                                             name: 'Argentina',
                                             description:
                                                 'This outcome resolves to Yes if Argentina is officially declared the 2026 FIFA World Cup champion.',
@@ -120,13 +147,18 @@ const openapi = describeRoute(
                                             settle_fraction: null,
                                             settle_details: null,
                                             sides: [
-                                                { label: 'Yes', coin: '#1720', side_index: 0 },
-                                                { label: 'No', coin: '#1721', side_index: 1 },
+                                                { label: 'Yes', coin: '#1730', side_index: 0 },
+                                                { label: 'No', coin: '#1731', side_index: 1 },
                                             ],
-                                            price_yes: 0.012,
-                                            volume_24h: 4521.32,
-                                            trades_24h: 18,
-                                            last_trade: '2026-06-12 13:38:55',
+                                            price_yes: 0.09604,
+                                            price_no: 0.90313,
+                                            price_yes_24h: 0.09425,
+                                            price_no_24h: 0.90575,
+                                            price_yes_24h_change: 0.018992,
+                                            price_no_24h_change: -0.002893,
+                                            volume_24h: 82430.17,
+                                            trades_24h: 93,
+                                            last_trade: '2026-06-16 15:50:51',
                                             question: {
                                                 question_id: 32,
                                                 name: '2026 World Cup Champion',
