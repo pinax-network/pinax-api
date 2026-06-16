@@ -38,7 +38,7 @@ const quoteTokenSchema = z
 
 const includeFallbackSchema = booleanFromString.meta({
     description:
-        'When `true`, include each multi-outcome question\'s fallback row (the catch-all "none of the above" leg). Defaults to `false` so list responses match the named outcomes a UI would render.',
+        'When `true`, include each multi-outcome question\'s fallback row (the catch-all "none of the above" leg). Defaults to `false` so list responses match the named outcomes a UI would render. Explicit `outcome_id` lookups always return the requested rows regardless of this flag.',
 });
 
 const querySchema = createQuerySchema({

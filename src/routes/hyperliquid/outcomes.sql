@@ -12,9 +12,11 @@ WITH
           AND (empty({question_id:Array(String)})  OR question_id IN (SELECT toUInt64(arrayJoin({question_id:Array(String)}))))
           AND ({status:String} = 'all' OR status = {status:String})
           AND (isNull({quote_token:Nullable(String)}) OR quote_token = {quote_token:Nullable(String)})
-          AND ({include_fallback:Bool} OR outcome_id NOT IN (
-              SELECT fallback_outcome_id FROM all_questions WHERE fallback_outcome_id IS NOT NULL
-          ))
+          AND ({include_fallback:Bool}
+               OR notEmpty({outcome_id:Array(String)})
+               OR outcome_id NOT IN (
+                   SELECT fallback_outcome_id FROM all_questions WHERE fallback_outcome_id IS NOT NULL
+               ))
     ),
     rollup AS (
         SELECT
