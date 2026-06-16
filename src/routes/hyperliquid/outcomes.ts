@@ -6,6 +6,7 @@ import { config } from '../../config.js';
 import { handleUsageQueryError, makeUsageQueryJson } from '../../handleQuery.js';
 import {
     apiUsageResponseSchema,
+    booleanFromString,
     createQuerySchema,
     dateTimeSchema,
     hyperliquidOutcomeIdSchema,
@@ -35,11 +36,17 @@ const quoteTokenSchema = z
         example: 'USDC',
     });
 
+const includeFallbackSchema = booleanFromString.meta({
+    description:
+        'When `true`, include each multi-outcome question\'s fallback row (the catch-all "none of the above" leg). Defaults to `false` so list responses match the named outcomes a UI would render.',
+});
+
 const querySchema = createQuerySchema({
     outcome_id: { schema: hyperliquidOutcomeIdSchema, batched: true, optional: true },
     question_id: { schema: hyperliquidQuestionIdSchema, batched: true, optional: true },
     status: { schema: hyperliquidOutcomeStatusSchema, prefault: 'live' },
     quote_token: { schema: quoteTokenSchema, optional: true },
+    include_fallback: { schema: includeFallbackSchema, default: false },
     sort_by: { schema: outcomesSortBySchema, prefault: 'volume_24h' },
 });
 

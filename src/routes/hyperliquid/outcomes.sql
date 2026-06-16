@@ -7,6 +7,11 @@ WITH
           AND (empty({question_id:Array(String)})  OR question_id IN (SELECT toUInt64(arrayJoin({question_id:Array(String)}))))
           AND ({status:String} = 'all' OR status = {status:String})
           AND (isNull({quote_token:Nullable(String)}) OR quote_token = {quote_token:Nullable(String)})
+          AND ({include_fallback:Bool} OR outcome_id NOT IN (
+              SELECT fallback_outcome_id
+              FROM {db_hypercore:Identifier}.state_question_meta FINAL
+              WHERE fallback_outcome_id IS NOT NULL
+          ))
     ),
     rollup AS (
         SELECT
