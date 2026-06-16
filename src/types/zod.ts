@@ -1060,7 +1060,7 @@ export const hyperliquidOutcomeCoinSchema = z.coerce
     .meta({
         type: 'string',
         description:
-            'Outcome coin (`#<outcome_id*10 + side_index>`). Side index = 0 or 1. Discover via `/v1/hyperliquid/outcomes`. Bare digits are accepted and prefixed with `#` server-side — useful when a browser strips the literal `#` as a URL fragment.',
+            'Outcome coin (`#<outcome_id*10 + side_index>`). Side index = 0 or 1. Bare digits accepted (auto-prefixed). Discover via `/v1/hyperliquid/outcomes`.',
         example: '#1720',
     });
 
