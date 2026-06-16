@@ -62,7 +62,11 @@ const responseSchema = apiUsageResponseSchema.extend({
     data: z.array(
         z.object({
             outcome_id: z.number().int(),
-            name: z.string(),
+            name: z
+                .string()
+                .describe(
+                    'Outcome leaf name. For multi-outcome questions this is the per-leg label (team, candidate, bucket). For binary single-outcome markets (`question.question_id IS NULL`) this is the full market title.'
+                ),
             description: z.string(),
             side_specs: z.array(z.string()),
             status: z.string(),
@@ -70,9 +74,18 @@ const responseSchema = apiUsageResponseSchema.extend({
             settle_fraction: z.number().nullable(),
             settle_details: z.string().nullable(),
             sides: z.array(sideSchema),
-            price_yes: z.number().nullable(),
-            volume_24h: z.number(),
-            trades_24h: z.number().int(),
+            price_yes: z
+                .number()
+                .nullable()
+                .describe(
+                    'Last traded price on the Yes leg (side_index=0) over the last 24h. Independent of other legs in the same question; sum across legs reflects market overround, not a normalized probability. Null when the Yes leg has no recent activity even if the No leg traded — query `/v1/hyperliquid/outcomes/ohlc` on `sides[1].coin` for the No-leg close.'
+                ),
+            volume_24h: z
+                .number()
+                .describe(
+                    'Combined Yes+No leg taker notional over the last 24h, denominated in the outcome `quote_token`.'
+                ),
+            trades_24h: z.number().int().describe('Number of BUY/SELL taker fills across both legs in the last 24h.'),
             last_trade: dateTimeSchema.nullable(),
             question: questionSchema,
         })

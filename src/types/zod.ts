@@ -93,7 +93,13 @@ export const commit = z.coerce.string().regex(/^[0-9a-f]{7}$/);
 // e.g. 2025-01-01T12:00:00.000Z / 2025-01-01 12:00:00
 export const dateTimeSchema = z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/, 'Invalid datetime format');
+    .regex(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/, 'Invalid datetime format')
+    .meta({
+        type: 'string',
+        description:
+            'Datetime. Returned in SQL form (`YYYY-MM-DD HH:MM:SS`) on ClickHouse-backed responses, in the server timezone (UTC). See `pattern` for accepted input formats.',
+        example: '2026-06-16 03:40:59',
+    });
 
 // Type exports
 export type EvmAddress = z.infer<typeof evmAddress>;
