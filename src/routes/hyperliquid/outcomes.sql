@@ -18,66 +18,45 @@ WITH
                    SELECT fallback_outcome_id FROM all_questions WHERE fallback_outcome_id IS NOT NULL
                ))
     ),
-    rollup AS (
+    /* Single pass over state_ohlcv_outcomes for the last 48h. Per-coin
+       close prices are merged at the (coin, timestamp) grain, then the
+       outer aggregation slices by side_index + window via conditional
+       aggregations. Replaces five separate scans (one rollup + four
+       per-(side, window) price CTEs) of the same source table. */
+    bars AS (
         SELECT
-            intDiv(toUInt64(splitByChar('#', coin)[2]), 10) AS outcome_id,
-            sum(taker_buy_volume + taker_sell_volume)       AS volume_24h,
-            sum(transactions)                               AS trades_24h,
-            max(max_timestamp)                              AS last_trade
+            intDiv(toUInt64(splitByChar('#', coin)[2]), 10)     AS outcome_id,
+            toUInt8(toUInt64(splitByChar('#', coin)[2]) % 10)   AS side_index,
+            timestamp,
+            argMaxMerge(close)                                  AS close,
+            sum(taker_buy_volume + taker_sell_volume)           AS volume_total,
+            sum(transactions)                                   AS trades_total,
+            max(max_timestamp)                                  AS last_ts
         FROM {db_hypercore:Identifier}.state_ohlcv_outcomes
         WHERE interval_min = 60
-          AND timestamp >= now() - INTERVAL 24 HOUR
-        GROUP BY coin
+          AND timestamp >= now() - INTERVAL 48 HOUR
+        GROUP BY coin, timestamp
     ),
     rollup_agg AS (
-        SELECT outcome_id,
-               sum(volume_24h)               AS volume_24h,
-               sum(trades_24h)               AS trades_24h,
-               toNullable(max(last_trade))   AS last_trade
-        FROM rollup
+        SELECT
+            outcome_id,
+            sumIf(volume_total, timestamp >= now() - INTERVAL 24 HOUR) AS volume_24h,
+            sumIf(trades_total, timestamp >= now() - INTERVAL 24 HOUR) AS trades_24h,
+            toNullable(maxIf(last_ts, timestamp >= now() - INTERVAL 24 HOUR)) AS last_trade,
+            toNullable(argMaxIf(close, timestamp,
+                side_index = 0 AND timestamp >= now() - INTERVAL 24 HOUR))  AS price_yes,
+            toNullable(argMaxIf(close, timestamp,
+                side_index = 1 AND timestamp >= now() - INTERVAL 24 HOUR))  AS price_no,
+            toNullable(argMaxIf(close, timestamp,
+                side_index = 0
+                AND timestamp >= now() - INTERVAL 48 HOUR
+                AND timestamp <  now() - INTERVAL 24 HOUR))                 AS price_yes_24h,
+            toNullable(argMaxIf(close, timestamp,
+                side_index = 1
+                AND timestamp >= now() - INTERVAL 48 HOUR
+                AND timestamp <  now() - INTERVAL 24 HOUR))                 AS price_no_24h
+        FROM bars
         GROUP BY outcome_id
-    ),
-    price_yes_cur AS (
-        SELECT
-            intDiv(toUInt64(splitByChar('#', coin)[2]), 10) AS outcome_id,
-            toNullable(argMaxMerge(close))                  AS price_yes
-        FROM {db_hypercore:Identifier}.state_ohlcv_outcomes
-        WHERE interval_min = 60
-          AND (toUInt64(splitByChar('#', coin)[2]) % 10) = 0
-          AND timestamp >= now() - INTERVAL 24 HOUR
-        GROUP BY coin
-    ),
-    price_no_cur AS (
-        SELECT
-            intDiv(toUInt64(splitByChar('#', coin)[2]), 10) AS outcome_id,
-            toNullable(argMaxMerge(close))                  AS price_no
-        FROM {db_hypercore:Identifier}.state_ohlcv_outcomes
-        WHERE interval_min = 60
-          AND (toUInt64(splitByChar('#', coin)[2]) % 10) = 1
-          AND timestamp >= now() - INTERVAL 24 HOUR
-        GROUP BY coin
-    ),
-    price_yes_prev AS (
-        SELECT
-            intDiv(toUInt64(splitByChar('#', coin)[2]), 10) AS outcome_id,
-            toNullable(argMaxMerge(close))                  AS price_yes_24h
-        FROM {db_hypercore:Identifier}.state_ohlcv_outcomes
-        WHERE interval_min = 60
-          AND (toUInt64(splitByChar('#', coin)[2]) % 10) = 0
-          AND timestamp >= now() - INTERVAL 48 HOUR
-          AND timestamp <  now() - INTERVAL 24 HOUR
-        GROUP BY coin
-    ),
-    price_no_prev AS (
-        SELECT
-            intDiv(toUInt64(splitByChar('#', coin)[2]), 10) AS outcome_id,
-            toNullable(argMaxMerge(close))                  AS price_no_24h
-        FROM {db_hypercore:Identifier}.state_ohlcv_outcomes
-        WHERE interval_min = 60
-          AND (toUInt64(splitByChar('#', coin)[2]) % 10) = 1
-          AND timestamp >= now() - INTERVAL 48 HOUR
-          AND timestamp <  now() - INTERVAL 24 HOUR
-        GROUP BY coin
     ),
     questions AS (
         SELECT * FROM all_questions
@@ -103,15 +82,15 @@ SELECT
         )
         AS Array(Tuple(label String, coin String, side_index UInt8))
     )                                                                     AS sides,
-    pyc.price_yes                                                         AS price_yes,
-    pnc.price_no                                                          AS price_no,
-    pyp.price_yes_24h                                                     AS price_yes_24h,
-    pnp.price_no_24h                                                      AS price_no_24h,
-    if(isNotNull(pyp.price_yes_24h) AND pyp.price_yes_24h > 0 AND isNotNull(pyc.price_yes),
-       (pyc.price_yes - pyp.price_yes_24h) / pyp.price_yes_24h,
+    r.price_yes                                                           AS price_yes,
+    r.price_no                                                            AS price_no,
+    r.price_yes_24h                                                       AS price_yes_24h,
+    r.price_no_24h                                                        AS price_no_24h,
+    if(isNotNull(r.price_yes_24h) AND r.price_yes_24h > 0 AND isNotNull(r.price_yes),
+       (r.price_yes - r.price_yes_24h) / r.price_yes_24h,
        NULL)                                                              AS price_yes_24h_change,
-    if(isNotNull(pnp.price_no_24h) AND pnp.price_no_24h > 0 AND isNotNull(pnc.price_no),
-       (pnc.price_no - pnp.price_no_24h) / pnp.price_no_24h,
+    if(isNotNull(r.price_no_24h) AND r.price_no_24h > 0 AND isNotNull(r.price_no),
+       (r.price_no - r.price_no_24h) / r.price_no_24h,
        NULL)                                                              AS price_no_24h_change,
     coalesce(r.volume_24h, 0)                                             AS volume_24h,
     coalesce(r.trades_24h, 0)                                             AS trades_24h,
@@ -135,12 +114,8 @@ SELECT
         )
     )                                                                     AS question
 FROM meta AS m
-LEFT JOIN rollup_agg    AS r   USING (outcome_id)
-LEFT JOIN price_yes_cur AS pyc USING (outcome_id)
-LEFT JOIN price_no_cur  AS pnc USING (outcome_id)
-LEFT JOIN price_yes_prev AS pyp USING (outcome_id)
-LEFT JOIN price_no_prev  AS pnp USING (outcome_id)
-LEFT JOIN questions      AS q ON q.question_id = m.question_id
+LEFT JOIN rollup_agg AS r USING (outcome_id)
+LEFT JOIN questions  AS q ON q.question_id = m.question_id
 ORDER BY
     if({sort_by:String} = 'volume_24h', coalesce(r.volume_24h, 0), 0)     DESC,
     if({sort_by:String} = 'outcome_id', -toInt64(m.outcome_id), 0)        DESC,
