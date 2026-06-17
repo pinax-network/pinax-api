@@ -1111,15 +1111,13 @@ const hyperliquidOutcomeDirectionValues = [
     'MERGE_QUESTION',
     'NEGATE_OUTCOME',
 ] as const;
-export const hyperliquidOutcomeDirectionSchema = z
-    .enum(hyperliquidOutcomeDirectionValues)
-    .meta({
-        type: 'string',
-        enum: hyperliquidOutcomeDirectionValues,
-        description:
-            'Restrict by outcome direction tag. `BUY`/`SELL` are taker matches; `SETTLEMENT` is the resolution payout; the four `*_OUTCOME`/`MERGE_QUESTION` tags are HIP-4 collateral reshapes. Omit for all seven.',
-        example: 'BUY',
-    });
+export const hyperliquidOutcomeDirectionSchema = z.enum(hyperliquidOutcomeDirectionValues).meta({
+    type: 'string',
+    enum: hyperliquidOutcomeDirectionValues,
+    description:
+        'Restrict by outcome direction tag. `BUY`/`SELL` are taker matches; `SETTLEMENT` is the resolution payout; the four `*_OUTCOME`/`MERGE_QUESTION` tags are HIP-4 collateral reshapes. Omit for all seven.',
+    example: 'BUY',
+});
 
 // `direction` filter for `/v1/hyperliquid/markets/activity`. Perp + spot
 // fills carry the broader set HL emits across all non-outcome dexes.
@@ -1143,15 +1141,13 @@ const hyperliquidMarketDirectionValues = [
     'BACKSTOP_BORROW_LIQUIDATION',
     'PARTIAL_BORROW_LIQUIDATION',
 ] as const;
-export const hyperliquidMarketDirectionSchema = z
-    .enum(hyperliquidMarketDirectionValues)
-    .meta({
-        type: 'string',
-        enum: hyperliquidMarketDirectionValues,
-        description:
-            'Restrict by perp/spot direction tag. Includes `BUY`/`SELL` matches, perp `OPEN_*`/`CLOSE_*` transitions, forced liquidations, delisted-market `SETTLEMENT`, and housekeeping flows. Omit for all.',
-        example: 'BUY',
-    });
+export const hyperliquidMarketDirectionSchema = z.enum(hyperliquidMarketDirectionValues).meta({
+    type: 'string',
+    enum: hyperliquidMarketDirectionValues,
+    description:
+        'Restrict by perp/spot direction tag. Includes `BUY`/`SELL` matches, perp `OPEN_*`/`CLOSE_*` transitions, forced liquidations, delisted-market `SETTLEMENT`, and housekeeping flows. Omit for all.',
+    example: 'BUY',
+});
 
 // `direction` filter for `/v1/hyperliquid/markets/liquidations`. Subset
 // limited to forced-liquidation events recorded on `fills_liquidation`.
@@ -1164,12 +1160,10 @@ const hyperliquidLiquidationDirectionValues = [
     'BACKSTOP_BORROW_LIQUIDATION',
     'PARTIAL_BORROW_LIQUIDATION',
 ] as const;
-export const hyperliquidLiquidationDirectionSchema = z
-    .enum(hyperliquidLiquidationDirectionValues)
-    .meta({
-        type: 'string',
-        enum: hyperliquidLiquidationDirectionValues,
-        description:
-            'Restrict by liquidation kind. `LIQUIDATED_CROSS_*` / `LIQUIDATED_ISOLATED_*` cover margin-based liquidations; `AUTO_DELEVERAGING` is HL ADL; `*_BORROW_LIQUIDATION` covers borrow-side. Omit for all.',
-        example: 'LIQUIDATED_CROSS_LONG',
-    });
+export const hyperliquidLiquidationDirectionSchema = z.enum(hyperliquidLiquidationDirectionValues).meta({
+    type: 'string',
+    enum: hyperliquidLiquidationDirectionValues,
+    description:
+        'Restrict by liquidation kind. `LIQUIDATED_CROSS_*` / `LIQUIDATED_ISOLATED_*` cover margin-based liquidations; `AUTO_DELEVERAGING` is HL ADL; `*_BORROW_LIQUIDATION` covers borrow-side. Omit for all.',
+    example: 'LIQUIDATED_CROSS_LONG',
+});
