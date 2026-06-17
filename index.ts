@@ -1,4 +1,5 @@
 import { type Context, Hono } from 'hono';
+import { compress } from 'hono/compress';
 import './src/banner.js';
 import { describeRoute, openAPIRouteHandler } from 'hono-openapi';
 import { logServerInit } from './src/banner.js';
@@ -9,6 +10,12 @@ import { APIErrorResponse } from './src/utils.js';
 import { createX402Discovery } from './src/x402/discovery.js';
 
 const app = new Hono();
+
+// Response compression. Uses the runtime's CompressionStream — gzip and
+// deflate negotiated via Accept-Encoding. Most responses on the API are
+// JSON payloads that compress 5-10x; the OpenAPI document alone is
+// ~540KB uncompressed.
+app.use(compress());
 
 // Tracking all incoming requests
 app.use(async (c: Context, next) => {
