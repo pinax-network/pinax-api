@@ -20,7 +20,7 @@ WITH
         FROM {db_hypercore:Identifier}.state_user_by_coin FINAL
         WHERE dex = 'outcome'
           AND interval_min = {interval_min:UInt32}
-          AND user IN {user:Array(String)}
+          AND (empty({user:Array(String)}) OR user IN {user:Array(String)})
     ),
     meta AS (
         SELECT outcome_id, name, status, question_id, settle_fraction
