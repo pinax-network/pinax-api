@@ -4,6 +4,18 @@ WITH
         FROM {db_hypercore:Identifier}.state_question_meta FINAL
         WHERE question_id IN (SELECT toUInt64(arrayJoin({question_id:Array(String)})))
     ),
+    /* Scope the source scan via coin IN (...) so the state_user_by_coin sort
+       key (interval_min, dex, coin, user) can granule-prune. Each outcome
+       id maps to two coins (#N*10+0 and #N*10+1, the Yes and No legs). */
+    scoped_coins AS (
+        SELECT concat('#', toString(o * 10 + s)) AS coin
+        FROM (
+            SELECT toUInt64(arrayJoin({outcome_id:Array(String)})) AS o
+            UNION ALL
+            SELECT outcome_id AS o FROM question_outcome_ids
+        ) AS o_ids
+        CROSS JOIN (SELECT arrayJoin([0, 1]) AS s) AS sides
+    ),
     rows AS (
         SELECT
             user,
@@ -21,6 +33,8 @@ WITH
         WHERE dex = 'outcome'
           AND interval_min = {interval_min:UInt32}
           AND (empty({user:Array(String)}) OR user IN {user:Array(String)})
+          AND ((empty({outcome_id:Array(String)}) AND empty({question_id:Array(String)}))
+               OR coin IN (SELECT coin FROM scoped_coins))
     ),
     meta AS (
         SELECT outcome_id, name, status, question_id, settle_fraction
@@ -63,8 +77,6 @@ LEFT JOIN (
     FROM {db_hypercore:Identifier}.state_question_meta FINAL
     WHERE question_id IN (SELECT question_id FROM meta WHERE question_id IS NOT NULL)
 ) AS q ON q.question_id = m.question_id
-WHERE (empty({outcome_id:Array(String)})  OR r.outcome_id IN (SELECT toUInt64(arrayJoin({outcome_id:Array(String)}))))
-  AND (empty({question_id:Array(String)}) OR r.outcome_id IN (SELECT outcome_id FROM question_outcome_ids))
 GROUP BY r.user, r.outcome_id, m.name, m.status, m.question_id, m.settle_fraction, q.name
 ORDER BY total_volume DESC
 LIMIT {limit:UInt64}
