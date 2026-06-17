@@ -11,6 +11,7 @@ import {
     evmAddressSchema,
     hyperliquidCoinSchema,
     hyperliquidDexIdSchema,
+    hyperliquidMarketDirectionSchema,
     timestampSchema,
 } from '../../types/zod.js';
 import { validatorHook, withErrorResponses } from '../../utils.js';
@@ -21,6 +22,7 @@ const querySchema = createQuerySchema({
     coin: { schema: hyperliquidCoinSchema, batched: true, optional: true },
     dex: { schema: hyperliquidDexIdSchema, batched: true, optional: true },
     user: { schema: evmAddressSchema, batched: true, optional: true },
+    direction: { schema: hyperliquidMarketDirectionSchema, batched: true, optional: true },
     start_time: { schema: timestampSchema, optional: true },
     end_time: { schema: timestampSchema, optional: true },
 });
