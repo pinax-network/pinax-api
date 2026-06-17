@@ -24,10 +24,6 @@ WITH
     )
 SELECT
     r.user                                                   AS user,
-    r.outcome_id                                             AS outcome_id,
-    coalesce(m.name, '')                                     AS outcome_name,
-    coalesce(m.status, '')                                   AS status,
-    coalesce(m.side_specs, [])                               AS side_specs,
     sum(r.transactions)                                      AS transactions,
     sum(r.buys)                                              AS buys,
     sum(r.sells)                                             AS sells,
@@ -39,28 +35,34 @@ SELECT
     max(r.last_trade)                                        AS last_trade,
     CAST(
         (
+            r.outcome_id,
+            coalesce(m.name, ''),
             m.question_id,
             nullIf(coalesce(q.name, ''), ''),
-            q.fallback_outcome_id
+            coalesce(m.status, ''),
+            m.settle_fraction
         )
         AS Tuple(
+            outcome_id UInt64,
+            outcome_name String,
             question_id Nullable(UInt64),
-            name Nullable(String),
-            fallback_outcome_id Nullable(UInt64)
+            question_name Nullable(String),
+            status String,
+            settle_fraction Nullable(Float64)
         )
-    )                                                        AS question
+    )                                                        AS outcome
 FROM rows AS r
 LEFT JOIN (
-    SELECT outcome_id, name, status, side_specs, question_id
+    SELECT outcome_id, name, status, question_id, settle_fraction
     FROM {db_hypercore:Identifier}.state_outcome_meta FINAL
 ) AS m ON m.outcome_id = r.outcome_id
 LEFT JOIN (
-    SELECT question_id, name, fallback_outcome_id
+    SELECT question_id, name
     FROM {db_hypercore:Identifier}.state_question_meta FINAL
 ) AS q ON q.question_id = m.question_id
 WHERE (empty({outcome_id:Array(String)})  OR r.outcome_id IN (SELECT toUInt64(arrayJoin({outcome_id:Array(String)}))))
   AND (empty({question_id:Array(String)}) OR r.outcome_id IN (SELECT outcome_id FROM question_outcome_ids))
-GROUP BY r.user, r.outcome_id, m.name, m.status, m.side_specs, m.question_id, q.name, q.fallback_outcome_id
+GROUP BY r.user, r.outcome_id, m.name, m.status, m.question_id, m.settle_fraction, q.name
 ORDER BY total_volume DESC
 LIMIT {limit:UInt64}
 OFFSET {offset:UInt64}

@@ -24,11 +24,6 @@ SELECT
     page.transaction_hash                                   AS transaction_hash,
     page.transaction_id                                     AS transaction_id,
     page.event_index                                        AS event_index,
-    page.coin                                               AS coin,
-    page.outcome_id                                         AS outcome_id,
-    page.side_index                                         AS side_index,
-    coalesce(m.side_specs[page.side_index + 1], '')         AS side_label,
-    coalesce(m.outcome_name, '')                            AS outcome_name,
     page.user                                               AS user,
     page.side                                               AS side,
     page.direction                                          AS direction,
@@ -42,7 +37,31 @@ SELECT
     page.order_id                                           AS order_id,
     page.client_order_id                                    AS client_order_id,
     page.twap_id                                            AS twap_id,
-    page.crossed                                            AS crossed
+    page.crossed                                            AS crossed,
+    CAST(
+        (
+            page.outcome_id,
+            coalesce(m.outcome_name, ''),
+            m.question_id,
+            nullIf(coalesce(q.name, ''), ''),
+            coalesce(m.status, ''),
+            m.settle_fraction,
+            page.coin,
+            page.side_index,
+            coalesce(m.side_specs[page.side_index + 1], '')
+        )
+        AS Tuple(
+            outcome_id UInt64,
+            outcome_name String,
+            question_id Nullable(UInt64),
+            question_name Nullable(String),
+            status String,
+            settle_fraction Nullable(Float64),
+            coin String,
+            side_index UInt8,
+            side_label String
+        )
+    )                                                       AS outcome
 FROM (
     SELECT
         timestamp,
@@ -79,7 +98,11 @@ FROM (
     OFFSET {offset:UInt64}
 ) AS page
 LEFT JOIN (
-    SELECT outcome_id, name AS outcome_name, side_specs
+    SELECT outcome_id, name AS outcome_name, side_specs, status, question_id, settle_fraction
     FROM {db_hypercore:Identifier}.state_outcome_meta FINAL
 ) AS m ON m.outcome_id = page.outcome_id
+LEFT JOIN (
+    SELECT question_id, name
+    FROM {db_hypercore:Identifier}.state_question_meta FINAL
+) AS q ON q.question_id = m.question_id
 ORDER BY page.timestamp DESC, page.block_num DESC, page.event_index DESC

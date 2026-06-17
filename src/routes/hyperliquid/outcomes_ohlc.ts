@@ -14,6 +14,7 @@ import {
     timestampSchema,
 } from '../../types/zod.js';
 import { validatorHook, withErrorResponses } from '../../utils.js';
+import { outcomeLegContextSchema } from './_outcome_context.js';
 
 import query from './outcomes_ohlc.sql' with { type: 'text' };
 
@@ -39,11 +40,6 @@ const responseSchema = apiUsageResponseSchema.extend({
     data: z.array(
         z.object({
             timestamp: dateTimeSchema,
-            coin: z.string(),
-            outcome_id: z.number().int(),
-            side_index: z.number().int(),
-            side_label: z.string(),
-            outcome_name: z.string(),
             interval_min: z.number().int(),
             open: z.number(),
             high: z.number(),
@@ -54,6 +50,7 @@ const responseSchema = apiUsageResponseSchema.extend({
             gross_volume: z.number(),
             net_volume: z.number(),
             transactions: z.number().int(),
+            outcome: outcomeLegContextSchema,
         })
     ),
 });
@@ -62,7 +59,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Outcome OHLCV',
         description:
-            "Returns OHLCV candles for one or more outcome legs over the requested interval. Provide either `coin` (full Hyperliquid coin identifier, e.g. `#1730`) or `outcome_id` (UInt64); both accept CSV for batched grid views. With `outcome_id`, the `side` selector resolves to side_index 0 (`yes`, default), 1 (`no`), or returns both (`both`).\n\nTrade-side fields (`buy_volume`, `sell_volume`) carry the directional split: `buy_volume` counts taker buys of this leg, `sell_volume` counts taker sells. Composition events (SPLIT_OUTCOME, MERGE_OUTCOME, MERGE_QUESTION, NEGATE_OUTCOME) and SETTLEMENT payouts are excluded from candles by design; query them via `/v1/hyperliquid/outcomes/trades` for the raw stream.\n\nWhen multiple legs are requested, each timestamp bucket is paginated as a unit — the response contains every requested leg's candle for the most recent `limit` distinct timestamps.",
+            "Returns OHLCV candles for one or more outcome legs over the requested interval. Provide either `coin` (full Hyperliquid coin identifier, e.g. `#1730`) or `outcome_id` (UInt64); both accept CSV for batched grid views. With `outcome_id`, the `side` selector resolves to side_index 0 (`yes`, default), 1 (`no`), or returns both (`both`).\n\nTrade-side fields (`buy_volume`, `sell_volume`) carry the directional split: `buy_volume` counts taker buys of this leg, `sell_volume` counts taker sells. Composition events (SPLIT_OUTCOME, MERGE_OUTCOME, MERGE_QUESTION, NEGATE_OUTCOME) and SETTLEMENT payouts are excluded from candles by design; query them via `/v1/hyperliquid/outcomes/trades` for the raw stream.\n\nWhen multiple legs are requested, each timestamp bucket is paginated as a unit — the response contains every requested leg's candle for the most recent `limit` distinct timestamps.\n\nEvery row embeds the compact `outcome` leg context (`outcome_id`, `outcome_name`, `question_id`, `question_name`, `status`, `settle_fraction`, `coin`, `side_index`, `side_label`). For full outcome metadata call `/v1/hyperliquid/outcomes?outcome_id=...`.",
         tags: ['Hyperliquid Outcomes'],
         security: [{ bearerAuth: [] }],
         responses: {
@@ -77,11 +74,6 @@ const openapi = describeRoute(
                                     data: [
                                         {
                                             timestamp: '2026-06-16 15:00:00',
-                                            coin: '#1730',
-                                            outcome_id: 173,
-                                            side_index: 0,
-                                            side_label: 'Yes',
-                                            outcome_name: 'Argentina',
                                             interval_min: 60,
                                             open: 0.09562,
                                             high: 0.09732,
@@ -92,6 +84,17 @@ const openapi = describeRoute(
                                             gross_volume: 7336.03,
                                             net_volume: 1706.61,
                                             transactions: 18,
+                                            outcome: {
+                                                outcome_id: 173,
+                                                outcome_name: 'Argentina',
+                                                question_id: 32,
+                                                question_name: '2026 World Cup Champion',
+                                                status: 'live',
+                                                settle_fraction: null,
+                                                coin: '#1730',
+                                                side_index: 0,
+                                                side_label: 'Yes',
+                                            },
                                         },
                                     ],
                                 },
@@ -102,11 +105,6 @@ const openapi = describeRoute(
                                     data: [
                                         {
                                             timestamp: '2026-06-16 15:00:00',
-                                            coin: '#1730',
-                                            outcome_id: 173,
-                                            side_index: 0,
-                                            side_label: 'Yes',
-                                            outcome_name: 'Argentina',
                                             interval_min: 60,
                                             open: 0.09562,
                                             high: 0.09732,
@@ -117,14 +115,20 @@ const openapi = describeRoute(
                                             gross_volume: 7336.03,
                                             net_volume: 1706.61,
                                             transactions: 18,
+                                            outcome: {
+                                                outcome_id: 173,
+                                                outcome_name: 'Argentina',
+                                                question_id: 32,
+                                                question_name: '2026 World Cup Champion',
+                                                status: 'live',
+                                                settle_fraction: null,
+                                                coin: '#1730',
+                                                side_index: 0,
+                                                side_label: 'Yes',
+                                            },
                                         },
                                         {
                                             timestamp: '2026-06-16 15:00:00',
-                                            coin: '#1731',
-                                            outcome_id: 173,
-                                            side_index: 1,
-                                            side_label: 'No',
-                                            outcome_name: 'Argentina',
                                             interval_min: 60,
                                             open: 0.90438,
                                             high: 0.90475,
@@ -135,6 +139,17 @@ const openapi = describeRoute(
                                             gross_volume: 4925.43,
                                             net_volume: -1284.33,
                                             transactions: 12,
+                                            outcome: {
+                                                outcome_id: 173,
+                                                outcome_name: 'Argentina',
+                                                question_id: 32,
+                                                question_name: '2026 World Cup Champion',
+                                                status: 'live',
+                                                settle_fraction: null,
+                                                coin: '#1731',
+                                                side_index: 1,
+                                                side_label: 'No',
+                                            },
                                         },
                                     ],
                                 },

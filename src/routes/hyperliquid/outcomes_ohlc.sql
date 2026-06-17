@@ -19,7 +19,10 @@ WITH
         SELECT
             outcome_id,
             name AS outcome_name,
-            side_specs
+            side_specs,
+            status,
+            question_id,
+            settle_fraction
         FROM {db_hypercore:Identifier}.state_outcome_meta FINAL
         WHERE outcome_id IN (
             SELECT intDiv(toUInt64(splitByChar('#', c)[2]), 10)
@@ -28,11 +31,6 @@ WITH
     )
 SELECT
     candles.timestamp                                              AS timestamp,
-    candles.coin                                                   AS coin,
-    candles.outcome_id                                             AS outcome_id,
-    candles.side_index                                             AS side_index,
-    coalesce(m.side_specs[candles.side_index + 1], '')             AS side_label,
-    coalesce(m.outcome_name, '')                                   AS outcome_name,
     candles.interval_min                                           AS interval_min,
     candles.open                                                   AS open,
     greatest(candles.high_quantile, candles.open, candles.close)   AS high,
@@ -42,7 +40,31 @@ SELECT
     candles.sell_volume                                            AS sell_volume,
     candles.gross_volume                                           AS gross_volume,
     candles.net_volume                                             AS net_volume,
-    candles.transactions                                           AS transactions
+    candles.transactions                                           AS transactions,
+    CAST(
+        (
+            candles.outcome_id,
+            coalesce(m.outcome_name, ''),
+            m.question_id,
+            nullIf(coalesce(q.name, ''), ''),
+            coalesce(m.status, ''),
+            m.settle_fraction,
+            candles.coin,
+            candles.side_index,
+            coalesce(m.side_specs[candles.side_index + 1], '')
+        )
+        AS Tuple(
+            outcome_id UInt64,
+            outcome_name String,
+            question_id Nullable(UInt64),
+            question_name Nullable(String),
+            status String,
+            settle_fraction Nullable(Float64),
+            coin String,
+            side_index UInt8,
+            side_label String
+        )
+    )                                                              AS outcome
 FROM (
     SELECT
         t.timestamp                                                AS timestamp,
@@ -68,4 +90,8 @@ FROM (
     SETTINGS optimize_aggregation_in_order = 1
 ) AS candles
 LEFT JOIN meta AS m ON m.outcome_id = candles.outcome_id
+LEFT JOIN (
+    SELECT question_id, name
+    FROM {db_hypercore:Identifier}.state_question_meta FINAL
+) AS q ON q.question_id = m.question_id
 ORDER BY candles.timestamp DESC, candles.coin

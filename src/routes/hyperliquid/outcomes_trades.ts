@@ -15,6 +15,7 @@ import {
     timestampSchema,
 } from '../../types/zod.js';
 import { validatorHook, withErrorResponses } from '../../utils.js';
+import { outcomeLegContextSchema } from './_outcome_context.js';
 
 import query from './outcomes_trades.sql' with { type: 'text' };
 
@@ -35,11 +36,6 @@ const responseSchema = apiUsageResponseSchema.extend({
             transaction_hash: z.string(),
             transaction_id: z.number().int(),
             event_index: z.number().int(),
-            coin: z.string(),
-            outcome_id: z.number().int(),
-            side_index: z.number().int(),
-            side_label: z.string(),
-            outcome_name: z.string(),
             user: z.string(),
             side: z
                 .string()
@@ -58,6 +54,7 @@ const responseSchema = apiUsageResponseSchema.extend({
             client_order_id: z.string(),
             twap_id: z.number().int(),
             crossed: z.boolean(),
+            outcome: outcomeLegContextSchema,
         })
     ),
 });
@@ -66,7 +63,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Outcome Trades',
         description:
-            'Returns a chronological fill feed for HIP-4 outcome markets. Each row is a single fill carrying price, size, side (`BID` = user bought, `ASK` = user sold), and one of seven directions:\n\n- `BUY`, `SELL`: regular taker matches. These are the only directions that flow into OHLCV candles.\n- `SETTLEMENT`: payout when the outcome resolved. Size = position cleared, price = 1 on the winning leg or 0 on the losing leg.\n- `SPLIT_OUTCOME`: user minted both Yes+No legs by depositing $1 of the quote token.\n- `MERGE_OUTCOME`: user redeemed Yes+No legs back to $1 of the quote token.\n- `MERGE_QUESTION`: user redeemed a full set of question outcomes back to $1 (multi-outcome only).\n- `NEGATE_OUTCOME`: converted a Yes-leg holding into a No-leg holding for the *other* outcomes under the same question (multi-outcome only).\n\nFilters compose additively. At least one of `coin`, `outcome_id`, `question_id`, or `user` is required. Defaults to the last 24 hours when no time range is specified.\n\nFor candle aggregates of the BUY/SELL subset, see `/v1/hyperliquid/outcomes/ohlc`. `fee_token` shows `+<coin_number>` on zero-fee fills (Hyperliquid wire-format quirk).',
+            'Returns a chronological fill feed for HIP-4 outcome markets. Each row is a single fill carrying price, size, side (`BID` = user bought, `ASK` = user sold), and one of seven directions:\n\n- `BUY`, `SELL`: regular taker matches. These are the only directions that flow into OHLCV candles.\n- `SETTLEMENT`: payout when the outcome resolved. Size = position cleared, price = 1 on the winning leg or 0 on the losing leg.\n- `SPLIT_OUTCOME`: user minted both Yes+No legs by depositing $1 of the quote token.\n- `MERGE_OUTCOME`: user redeemed Yes+No legs back to $1 of the quote token.\n- `MERGE_QUESTION`: user redeemed a full set of question outcomes back to $1 (multi-outcome only).\n- `NEGATE_OUTCOME`: converted a Yes-leg holding into a No-leg holding for the *other* outcomes under the same question (multi-outcome only).\n\nFilters compose additively. At least one of `coin`, `outcome_id`, `question_id`, or `user` is required. Defaults to the last 24 hours when no time range is specified.\n\nEvery row embeds the compact `outcome` leg context (`outcome_id`, `outcome_name`, `question_id`, `question_name`, `status`, `settle_fraction`, `coin`, `side_index`, `side_label`). For full outcome metadata call `/v1/hyperliquid/outcomes?outcome_id=...`.\n\nFor candle aggregates of the BUY/SELL subset, see `/v1/hyperliquid/outcomes/ohlc`. `fee_token` shows `+<coin_number>` on zero-fee fills (Hyperliquid wire-format quirk).',
         tags: ['Hyperliquid Outcomes'],
         security: [{ bearerAuth: [] }],
         responses: {
@@ -86,11 +83,6 @@ const openapi = describeRoute(
                                                 '0x40163a5290e2756e418f043dc1871e00005152382be59440e3dee5a54fe64f58',
                                             transaction_id: 218233422822675,
                                             event_index: 347,
-                                            coin: '#3290',
-                                            outcome_id: 329,
-                                            side_index: 0,
-                                            side_label: 'Yes',
-                                            outcome_name: 'Recurring',
                                             user: '0xfc0a9d73b4382348bac7f4f600439bc61bb00271',
                                             side: 'ASK',
                                             direction: 'SETTLEMENT',
@@ -105,6 +97,17 @@ const openapi = describeRoute(
                                             client_order_id: '',
                                             twap_id: 0,
                                             crossed: true,
+                                            outcome: {
+                                                outcome_id: 329,
+                                                outcome_name: 'Recurring',
+                                                question_id: null,
+                                                question_name: null,
+                                                status: 'settled',
+                                                settle_fraction: 1.0,
+                                                coin: '#3290',
+                                                side_index: 0,
+                                                side_label: 'Yes',
+                                            },
                                         },
                                     ],
                                 },

@@ -14,6 +14,7 @@ import {
     userLookbackIntervalSchema,
 } from '../../types/zod.js';
 import { validatorHook, withErrorResponses } from '../../utils.js';
+import { outcomeContextSchema } from './_outcome_context.js';
 
 import query from './outcomes_users.sql' with { type: 'text' };
 
@@ -24,20 +25,10 @@ const querySchema = createQuerySchema({
     interval: { schema: userLookbackIntervalSchema, optional: true },
 });
 
-const questionSchema = z.object({
-    question_id: z.number().int().nullable(),
-    name: z.string().nullable(),
-    fallback_outcome_id: z.number().int().nullable(),
-});
-
 const responseSchema = apiUsageResponseSchema.extend({
     data: z.array(
         z.object({
             user: z.string(),
-            outcome_id: z.number().int(),
-            outcome_name: z.string(),
-            status: z.string(),
-            side_specs: z.array(z.string()),
             transactions: z.number().int(),
             buys: z.number().int(),
             sells: z.number().int(),
@@ -47,16 +38,16 @@ const responseSchema = apiUsageResponseSchema.extend({
             realized_pnl: z.number(),
             first_trade: dateTimeSchema,
             last_trade: dateTimeSchema,
-            question: questionSchema,
+            outcome: outcomeContextSchema,
         })
     ),
 });
 
 const openapi = describeRoute(
     withErrorResponses({
-        summary: 'Outcome User Activity',
+        summary: 'Outcome User Lookup',
         description:
-            'Returns trading aggregates per outcome for a given user, with both side legs (Yes/No or custom labels) collapsed into one row per outcome. Includes fill count, buys/sells split, volume bought/sold, realized PnL, and first/last trade times across all seven outcome directions (BUY/SELL/SETTLEMENT/SPLIT_OUTCOME/MERGE_OUTCOME/MERGE_QUESTION/NEGATE_OUTCOME).\n\n`user` is required; `outcome_id` and `question_id` narrow further. Sorted by `total_volume` descending. Backed by `state_user_by_coin` (hourly refresh; `interval=1h` lags up to 1h).\n\n`question.question_id IS NULL` indicates a binary single-outcome market (no parent question grouping in HL `outcomeMeta`).',
+            'Returns trading aggregates per outcome for a given user, with both side legs (Yes/No or custom labels) collapsed into one row per outcome. Includes fill count, buys/sells split, volume bought/sold, realized PnL, and first/last trade times.\n\nSETTLEMENT events contribute to `realized_pnl` (the resolution payout is realized P&L for positions held to resolution) but do not count toward `transactions` / `buys` / `sells` / `volume_*` — those reflect actual taker trade activity. SPLIT/MERGE/MERGE_QUESTION/NEGATE composition events are excluded from every aggregate.\n\n`user` is required; `outcome_id` and `question_id` narrow further. Sorted by `total_volume` descending. Backed by `state_user_by_coin` (hourly refresh; `interval=1h` lags up to 1h).\n\nEvery row embeds the compact `outcome` context (`outcome_id`, `outcome_name`, `question_id`, `question_name`, `status`, `settle_fraction`). For full outcome metadata (description, side_specs, named_outcome_ids, etc.) call `/v1/hyperliquid/outcomes?outcome_id=...`.',
         tags: ['Hyperliquid Outcomes'],
         security: [{ bearerAuth: [] }],
         responses: {
@@ -71,10 +62,6 @@ const openapi = describeRoute(
                                     data: [
                                         {
                                             user: '0xfcecc2a54724cf0502eb7c916e2717ef76a510ed',
-                                            outcome_id: 318,
-                                            outcome_name: 'Germany',
-                                            status: 'settled',
-                                            side_specs: ['Yes', 'No'],
                                             transactions: 276,
                                             buys: 30,
                                             sells: 246,
@@ -84,10 +71,13 @@ const openapi = describeRoute(
                                             realized_pnl: 61796.11,
                                             first_trade: '2026-06-12 09:36:14',
                                             last_trade: '2026-06-14 18:15:01',
-                                            question: {
+                                            outcome: {
+                                                outcome_id: 318,
+                                                outcome_name: 'Germany',
                                                 question_id: null,
-                                                name: null,
-                                                fallback_outcome_id: null,
+                                                question_name: null,
+                                                status: 'settled',
+                                                settle_fraction: 1.0,
                                             },
                                         },
                                     ],
