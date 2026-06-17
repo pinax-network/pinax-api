@@ -24,6 +24,7 @@ WHERE f.user = f.liquidated_user
   AND (empty({coin:Array(String)})            OR f.coin IN {coin:Array(String)})
   AND (empty({dex:Array(String)})             OR dex_from_coin(f.coin) IN {dex:Array(String)})
   AND (empty({liquidated_user:Array(String)}) OR f.liquidated_user IN {liquidated_user:Array(String)})
+  AND (empty({direction:Array(String)})       OR f.direction IN {direction:Array(String)})
   AND (isNull({start_time:Nullable(UInt64)})      OR f.timestamp >= toDateTime({start_time:Nullable(UInt64)}))
   AND (isNull({end_time:Nullable(UInt64)})        OR f.timestamp <  toDateTime({end_time:Nullable(UInt64)}))
 GROUP BY f.event_hash, f.liquidated_user, f.coin, f.direction

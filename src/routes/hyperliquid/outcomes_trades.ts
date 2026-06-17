@@ -10,6 +10,7 @@ import {
     dateTimeSchema,
     evmAddressSchema,
     hyperliquidOutcomeCoinSchema,
+    hyperliquidOutcomeDirectionSchema,
     hyperliquidOutcomeIdSchema,
     hyperliquidQuestionIdSchema,
     timestampSchema,
@@ -24,6 +25,7 @@ const querySchema = createQuerySchema({
     outcome_id: { schema: hyperliquidOutcomeIdSchema, batched: true, optional: true },
     question_id: { schema: hyperliquidQuestionIdSchema, batched: true, optional: true },
     user: { schema: evmAddressSchema, batched: true, optional: true },
+    direction: { schema: hyperliquidOutcomeDirectionSchema, batched: true, optional: true },
     start_time: { schema: timestampSchema, optional: true },
     end_time: { schema: timestampSchema, optional: true },
 });

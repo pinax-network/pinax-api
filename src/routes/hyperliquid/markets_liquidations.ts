@@ -11,6 +11,7 @@ import {
     evmAddressSchema,
     hyperliquidCoinSchema,
     hyperliquidDexIdSchema,
+    hyperliquidLiquidationDirectionSchema,
     hyperliquidLiquidationSortBySchema,
     timestampSchema,
 } from '../../types/zod.js';
@@ -22,6 +23,7 @@ const querySchema = createQuerySchema({
     coin: { schema: hyperliquidCoinSchema, batched: true, optional: true },
     dex: { schema: hyperliquidDexIdSchema, batched: true, optional: true },
     liquidated_user: { schema: evmAddressSchema, batched: true, optional: true },
+    direction: { schema: hyperliquidLiquidationDirectionSchema, batched: true, optional: true },
     sort_by: { schema: hyperliquidLiquidationSortBySchema, prefault: 'notional' },
     start_time: { schema: timestampSchema, optional: true },
     end_time: { schema: timestampSchema, optional: true },

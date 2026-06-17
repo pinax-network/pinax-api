@@ -49,6 +49,7 @@ WITH
           AND (empty({coin:Array(String)})        OR coin       IN {coin:Array(String)})
           AND (empty({outcome_id:Array(String)})  OR outcome_id IN (SELECT toUInt64(arrayJoin({outcome_id:Array(String)}))))
           AND (empty({question_id:Array(String)}) OR outcome_id IN (SELECT outcome_id FROM question_outcome_ids))
+          AND (empty({direction:Array(String)})   OR direction  IN {direction:Array(String)})
         ORDER BY timestamp DESC, block_num DESC, event_index DESC
         LIMIT {limit:UInt64}
         OFFSET {offset:UInt64}
