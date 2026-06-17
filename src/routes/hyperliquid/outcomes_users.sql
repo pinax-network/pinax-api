@@ -21,6 +21,11 @@ WITH
         WHERE dex = 'outcome'
           AND interval_min = {interval_min:UInt32}
           AND user IN {user:Array(String)}
+    ),
+    meta AS (
+        SELECT outcome_id, name, status, question_id, settle_fraction
+        FROM {db_hypercore:Identifier}.state_outcome_meta FINAL
+        WHERE outcome_id IN (SELECT outcome_id FROM rows)
     )
 SELECT
     r.user                                                   AS user,
@@ -52,13 +57,11 @@ SELECT
         )
     )                                                        AS outcome
 FROM rows AS r
-LEFT JOIN (
-    SELECT outcome_id, name, status, question_id, settle_fraction
-    FROM {db_hypercore:Identifier}.state_outcome_meta FINAL
-) AS m ON m.outcome_id = r.outcome_id
+LEFT JOIN meta AS m ON m.outcome_id = r.outcome_id
 LEFT JOIN (
     SELECT question_id, name
     FROM {db_hypercore:Identifier}.state_question_meta FINAL
+    WHERE question_id IN (SELECT question_id FROM meta WHERE question_id IS NOT NULL)
 ) AS q ON q.question_id = m.question_id
 WHERE (empty({outcome_id:Array(String)})  OR r.outcome_id IN (SELECT toUInt64(arrayJoin({outcome_id:Array(String)}))))
   AND (empty({question_id:Array(String)}) OR r.outcome_id IN (SELECT outcome_id FROM question_outcome_ids))

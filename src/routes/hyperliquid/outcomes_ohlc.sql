@@ -93,5 +93,6 @@ LEFT JOIN meta AS m ON m.outcome_id = candles.outcome_id
 LEFT JOIN (
     SELECT question_id, name
     FROM {db_hypercore:Identifier}.state_question_meta FINAL
+    WHERE question_id IN (SELECT question_id FROM meta WHERE question_id IS NOT NULL)
 ) AS q ON q.question_id = m.question_id
 ORDER BY candles.timestamp DESC, candles.coin
