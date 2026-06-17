@@ -1113,7 +1113,6 @@ const hyperliquidOutcomeDirectionValues = [
 ] as const;
 export const hyperliquidOutcomeDirectionSchema = z
     .enum(hyperliquidOutcomeDirectionValues)
-    .refine((val) => !/[,\s]/.test(val), 'no commas or whitespace')
     .meta({
         type: 'string',
         enum: hyperliquidOutcomeDirectionValues,
@@ -1146,7 +1145,6 @@ const hyperliquidMarketDirectionValues = [
 ] as const;
 export const hyperliquidMarketDirectionSchema = z
     .enum(hyperliquidMarketDirectionValues)
-    .refine((val) => !/[,\s]/.test(val), 'no commas or whitespace')
     .meta({
         type: 'string',
         enum: hyperliquidMarketDirectionValues,
@@ -1168,7 +1166,6 @@ const hyperliquidLiquidationDirectionValues = [
 ] as const;
 export const hyperliquidLiquidationDirectionSchema = z
     .enum(hyperliquidLiquidationDirectionValues)
-    .refine((val) => !/[,\s]/.test(val), 'no commas or whitespace')
     .meta({
         type: 'string',
         enum: hyperliquidLiquidationDirectionValues,
