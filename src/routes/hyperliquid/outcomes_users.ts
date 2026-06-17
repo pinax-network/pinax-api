@@ -19,7 +19,7 @@ import { outcomeContextSchema } from './_outcome_context.js';
 import query from './outcomes_users.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
-    user: { schema: evmAddressSchema, batched: true },
+    user: { schema: evmAddressSchema, batched: true, optional: true },
     outcome_id: { schema: hyperliquidOutcomeIdSchema, batched: true, optional: true },
     question_id: { schema: hyperliquidQuestionIdSchema, batched: true, optional: true },
     interval: { schema: userLookbackIntervalSchema, optional: true },
@@ -47,7 +47,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Outcome User Lookup',
         description:
-            'Returns trading aggregates per outcome for a given user, with both side legs (Yes/No or custom labels) collapsed into one row per outcome. Includes fill count, buys/sells split, volume bought/sold, realized PnL, and first/last trade times.\n\nSETTLEMENT events contribute to `realized_pnl` (the resolution payout is realized P&L for positions held to resolution) but do not count toward `transactions` / `buys` / `sells` / `volume_*` — those reflect actual taker trade activity. SPLIT/MERGE/MERGE_QUESTION/NEGATE composition events are excluded from every aggregate.\n\n`user` is required; `outcome_id` and `question_id` narrow further. Sorted by `total_volume` descending. Backed by `state_user_by_coin` (hourly refresh; `interval=1h` lags up to 1h).\n\nEvery row embeds the compact `outcome` context (`outcome_id`, `outcome_name`, `question_id`, `question_name`, `status`, `settle_fraction`). For full outcome metadata (description, side_specs, named_outcome_ids, etc.) call `/v1/hyperliquid/outcomes?outcome_id=...`.',
+            'Returns trading aggregates per outcome with both side legs (Yes/No or custom labels) collapsed into one row per (user, outcome). Includes fill count, buys/sells split, volume bought/sold, realized PnL, and first/last trade times.\n\nFilters compose additively. At least one of `user`, `outcome_id`, or `question_id` must be provided. Sorted by `total_volume` descending — when `user` is omitted the response is a leaderboard for the given outcome / question scope.\n\nSETTLEMENT events contribute to `realized_pnl` (the resolution payout is realized P&L for positions held to resolution) but do not count toward `transactions` / `buys` / `sells` / `volume_*` — those reflect actual taker trade activity. SPLIT/MERGE/MERGE_QUESTION/NEGATE composition events are excluded from every aggregate.\n\n`interval` selects the lookback window applied at MV refresh time: `1h`, `1d`, `1w`, `30d`. Omit for all-time. Each interval is a sliding window of fills whose `fill_time >= now() - interval` at the most recent MV refresh; rows have up to one hour of staleness (and up to six hours for the all-time aggregate). Backed by `state_user_by_coin`.\n\nEvery row embeds the compact `outcome` context (`outcome_id`, `outcome_name`, `question_id`, `question_name`, `status`, `settle_fraction`). For full outcome metadata (description, side_specs, named_outcome_ids, etc.) call `/v1/hyperliquid/outcomes?outcome_id=...`.',
         tags: ['Hyperliquid Outcomes'],
         security: [{ bearerAuth: [] }],
         responses: {
@@ -57,7 +57,8 @@ const openapi = describeRoute(
                     'application/json': {
                         schema: resolver(responseSchema),
                         examples: {
-                            default: {
+                            single_user_profile: {
+                                summary: '?user=0xfcec... — per-outcome stats for one user',
                                 value: {
                                     data: [
                                         {
@@ -83,6 +84,33 @@ const openapi = describeRoute(
                                     ],
                                 },
                             },
+                            leaderboard_by_outcome: {
+                                summary: '?outcome_id=357 — top traders on one outcome, sorted by total_volume',
+                                value: {
+                                    data: [
+                                        {
+                                            user: '0xfcecc2a54724cf0502eb7c916e2717ef76a510ed',
+                                            transactions: 207,
+                                            buys: 55,
+                                            sells: 152,
+                                            volume_bought: 19590.55,
+                                            volume_sold: 63301.03,
+                                            total_volume: 82891.58,
+                                            realized_pnl: 7524.9,
+                                            first_trade: '2026-06-16 23:05:01',
+                                            last_trade: '2026-06-17 20:10:33',
+                                            outcome: {
+                                                outcome_id: 357,
+                                                outcome_name: 'Argentina',
+                                                question_id: 32,
+                                                question_name: '2026 World Cup Champion',
+                                                status: 'live',
+                                                settle_fraction: null,
+                                            },
+                                        },
+                                    ],
+                                },
+                            },
                         },
                     },
                 },
@@ -96,8 +124,15 @@ const route = new Hono<{ Variables: { validatedData: z.infer<typeof querySchema>
 route.get('/', openapi, zValidator('query', querySchema, validatorHook), validator('query', querySchema), async (c) => {
     const params = c.req.valid('query');
 
-    if (!params.user.length) {
-        return c.json({ status: 400, code: 'bad_query_input', message: 'user is required' }, 400);
+    if (!params.user.length && !params.outcome_id.length && !params.question_id.length) {
+        return c.json(
+            {
+                status: 400,
+                code: 'bad_query_input',
+                message: 'Provide at least one of user, outcome_id, or question_id',
+            },
+            400
+        );
     }
 
     const hypercore = config.hypercoreDatabases.hyperliquid;
