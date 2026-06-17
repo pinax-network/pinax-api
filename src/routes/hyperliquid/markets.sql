@@ -90,9 +90,9 @@ FROM (
         cur.sell_volume_24h                                                      AS sell_volume_24h,
         cur.trades_24h                                                           AS trades_24h,
         coalesce(uu.unique_users_24h, 0)                                         AS unique_users_24h,
-        oi.open_interest                                                         AS open_interest,
-        oi.funding_rate                                                          AS funding_rate,
-        oi.funding_snapshot_time                                                 AS funding_snapshot_time
+        if(oi.funding_snapshot_time > toDateTime(0), oi.open_interest, NULL)     AS open_interest,
+        if(oi.funding_snapshot_time > toDateTime(0), oi.funding_rate,   NULL)    AS funding_rate,
+        if(oi.funding_snapshot_time > toDateTime(0), oi.funding_snapshot_time, NULL) AS funding_snapshot_time
     FROM day_cur cur
     LEFT JOIN day_prev prev ON prev.coin = cur.coin
     LEFT JOIN oi_latest oi  ON oi.coin  = cur.coin
