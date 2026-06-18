@@ -10,6 +10,7 @@ import {
     dateTimeSchema,
     evmAddressSchema,
     hyperliquidOutcomeIdSchema,
+    hyperliquidOutcomeUserSortBySchema,
     hyperliquidQuestionIdSchema,
     userLookbackIntervalSchema,
 } from '../../types/zod.js';
@@ -23,7 +24,14 @@ const querySchema = createQuerySchema({
     outcome_id: { schema: hyperliquidOutcomeIdSchema, batched: true, optional: true },
     question_id: { schema: hyperliquidQuestionIdSchema, batched: true, optional: true },
     interval: { schema: userLookbackIntervalSchema, optional: true },
+    sort_by: { schema: hyperliquidOutcomeUserSortBySchema, prefault: 'total_volume' },
 });
+
+const SORT_COLUMN_MAP: Record<string, string> = {
+    total_volume: 'total_volume',
+    transactions: 'transactions',
+    realized_pnl: 'realized_pnl',
+};
 
 const responseSchema = apiUsageResponseSchema.extend({
     data: z.array(
@@ -47,7 +55,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Outcome User Lookup',
         description:
-            'Returns trading aggregates per outcome with both side legs (Yes/No or custom labels) collapsed into one row per (user, outcome). Includes fill count, buys/sells split, volume bought/sold, realized PnL, and first/last trade times.\n\nFilters compose additively. At least one of `user`, `outcome_id`, or `question_id` must be provided. Sorted by `total_volume` descending — when `user` is omitted the response is a leaderboard for the given outcome / question scope.\n\nSETTLEMENT events contribute to `realized_pnl` (the resolution payout is realized P&L for positions held to resolution) but do not count toward `transactions` / `buys` / `sells` / `volume_*` — those reflect actual taker trade activity. SPLIT/MERGE/MERGE_QUESTION/NEGATE composition events are excluded from every aggregate.\n\n`interval` selects the lookback window applied at MV refresh time: `1h`, `1d`, `1w`, `30d`. Omit for all-time. Each interval is a sliding window of fills whose `fill_time >= now() - interval` at the most recent MV refresh; rows have up to one hour of staleness (and up to six hours for the all-time aggregate). Backed by `state_user_by_coin`.\n\nEvery row embeds the compact `outcome` context (`outcome_id`, `outcome_name`, `question_id`, `question_name`, `status`, `settle_fraction`). For full outcome metadata (description, side_specs, named_outcome_ids, etc.) call `/v1/hyperliquid/outcomes?outcome_id=...`.',
+            '**At least one of `user`, `outcome_id`, or `question_id` is required** — calls without any of these return `400`.\n\nReturns trading aggregates per outcome with both side legs (Yes/No or custom labels) collapsed into one row per (user, outcome). Includes fill count, buys/sells split, volume bought/sold, realized PnL, and first/last trade times.\n\nFilters compose additively. Sorted by `sort_by` descending (default `total_volume`; also `transactions`, `realized_pnl`) — when `user` is omitted the response is a leaderboard for the given outcome / question scope.\n\nSETTLEMENT events contribute to `realized_pnl` (the resolution payout is realized P&L for positions held to resolution) but do not count toward `transactions` / `buys` / `sells` / `volume_*` — those reflect actual taker trade activity. SPLIT/MERGE/MERGE_QUESTION/NEGATE composition events are excluded from every aggregate.\n\n`interval` selects the lookback window applied at MV refresh time: `1h`, `1d`, `1w`, `30d`. Omit for all-time. Each interval is a sliding window of fills whose `fill_time >= now() - interval` at the most recent MV refresh; rows have up to one hour of staleness (and up to six hours for the all-time aggregate). Backed by `state_user_by_coin`.\n\nEvery row embeds the compact `outcome` context (`outcome_id`, `outcome_name`, `question_id`, `question_name`, `status`, `settle_fraction`). For full outcome metadata (description, side_specs, named_outcome_ids, etc.) call `/v1/hyperliquid/outcomes?outcome_id=...`.',
         tags: ['Hyperliquid Outcomes'],
         security: [{ bearerAuth: [] }],
         responses: {
@@ -140,7 +148,10 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
         return c.json({ error: 'Hyperliquid not configured' }, 500);
     }
 
-    const response = await makeUsageQueryJson(c, [query], {
+    const sortColumn = SORT_COLUMN_MAP[params.sort_by] ?? 'total_volume';
+    const sql = query.replace('ORDER BY total_volume DESC', `ORDER BY ${sortColumn} DESC`);
+
+    const response = await makeUsageQueryJson(c, [sql], {
         ...params,
         interval_min: params.interval ?? 0,
         network: 'hyperliquid',
