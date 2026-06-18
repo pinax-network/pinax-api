@@ -16,6 +16,7 @@ WITH
         FROM {db_hypercore:Identifier}.state_user_outcome_position FINAL
         WHERE share_balance > 0
           AND (empty({user:Array(String)})        OR user       IN {user:Array(String)})
+          AND (empty({coin:Array(String)})        OR coin       IN {coin:Array(String)})
           AND (empty({outcome_id:Array(String)})  OR outcome_id IN (SELECT toUInt64(arrayJoin({outcome_id:Array(String)}))))
           AND (empty({question_id:Array(String)}) OR outcome_id IN (SELECT outcome_id FROM question_outcome_ids))
     ),

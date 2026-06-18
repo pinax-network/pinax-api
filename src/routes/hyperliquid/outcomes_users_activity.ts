@@ -10,7 +10,7 @@ import {
     dateTimeSchema,
     evmAddressSchema,
     hyperliquidOutcomeCoinSchema,
-    hyperliquidOutcomeDirectionSchema,
+    hyperliquidOutcomeCompositionDirectionSchema,
     hyperliquidOutcomeIdSchema,
     hyperliquidQuestionIdSchema,
     timestampSchema,
@@ -25,7 +25,7 @@ const querySchema = createQuerySchema({
     coin: { schema: hyperliquidOutcomeCoinSchema, batched: true, optional: true },
     outcome_id: { schema: hyperliquidOutcomeIdSchema, batched: true, optional: true },
     question_id: { schema: hyperliquidQuestionIdSchema, batched: true, optional: true },
-    direction: { schema: hyperliquidOutcomeDirectionSchema, batched: true, optional: true },
+    direction: { schema: hyperliquidOutcomeCompositionDirectionSchema, batched: true, optional: true },
     start_time: { schema: timestampSchema, optional: true },
     end_time: { schema: timestampSchema, optional: true },
 });
@@ -55,7 +55,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'Outcome User Activity',
         description:
-            "Returns the chronological composition-event feed for HIP-4 outcome positions — one row per (event, affected leg). Covers `SETTLEMENT` (resolution payouts), `SPLIT_OUTCOME` (mint Yes+No from collateral), `MERGE_OUTCOME` (redeem Yes+No to collateral), `MERGE_QUESTION` (redeem the full Yes-set of a multi-outcome question), and `NEGATE_OUTCOME` (convert a No-A holding into Yes-on-every-other-outcome under the same question).\n\nBUY/SELL taker fills are deliberately excluded — query `/v1/hyperliquid/outcomes/trades` for those. Override the default by passing an explicit `direction` filter.\n\nFilters compose additively. At least one of `user`, `coin`, `outcome_id`, or `question_id` must be provided. Defaults to the last 24 hours when no time range is specified.\n\n`closed_pnl` carries the realized USDC delta for the row's leg (settlement payouts on the winning leg are positive; merge/redeem rows carry the collateral-side delta). For position-level rollups see `/v1/hyperliquid/outcomes/users`; for current open share balances see `/v1/hyperliquid/outcomes/users/positions`.\n\nEvery row embeds the compact `outcome` leg context (`outcome_id`, `outcome_name`, `question_id`, `question_name`, `status`, `settle_fraction`, `coin`, `side_index`, `side_label`). For full outcome metadata call `/v1/hyperliquid/outcomes?outcome_id=...`.",
+            "**At least one of `user`, `coin`, `outcome_id`, or `question_id` is required** — calls without any of these return `400`.\n\nReturns the chronological composition-event feed for HIP-4 outcome positions — one row per (event, affected leg). Covers `SETTLEMENT` (resolution payouts), `SPLIT_OUTCOME` (mint Yes+No from collateral), `MERGE_OUTCOME` (redeem Yes+No to collateral), `MERGE_QUESTION` (redeem the full Yes-set of a multi-outcome question), and `NEGATE_OUTCOME` (convert a No-A holding into Yes-on-every-other-outcome under the same question).\n\nBUY/SELL taker fills are not served by this endpoint — query `/v1/hyperliquid/outcomes/trades` for those. The `direction` enum here is restricted to the five composition tags; passing `BUY`/`SELL` returns `400`.\n\nFilters compose additively. Defaults to the last 24 hours when no time range is specified.\n\n`closed_pnl` carries the realized USDC delta for the row's leg (settlement payouts on the winning leg are positive; merge/redeem rows carry the collateral-side delta). For position-level rollups see `/v1/hyperliquid/outcomes/users`; for current open share balances see `/v1/hyperliquid/outcomes/users/positions`.\n\nEvery row embeds the compact `outcome` leg context (`outcome_id`, `outcome_name`, `question_id`, `question_name`, `status`, `settle_fraction`, `coin`, `side_index`, `side_label`). For full outcome metadata call `/v1/hyperliquid/outcomes?outcome_id=...`.",
         tags: ['Hyperliquid Outcomes'],
         security: [{ bearerAuth: [] }],
         responses: {
@@ -103,7 +103,7 @@ const openapi = describeRoute(
     })
 );
 
-const COMPOSITION_DIRECTIONS = ['SETTLEMENT', 'SPLIT_OUTCOME', 'MERGE_OUTCOME', 'MERGE_QUESTION', 'NEGATE_OUTCOME'];
+const ALL_COMPOSITION_DIRECTIONS = hyperliquidOutcomeCompositionDirectionSchema.options;
 
 const route = new Hono<{ Variables: { validatedData: z.infer<typeof querySchema> } }>();
 
@@ -126,8 +126,7 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
         return c.json({ error: 'Hyperliquid not configured' }, 500);
     }
 
-    // Default direction filter excludes BUY/SELL taker fills — those go through /outcomes/trades
-    const direction = params.direction.length ? params.direction : COMPOSITION_DIRECTIONS;
+    const direction = params.direction.length ? params.direction : ALL_COMPOSITION_DIRECTIONS;
 
     const response = await makeUsageQueryJson(c, [query], {
         ...params,

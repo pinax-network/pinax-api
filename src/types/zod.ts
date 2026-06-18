@@ -1021,6 +1021,15 @@ export const hyperliquidUserSortBySchema = z.enum(hyperliquidUserSortFields).met
     default: 'total_volume',
 });
 
+// Outcome-user sort columns — narrower than the perp/spot set because HIP-4
+// outcomes don't have fees, funding, or liquidation flows.
+const hyperliquidOutcomeUserSortFields = ['total_volume', 'transactions', 'realized_pnl'] as const;
+export const hyperliquidOutcomeUserSortBySchema = z.enum(hyperliquidOutcomeUserSortFields).meta({
+    type: 'string',
+    enum: hyperliquidOutcomeUserSortFields,
+    default: 'total_volume',
+});
+
 export const hyperliquidTokenSchema = z.coerce
     .string()
     .min(1)
@@ -1117,6 +1126,25 @@ export const hyperliquidOutcomeDirectionSchema = z.enum(hyperliquidOutcomeDirect
     description:
         'Restrict by outcome direction tag. `BUY`/`SELL` are taker matches; `SETTLEMENT` is the resolution payout; the four `*_OUTCOME`/`MERGE_QUESTION` tags are HIP-4 collateral reshapes. Omit for all seven.',
     example: 'BUY',
+});
+
+// `direction` filter for `/v1/hyperliquid/outcomes/users/activity`. Strict
+// subset excluding BUY/SELL — that endpoint is the composition-events feed
+// (resolution payouts + collateral reshapes); taker fills belong on
+// `/outcomes/trades`.
+const hyperliquidOutcomeCompositionDirectionValues = [
+    'SETTLEMENT',
+    'SPLIT_OUTCOME',
+    'MERGE_OUTCOME',
+    'MERGE_QUESTION',
+    'NEGATE_OUTCOME',
+] as const;
+export const hyperliquidOutcomeCompositionDirectionSchema = z.enum(hyperliquidOutcomeCompositionDirectionValues).meta({
+    type: 'string',
+    enum: hyperliquidOutcomeCompositionDirectionValues,
+    description:
+        'Composition events only. `SETTLEMENT` is the resolution payout; the four `*_OUTCOME`/`MERGE_QUESTION` tags are HIP-4 collateral reshapes. BUY/SELL not accepted — for taker fills query `/outcomes/trades`.',
+    example: 'SETTLEMENT',
 });
 
 // `direction` filter for `/v1/hyperliquid/markets/activity`. Perp + spot
