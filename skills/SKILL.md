@@ -1,10 +1,15 @@
 ---
 name: pinax-api
+type: skill
+title: Pinax API
 description: >
   Query Pinax API datasets, including Token API for EVM/SVM/TVM token data,
   prediction markets, and perp exchange data. Use when: integrating with Pinax
   API, choosing endpoints, building API requests, handling pagination, or
   discovering supported networks.
+resource: https://api.pinax.network
+tags: [pinax, token-api, evm, svm, tvm, polymarket, hyperliquid, blockchain]
+timestamp: 2026-06-19T00:00:00Z
 ---
 
 # Pinax API
