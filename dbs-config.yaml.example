@@ -22,7 +22,7 @@ networks:
     transfers: mainnet:evm-transfers@v0.2.2
     balances: mainnet:evm-balances@v0.2.3
     nfts: mainnet:evm-nft-tokens@v0.6.2
-    dexes: mainnet:evm-dex@v0.2.6
+    dexes: mainnet:evm-dex@v0.5.0
     contracts: mainnet:evm-contracts@v0.3.0
 
   # SVM Networks
@@ -33,14 +33,14 @@ networks:
     balances: solana:svm-balances@v0.3.2
     accounts: solana:svm-accounts@v0.3.0
     metadata: solana:svm-metadata@v0.3.1
-    dexes: solana:svm-dex@v0.4.4
+    dexes: solana:svm-dex@v0.5.2
 
   # TVM Networks
   tron:
     type: tvm
     cluster: b
     transfers: tron:evm-transfers@v0.2.3
-    dexes: tron:evm-dex@v0.2.6
+    dexes: tron:evm-dex@v0.5.0
 
   # Polymarket
   polymarket:

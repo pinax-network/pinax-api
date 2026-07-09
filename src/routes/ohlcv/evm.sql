@@ -1,4 +1,29 @@
 WITH
+window_bound AS (
+    /* Find the timestamp cutoff of the most-recent (limit+offset) candles by
+       scanning ONLY the cheap `timestamp` column of the underlying state table.
+       `ohlc_prices` is a GROUP BY view over `state_ohlc_prices`; querying it
+       without a lower time bound forces the merge of the pool's ENTIRE history
+       (multi-GB reads, multi-second, GBs of memory) before ORDER BY ... LIMIT
+       can discard almost all of it. Bounding the view to this cutoff keeps the
+       result identical while reading only the needed tail. The excluded-protocol
+       filter is applied here too so each counted bucket has a surviving row. */
+    SELECT min(bucket) AS min_ts
+    FROM
+    (
+        SELECT toStartOfInterval(timestamp, INTERVAL {interval:UInt64} MINUTE) AS bucket
+        FROM {db_dex:Identifier}.state_ohlc_prices
+        WHERE interval_min = {interval: UInt64}
+            AND pool = {pool: String}
+            AND (isNull({start_time:Nullable(UInt64)}) OR timestamp >= toDateTime({start_time:Nullable(UInt64)}))
+            AND (isNull({end_time:Nullable(UInt64)})   OR timestamp <= toDateTime({end_time:Nullable(UInt64)}))
+            AND toString(protocol) NOT IN {excluded_protocols:Array(String)}
+        GROUP BY bucket
+        ORDER BY bucket DESC
+        LIMIT  {limit:UInt64}
+        OFFSET {offset:UInt64}
+    )
+),
 ohlc_raw AS (
     /* Read the LIMIT'd window of OHLC rows first so the downstream metadata
        lookup is bounded to the tokens that actually appear in the result. */
@@ -20,6 +45,8 @@ ohlc_raw AS (
         AND p.pool = {pool: String}
         AND (isNull({start_time:Nullable(UInt64)}) OR p.timestamp >= toDateTime({start_time:Nullable(UInt64)}))
         AND (isNull({end_time:Nullable(UInt64)})   OR p.timestamp <= toDateTime({end_time:Nullable(UInt64)}))
+        /* Restrict the heavy state-merge view to the most-recent buckets found above. */
+        AND p.timestamp >= (SELECT min_ts FROM window_bound)
 
         /* Protocols whose substreams decoders are known to emit duplicates of another
            protocol. List maintained in EXCLUDED_EVM_PROTOCOLS in src/config.ts. */
