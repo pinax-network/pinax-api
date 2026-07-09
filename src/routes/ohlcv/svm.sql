@@ -1,4 +1,32 @@
-WITH ohlc AS
+WITH
+/* Find the timestamp cutoff of the most-recent (limit+offset) candles FIRST.
+   This only reads/aggregates the cheap `timestamp` column to enumerate distinct
+   buckets, so it can use the primary key and stop early — unlike the main query
+   below, whose argMin/quantile/uniq state-merges are expensive to read.
+   Without this bound the main GROUP BY has to merge the pool's ENTIRE history
+   before ORDER BY ... LIMIT can discard it, which is what makes high-activity
+   pools take >10s and time out (500). The cutoff preserves exact semantics:
+   `timestamp >= min_bucket` selects precisely the most-recent buckets, including
+   for sparse pools whose candles span a much wider wall-clock range than
+   interval*limit. */
+window_bound AS
+(
+    SELECT min(bucket) AS min_ts
+    FROM
+    (
+        SELECT toStartOfInterval(timestamp, INTERVAL {interval:UInt64} MINUTE) AS bucket
+        FROM {db_dex:Identifier}.state_ohlc_prices
+        WHERE interval_min = {interval: UInt64}
+        AND amm_pool = {amm_pool: String}
+        AND (isNull({start_time:Nullable(UInt64)}) OR timestamp >= toDateTime({start_time:Nullable(UInt64)}))
+        AND (isNull({end_time:Nullable(UInt64)}) OR timestamp <= toDateTime({end_time:Nullable(UInt64)}))
+        GROUP BY bucket
+        ORDER BY bucket DESC
+        LIMIT {limit: UInt64}
+        OFFSET {offset: UInt64}
+    )
+),
+ohlc AS
 (
     SELECT
         if(
@@ -23,6 +51,8 @@ WITH ohlc AS
     AND amm_pool = {amm_pool: String}
     AND (isNull({start_time:Nullable(UInt64)}) OR timestamp >= toDateTime({start_time:Nullable(UInt64)}))
     AND (isNull({end_time:Nullable(UInt64)}) OR timestamp <= toDateTime({end_time:Nullable(UInt64)}))
+    /* Restrict the heavy state-merge to the most-recent buckets found above. */
+    AND o.timestamp >= (SELECT min_ts FROM window_bound)
     GROUP BY token0, token1, amm, amm_pool, datetime
     ORDER BY datetime DESC
     LIMIT {limit: UInt64}
