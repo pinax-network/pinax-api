@@ -2,7 +2,7 @@
     "private": true,
     "name": "pinax-api",
     "description": "Pinax API",
-    "version": "3.21.0",
+    "version": "3.21.1",
     "homepage": "https://github.com/pinax-network/pinax-api",
     "license": "Apache-2.0",
     "type": "module",
