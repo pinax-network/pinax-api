@@ -50,11 +50,11 @@ clamped_start_ts AS (
 erc721 AS (
     SELECT
         CASE
-            WHEN from IN (
+            WHEN `from` IN (
                 '0x0000000000000000000000000000000000000000',
                 '0x000000000000000000000000000000000000dead'
             ) THEN 'MINT'
-            WHEN to IN (
+            WHEN `to` IN (
                 '0x0000000000000000000000000000000000000000',
                 '0x000000000000000000000000000000000000dead'
             ) THEN 'BURN'
@@ -65,8 +65,8 @@ erc721 AS (
         timestamp,
         tx_hash,
         contract,
-        from,
-        to,
+        `from`,
+        `to`,
         toString(token_id) AS token_id,
         amount,
         transfer_type,
@@ -79,18 +79,18 @@ erc721 AS (
         AND (empty({transaction_id:Array(String)}) OR tx_hash IN {transaction_id:Array(String)})
         AND (empty({contract:Array(String)}) OR contract IN {contract:Array(String)})
         AND (empty({token_id:Array(String)}) OR token_id IN {token_id:Array(String)})
-        AND (empty({address:Array(String)}) OR (from IN {address:Array(String)} OR to IN {address:Array(String)}))
-        AND (empty({from_address:Array(String)}) OR from IN {from_address:Array(String)})
-        AND (empty({to_address:Array(String)}) OR to IN {to_address:Array(String)})
+        AND (empty({address:Array(String)}) OR (`from` IN {address:Array(String)} OR `to` IN {address:Array(String)}))
+        AND (empty({from_address:Array(String)}) OR `from` IN {from_address:Array(String)})
+        AND (empty({to_address:Array(String)}) OR `to` IN {to_address:Array(String)})
 ),
 erc1155 AS (
     SELECT
         CASE
-            WHEN from IN (
+            WHEN `from` IN (
                 '0x0000000000000000000000000000000000000000',
                 '0x000000000000000000000000000000000000dead'
             ) THEN 'MINT'
-            WHEN to IN (
+            WHEN `to` IN (
                 '0x0000000000000000000000000000000000000000',
                 '0x000000000000000000000000000000000000dead'
             ) THEN 'BURN'
@@ -101,8 +101,8 @@ erc1155 AS (
         timestamp,
         tx_hash,
         contract,
-        from,
-        to,
+        `from`,
+        `to`,
         toString(token_id) AS token_id,
         amount,
         transfer_type,
@@ -114,9 +114,9 @@ erc1155 AS (
         AND (empty({transaction_id:Array(String)}) OR tx_hash IN {transaction_id:Array(String)})
         AND (empty({contract:Array(String)}) OR contract IN {contract:Array(String)})
         AND (empty({token_id:Array(String)}) OR token_id IN {token_id:Array(String)})
-        AND (empty({address:Array(String)}) OR (from IN {address:Array(String)} OR to IN {address:Array(String)}))
-        AND (empty({from_address:Array(String)}) OR from IN {from_address:Array(String)})
-        AND (empty({to_address:Array(String)}) OR to IN {to_address:Array(String)})
+        AND (empty({address:Array(String)}) OR (`from` IN {address:Array(String)} OR `to` IN {address:Array(String)}))
+        AND (empty({from_address:Array(String)}) OR `from` IN {from_address:Array(String)})
+        AND (empty({to_address:Array(String)}) OR `to` IN {to_address:Array(String)})
 ),
 combined AS (
     SELECT * FROM erc721
@@ -160,8 +160,8 @@ SELECT
     if(length(m.name) > 0, m.name, m2.name) AS name,
     if(length(m.symbol) > 0, m.symbol, m2.symbol) AS symbol,
     token_standard,
-    from,
-    to,
+    `from`,
+    `to`,
     toString(amount) AS amount,
     {network:String} as network
 FROM limit_combined AS c
