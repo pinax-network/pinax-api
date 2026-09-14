@@ -79,9 +79,9 @@ erc721 AS (
         AND (empty({transaction_id:Array(String)}) OR tx_hash IN {transaction_id:Array(String)})
         AND (empty({contract:Array(String)}) OR contract IN {contract:Array(String)})
         AND (empty({token_id:Array(String)}) OR token_id IN {token_id:Array(String)})
-        AND (empty({address:Array(String)}) OR (from IN {address:Array(String)} OR to IN {address:Array(String)}))
-        AND (empty({from_address:Array(String)}) OR from IN {from_address:Array(String)})
-        AND (empty({to_address:Array(String)}) OR to IN {to_address:Array(String)})
+        AND (empty({address:Array(String)}) OR (`from` IN {address:Array(String)} OR `to` IN {address:Array(String)}))
+        AND (empty({from_address:Array(String)}) OR `from` IN {from_address:Array(String)})
+        AND (empty({to_address:Array(String)}) OR `to` IN {to_address:Array(String)})
 ),
 erc1155 AS (
     SELECT
@@ -114,9 +114,9 @@ erc1155 AS (
         AND (empty({transaction_id:Array(String)}) OR tx_hash IN {transaction_id:Array(String)})
         AND (empty({contract:Array(String)}) OR contract IN {contract:Array(String)})
         AND (empty({token_id:Array(String)}) OR token_id IN {token_id:Array(String)})
-        AND (empty({address:Array(String)}) OR (from IN {address:Array(String)} OR to IN {address:Array(String)}))
-        AND (empty({from_address:Array(String)}) OR from IN {from_address:Array(String)})
-        AND (empty({to_address:Array(String)}) OR to IN {to_address:Array(String)})
+        AND (empty({address:Array(String)}) OR (`from` IN {address:Array(String)} OR `to` IN {address:Array(String)}))
+        AND (empty({from_address:Array(String)}) OR `from` IN {from_address:Array(String)})
+        AND (empty({to_address:Array(String)}) OR `to` IN {to_address:Array(String)})
 ),
 combined AS (
     SELECT * FROM erc721
