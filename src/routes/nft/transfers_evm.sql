@@ -1,19 +1,37 @@
 /*
-    Unified timestamp + block_num resolution.
-    Uses coalesce instead of `isNull(X) OR timestamp >= (subquery)` because
-    the OR pattern prevents ClickHouse from recognizing a clean primary-key range,
-    causing a full scan. With coalesce, ClickHouse always sees direct bounds,
-    enabling granule skipping on the primary index.
-    When no lower bound → falls back to epoch (toDateTime(0)) → no-op.
-    When no upper bound → falls back to now() → no-op.
-/* Only clamp to 1 hour when no narrowing filters are active.
-   start_time/start_block are already incorporated into start_ts, so the
-   clamp's greatest() handles them correctly without disabling it. */
+    NFT transfers (ERC-721 + ERC-1155).
 
-    NOTE: block_num filtering is limited — unlike swaps/transfers, the NFT database
-    has no `blocks` table to resolve block_num → timestamp, so block filters are applied
-    as secondary WHERE clauses after the timestamp clamp. This means block-only queries
-    are constrained to the 10-minute window. For accurate wide-range block_num filtering,
+    Table layout (both erc721_transfers and erc1155_transfers):
+      ORDER BY (timestamp, block_num, index)
+      bloom_filter skip indexes on tx_hash, contract, `from`, `to`
+
+    Unlike the ERC-20 transfers / swaps tables there is no `minute` column and no
+    per-minute projections, so the `minutes_union` pre-filter used there cannot be
+    applied here. Instead this query leans on two things the NFT tables do support:
+
+      1. Reverse primary-key reads. The final `ORDER BY timestamp DESC LIMIT` is
+         pushed through the UNION ALL, so every branch reads the table backwards
+         in PK order and stops as soon as enough rows match. (Do NOT add per-branch
+         LIMITs or re-reference `limit_combined` from other CTEs: ClickHouse inlines
+         CTEs at each use, which multiplies the scan.)
+
+      2. Bloom-filter skip indexes. A skip index can only prune when the column
+         predicate is AND-ed into the WHERE clause. `from IN x OR to IN x` defeats
+         both idx_from and idx_to (76% of granules survive on mainnet), so the
+         `address` filter is split into two branches per table:
+           - from-branch: `from` IN address            (uses idx_from)
+           - to-branch:   `to` IN address AND `from` NOT IN address  (uses idx_to)
+         The NOT IN guard makes the branches disjoint, so no dedup is needed.
+         When `address` is not provided the to-branch's `notEmpty(...)` folds to
+         false and the branch reads nothing.
+
+    Unified timestamp + block_num resolution uses coalesce instead of
+    `isNull(X) OR timestamp >= (subquery)` because the OR pattern prevents
+    ClickHouse from recognizing a clean primary-key range.
+
+    NOTE: block_num filtering is limited. The NFT database has no `blocks` table to
+    resolve block_num -> timestamp, so block filters are applied as secondary WHERE
+    clauses after the timestamp clamp. For accurate wide-range block_num filtering,
     a blocks table needs to be added to the NFT substreams:
     https://github.com/pinax-network/substreams-evm/issues/175
 */
@@ -32,11 +50,9 @@ has_filters AS (
         OR notEmpty({from_address:Array(String)}) OR notEmpty({to_address:Array(String)})
     ) AS yes
 ),
-/* Only skip the 10-minute safety clamp when the caller has provided BOTH
-   narrowing filters AND an explicit lower bound (start_time or start_block).
-   Without a lower bound, start_ts = epoch → ClickHouse scans the entire table.
-   Unlike EVM transfers/swaps, the NFT database has no `minute` column or
-   `minutes_union` pre-filtering, so the clamp is the only scan limiter. */
+/* Only skip the 1-hour safety clamp when the caller has provided narrowing
+   filters or an explicit lower bound (start_time or start_block). Without either,
+   start_ts = epoch and a bare query would scan the entire table. */
 has_explicit_start AS (
     SELECT (isNotNull({start_time:Nullable(UInt64)}) OR isNotNull({start_block:Nullable(UInt64)})) AS yes
 ),
@@ -47,7 +63,8 @@ clamped_start_ts AS (
         greatest((SELECT ts FROM start_ts), (SELECT ts FROM end_ts) - INTERVAL 1 HOUR)
     ) AS ts
 ),
-erc721 AS (
+/* ---- ERC-721: from-branch (also the only branch when `address` is empty) ---- */
+erc721_from AS (
     SELECT
         CASE
             WHEN `from` IN (
@@ -71,7 +88,7 @@ erc721 AS (
         amount,
         transfer_type,
         token_standard
-    FROM {db_nft:Identifier}.erc721_transfers AS t
+    FROM {db_nft:Identifier}.erc721_transfers
     WHERE timestamp >= (SELECT ts FROM clamped_start_ts) AND timestamp <= (SELECT ts FROM end_ts)
         AND (isNull({start_block:Nullable(UInt64)}) OR block_num >= {start_block:Nullable(UInt64)})
         AND (isNull({end_block:Nullable(UInt64)}) OR block_num <= {end_block:Nullable(UInt64)})
@@ -79,11 +96,12 @@ erc721 AS (
         AND (empty({transaction_id:Array(String)}) OR tx_hash IN {transaction_id:Array(String)})
         AND (empty({contract:Array(String)}) OR contract IN {contract:Array(String)})
         AND (empty({token_id:Array(String)}) OR token_id IN {token_id:Array(String)})
-        AND (empty({address:Array(String)}) OR (`from` IN {address:Array(String)} OR `to` IN {address:Array(String)}))
+        AND (empty({address:Array(String)}) OR `from` IN {address:Array(String)})
         AND (empty({from_address:Array(String)}) OR `from` IN {from_address:Array(String)})
         AND (empty({to_address:Array(String)}) OR `to` IN {to_address:Array(String)})
 ),
-erc1155 AS (
+/* ---- ERC-721: to-branch (only active when `address` is provided) ---- */
+erc721_to AS (
     SELECT
         CASE
             WHEN `from` IN (
@@ -107,21 +125,104 @@ erc1155 AS (
         amount,
         transfer_type,
         token_standard
-    FROM {db_nft:Identifier}.erc1155_transfers AS t
-    WHERE timestamp >= (SELECT ts FROM clamped_start_ts) AND timestamp <= (SELECT ts FROM end_ts)
+    FROM {db_nft:Identifier}.erc721_transfers
+    WHERE notEmpty({address:Array(String)})
+        AND `to` IN {address:Array(String)}
+        AND `from` NOT IN {address:Array(String)}
+        AND timestamp >= (SELECT ts FROM clamped_start_ts) AND timestamp <= (SELECT ts FROM end_ts)
         AND (isNull({start_block:Nullable(UInt64)}) OR block_num >= {start_block:Nullable(UInt64)})
         AND (isNull({end_block:Nullable(UInt64)}) OR block_num <= {end_block:Nullable(UInt64)})
+        AND (isNull({type:Nullable(String)}) OR `@type` = {type:Nullable(String)})
         AND (empty({transaction_id:Array(String)}) OR tx_hash IN {transaction_id:Array(String)})
         AND (empty({contract:Array(String)}) OR contract IN {contract:Array(String)})
         AND (empty({token_id:Array(String)}) OR token_id IN {token_id:Array(String)})
-        AND (empty({address:Array(String)}) OR (`from` IN {address:Array(String)} OR `to` IN {address:Array(String)}))
+        AND (empty({from_address:Array(String)}) OR `from` IN {from_address:Array(String)})
+        AND (empty({to_address:Array(String)}) OR `to` IN {to_address:Array(String)})
+),
+/* ---- ERC-1155: from-branch ---- */
+erc1155_from AS (
+    SELECT
+        CASE
+            WHEN `from` IN (
+                '0x0000000000000000000000000000000000000000',
+                '0x000000000000000000000000000000000000dead'
+            ) THEN 'MINT'
+            WHEN `to` IN (
+                '0x0000000000000000000000000000000000000000',
+                '0x000000000000000000000000000000000000dead'
+            ) THEN 'BURN'
+            ELSE 'TRANSFER'
+        END AS "@type",
+        block_num,
+        block_hash,
+        timestamp,
+        tx_hash,
+        contract,
+        `from`,
+        `to`,
+        toString(token_id) AS token_id,
+        amount,
+        transfer_type,
+        token_standard
+    FROM {db_nft:Identifier}.erc1155_transfers
+    WHERE timestamp >= (SELECT ts FROM clamped_start_ts) AND timestamp <= (SELECT ts FROM end_ts)
+        AND (isNull({start_block:Nullable(UInt64)}) OR block_num >= {start_block:Nullable(UInt64)})
+        AND (isNull({end_block:Nullable(UInt64)}) OR block_num <= {end_block:Nullable(UInt64)})
+        AND (isNull({type:Nullable(String)}) OR `@type` = {type:Nullable(String)})
+        AND (empty({transaction_id:Array(String)}) OR tx_hash IN {transaction_id:Array(String)})
+        AND (empty({contract:Array(String)}) OR contract IN {contract:Array(String)})
+        AND (empty({token_id:Array(String)}) OR token_id IN {token_id:Array(String)})
+        AND (empty({address:Array(String)}) OR `from` IN {address:Array(String)})
+        AND (empty({from_address:Array(String)}) OR `from` IN {from_address:Array(String)})
+        AND (empty({to_address:Array(String)}) OR `to` IN {to_address:Array(String)})
+),
+/* ---- ERC-1155: to-branch ---- */
+erc1155_to AS (
+    SELECT
+        CASE
+            WHEN `from` IN (
+                '0x0000000000000000000000000000000000000000',
+                '0x000000000000000000000000000000000000dead'
+            ) THEN 'MINT'
+            WHEN `to` IN (
+                '0x0000000000000000000000000000000000000000',
+                '0x000000000000000000000000000000000000dead'
+            ) THEN 'BURN'
+            ELSE 'TRANSFER'
+        END AS "@type",
+        block_num,
+        block_hash,
+        timestamp,
+        tx_hash,
+        contract,
+        `from`,
+        `to`,
+        toString(token_id) AS token_id,
+        amount,
+        transfer_type,
+        token_standard
+    FROM {db_nft:Identifier}.erc1155_transfers
+    WHERE notEmpty({address:Array(String)})
+        AND `to` IN {address:Array(String)}
+        AND `from` NOT IN {address:Array(String)}
+        AND timestamp >= (SELECT ts FROM clamped_start_ts) AND timestamp <= (SELECT ts FROM end_ts)
+        AND (isNull({start_block:Nullable(UInt64)}) OR block_num >= {start_block:Nullable(UInt64)})
+        AND (isNull({end_block:Nullable(UInt64)}) OR block_num <= {end_block:Nullable(UInt64)})
+        AND (isNull({type:Nullable(String)}) OR `@type` = {type:Nullable(String)})
+        AND (empty({transaction_id:Array(String)}) OR tx_hash IN {transaction_id:Array(String)})
+        AND (empty({contract:Array(String)}) OR contract IN {contract:Array(String)})
+        AND (empty({token_id:Array(String)}) OR token_id IN {token_id:Array(String)})
         AND (empty({from_address:Array(String)}) OR `from` IN {from_address:Array(String)})
         AND (empty({to_address:Array(String)}) OR `to` IN {to_address:Array(String)})
 ),
 combined AS (
-    SELECT * FROM erc721
+    SELECT * FROM erc721_from
     UNION ALL
-    SELECT * FROM erc1155
+    SELECT * FROM erc721_to
+    UNION ALL
+    SELECT * FROM erc1155_from
+    UNION ALL
+    SELECT * FROM erc1155_to
 ),
 limit_combined AS (
     SELECT *
