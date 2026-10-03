@@ -1,4 +1,5 @@
 import { config } from '../config.js';
+import { getSupportedRoutes } from '../supported-routes.js';
 
 const freeRoutes = [
     '/.well-known/x402',
@@ -15,7 +16,6 @@ const freeRoutes = [
     '/v1/networks',
     '/v1/evm/dexes',
     '/v1/svm/dexes',
-    '/v1/tvm/dexes',
     '/v1/polymarket/markets',
     '/v1/hyperliquid/dexes',
     '/v1/hyperliquid/markets',
@@ -24,8 +24,8 @@ const freeRoutes = [
 const datasets = [
     {
         name: 'Token API',
-        description: 'EVM, SVM, and TVM token balances, transfers, holders, swaps, pools, NFT data, and metadata.',
-        routePatterns: ['/v1/evm/*', '/v1/svm/*', '/v1/tvm/*'],
+        description: 'EVM and SVM token balances, transfers, holders, swaps, pools, NFT data, and metadata.',
+        routePatterns: ['/v1/evm/*', '/v1/svm/*'],
     },
     {
         name: 'Prediction Markets',
@@ -40,8 +40,9 @@ const datasets = [
     },
 ] as const;
 
-export function createX402Discovery() {
-    const baseUrl = config.apiUrl.replace(/\/$/, '');
+export function createX402Discovery(cfg = config) {
+    const supported = new Set(getSupportedRoutes(cfg).supported);
+    const baseUrl = cfg.apiUrl.replace(/\/$/, '');
 
     return {
         x402Version: 2,
@@ -57,14 +58,19 @@ export function createX402Discovery() {
             llms: `${baseUrl}/llms.txt`,
             skill: `${baseUrl}/SKILL.md`,
         },
-        freeRoutes: freeRoutes.map((path) => ({
-            method: 'GET',
-            path,
-            resource: `${baseUrl}${path}`,
-        })),
-        datasets: datasets.map((dataset) => ({
-            ...dataset,
-            metering: 'proxy',
-        })),
+        freeRoutes: freeRoutes
+            .filter((path) => !/^\/v1\/(evm|svm)\//.test(path) || supported.has(path))
+            .map((path) => ({
+                method: 'GET',
+                path,
+                resource: `${baseUrl}${path}`,
+            })),
+        datasets: datasets
+            .map((dataset) => ({
+                ...dataset,
+                routePatterns: dataset.name === 'Token API' ? [...supported] : [...dataset.routePatterns],
+                metering: 'proxy',
+            }))
+            .filter((dataset) => dataset.routePatterns.length > 0),
     };
 }

@@ -11,7 +11,7 @@ const ClusterConfigSchema = z.object({
 
 const NetworkConfigSchema = z
     .object({
-        type: z.enum(['evm', 'svm', 'tvm', 'polymarket', 'hyperliquid']),
+        type: z.enum(['evm', 'svm', 'polymarket', 'hyperliquid']),
         cluster: z.string(),
     })
     .catchall(z.string());

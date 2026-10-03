@@ -26,19 +26,13 @@ import {
     SVM_TOKEN_ACCOUNT_PUMP_EXAMPLE,
     SVM_TRANSACTION_SWAP_EXAMPLE,
     SVM_TRANSACTION_TRANSFER_EXAMPLE,
-    TVM_ADDRESS_SWAP_EXAMPLE,
-    TVM_CONTRACT_USDT_EXAMPLE,
-    TVM_FACTORY_SUNSWAP_EXAMPLE,
-    TVM_POOL_USDT_WTRX_EXAMPLE,
-    TVM_TRANSACTION_SWAP_EXAMPLE,
-    TVM_TRANSACTION_TRANSFER_EXAMPLE,
 } from '../src/types/examples.js';
 
 const app = new Hono();
 app.route('/', routes);
 
 type DbCategory = 'balances' | 'transfers' | 'dex' | 'nft' | 'contracts';
-type ChainType = 'evm' | 'svm' | 'tvm';
+type ChainType = 'evm' | 'svm';
 
 interface BenchConfig {
     startBlock: number;
@@ -61,15 +55,12 @@ const BENCH: Record<string, BenchConfig> = {
     unichain: { startBlock: 38_000_100, endBlock: 38_000_300, startTime: 1768766360, endTime: 1768766370 },
     // SVM Networks
     solana: { startBlock: 370_000_002, endBlock: 370_000_005, startTime: 1727592950, endTime: 1727592960 },
-    // TVM Networks
-    tron: { startBlock: 68_000_000, endBlock: 68_000_005, startTime: 1727592950, endTime: 1727592960 },
 };
 
 // Fallbacks per chain type (uses first-defined network defaults)
 const CHAIN_BENCH_DEFAULT: Record<ChainType, BenchConfig> = {
     evm: { startBlock: 21_000_000, endBlock: 21_000_005, startTime: 1727592950, endTime: 1727592960 },
     svm: { startBlock: 370_000_002, endBlock: 370_000_005, startTime: 1727592950, endTime: 1727592960 },
-    tvm: { startBlock: 68_000_000, endBlock: 68_000_005, startTime: 1727592950, endTime: 1727592960 },
 };
 
 function getBench(network: string, chain: ChainType): BenchConfig {
@@ -307,9 +298,6 @@ const PERF_ROUTES: PerfRoute[] = [
     { path: '/v1/evm/tokens/native', chain: 'evm', params: '', requires: ['balances'] },
     // SVM Tokens
     { path: '/v1/svm/tokens', chain: 'svm', params: `mint=${SVM_MINT_WSOL_EXAMPLE}`, requires: ['balances'] },
-    // TVM Tokens
-    { path: '/v1/tvm/tokens', chain: 'tvm', params: `contract=${TVM_CONTRACT_USDT_EXAMPLE}`, requires: ['transfers'] },
-    { path: '/v1/tvm/tokens/native', chain: 'tvm', params: '', requires: ['transfers'] },
     // EVM Balances
     {
         path: '/v1/evm/balances',
@@ -361,15 +349,6 @@ const PERF_ROUTES: PerfRoute[] = [
         authority: SVM_OWNER_USER_EXAMPLE,
     }),
     ...timeBlockVariants('/v1/svm/transfers', 'svm', ['transfers'], `mint=${SVM_MINT_WSOL_EXAMPLE}`),
-    // TVM Transfers
-    ...timeBlockVariants('/v1/tvm/transfers', 'tvm', ['transfers']),
-    ...filterVariants('/v1/tvm/transfers', 'tvm', ['transfers'], {
-        transaction_id: TVM_TRANSACTION_TRANSFER_EXAMPLE,
-        contract: TVM_CONTRACT_USDT_EXAMPLE,
-        from_address: TVM_ADDRESS_SWAP_EXAMPLE,
-    }),
-    ...timeBlockVariants('/v1/tvm/transfers', 'tvm', ['transfers'], `contract=${TVM_CONTRACT_USDT_EXAMPLE}`),
-    { path: '/v1/tvm/transfers/native', chain: 'tvm', params: '', requires: ['transfers'] },
     // EVM Holders
     {
         path: '/v1/evm/holders',
@@ -404,31 +383,14 @@ const PERF_ROUTES: PerfRoute[] = [
         output_mint: SVM_MINT_USDC_EXAMPLE,
     }),
     ...timeBlockVariants('/v1/svm/swaps', 'svm', ['dex'], `amm_pool=${SVM_AMM_POOL_PUMP_EXAMPLE}`),
-    // TVM Swaps
-    ...timeBlockVariants('/v1/tvm/swaps', 'tvm', ['dex']),
-    ...filterVariants('/v1/tvm/swaps', 'tvm', ['dex'], {
-        transaction_id: TVM_TRANSACTION_SWAP_EXAMPLE,
-        factory: TVM_FACTORY_SUNSWAP_EXAMPLE,
-        pool: TVM_POOL_USDT_WTRX_EXAMPLE,
-        caller: TVM_ADDRESS_SWAP_EXAMPLE,
-        sender: TVM_ADDRESS_SWAP_EXAMPLE,
-        recipient: TVM_ADDRESS_SWAP_EXAMPLE,
-        input_contract: TVM_CONTRACT_USDT_EXAMPLE,
-        output_contract: TVM_CONTRACT_USDT_EXAMPLE,
-    }),
-    ...timeBlockVariants('/v1/tvm/swaps', 'tvm', ['dex'], `pool=${TVM_POOL_USDT_WTRX_EXAMPLE}`),
     // EVM DEXes
     { path: '/v1/evm/dexes', chain: 'evm', params: '', requires: ['dex'] },
     // SVM DEXes
     { path: '/v1/svm/dexes', chain: 'svm', params: '', requires: ['dex'] },
-    // TVM DEXes
-    { path: '/v1/tvm/dexes', chain: 'tvm', params: '', requires: ['dex'] },
     // EVM Pools
     { path: '/v1/evm/pools', chain: 'evm', params: '', requires: ['dex'] },
     // SVM Pools
     { path: '/v1/svm/pools', chain: 'svm', params: '', requires: ['dex'] },
-    // TVM Pools
-    { path: '/v1/tvm/pools', chain: 'tvm', params: '', requires: ['dex'] },
     // EVM OHLCV
     { path: '/v1/evm/pools/ohlc', chain: 'evm', params: (n) => `pool=${getEvmExamples(n).pool}`, requires: ['dex'] },
     // SVM OHLCV
@@ -438,8 +400,6 @@ const PERF_ROUTES: PerfRoute[] = [
         params: `amm_pool=${SVM_AMM_POOL_PUMP_EXAMPLE}`,
         requires: ['dex', 'balances'],
     },
-    // TVM OHLCV
-    { path: '/v1/tvm/pools/ohlc', chain: 'tvm', params: `pool=${TVM_POOL_USDT_WTRX_EXAMPLE}`, requires: ['dex'] },
     // SVM Owner
     {
         path: '/v1/svm/owner',
@@ -492,8 +452,6 @@ function getNetworksForChain(chain: ChainType): string[] {
             return config.evmNetworks;
         case 'svm':
             return config.svmNetworks;
-        case 'tvm':
-            return config.tvmNetworks;
         default:
             throw new Error(`Unknown chain type: ${chain}`);
     }
@@ -553,7 +511,7 @@ async function runPerf() {
 
     if (activeRoutes.length === 0) {
         console.log(`No routes matched filters: ${JSON.stringify(filters)}`);
-        console.log('\nUsage: bun run scripts/perf.ts [--path <substring>] [--chain <evm|svm|tvm>]');
+        console.log('\nUsage: bun run scripts/perf.ts [--path <substring>] [--chain <evm|svm>]');
         console.log('\nExamples:');
         console.log('  bun run scripts/perf.ts --chain evm');
         console.log('  bun run scripts/perf.ts --path swaps');

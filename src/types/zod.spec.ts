@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { z } from 'zod';
+import { config } from '../config.js';
 import {
     apiErrorResponseSchema,
     apiUsageResponseSchema,
@@ -54,16 +55,6 @@ import {
     svmTransaction,
     svmTransactionSchema,
     timestampSchema,
-    tvmAddress,
-    tvmAddressSchema,
-    tvmContractSchema,
-    tvmFactorySchema,
-    tvmNetworkIdSchema,
-    tvmPoolSchema,
-    tvmProtocolSchema,
-    tvmTokenResponseSchema,
-    tvmTransaction,
-    tvmTransactionSchema,
     userLookbackIntervalSchema,
 } from './zod.js';
 
@@ -132,47 +123,6 @@ describe('Base Validation Schemas', () => {
         });
     });
 
-    describe('tvmAddress', () => {
-        it('should validate correct TVM addresses', () => {
-            expect(tvmAddress.parse('TRX9Uehj3GuFVh5jjVjNqb6q9cgVHJ4jGX')).toBe('TRX9Uehj3GuFVh5jjVjNqb6q9cgVHJ4jGX');
-            expect(tvmAddress.parse('TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t')).toBe('TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
-        });
-
-        it('should reject invalid TVM addresses', () => {
-            expect(() => tvmAddress.parse('invalid')).toThrow();
-            expect(() => tvmAddress.parse('0x1234567890abcdef')).toThrow();
-            expect(() => tvmAddress.parse('T123')).toThrow(); // Too short
-            expect(() => tvmAddress.parse('ARYX9Uehj3GuFVh5jjVjNqb6q9cgVHJ4jGX')).toThrow(); // Doesn't start with T
-            expect(() => tvmAddress.parse('TRX9Uehj3GuFVh5jjVjNqb6q9cgVHJ4jG0')).toThrow(); // Contains invalid char '0'
-        });
-    });
-
-    describe('tvmTransaction', () => {
-        it('should validate correct TVM transaction hashes', () => {
-            const validTx = 'a7c8e5f9b2d4c6e8a1b3c5d7e9f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7';
-            expect(tvmTransaction.parse(validTx)).toBe(validTx);
-        });
-
-        it('should transform to lowercase', () => {
-            const txUpper = 'A7C8E5F9B2D4C6E8A1B3C5D7E9F1A3B5C7D9E1F3A5B7C9D1E3F5A7B9C1D3E5F7';
-            expect(tvmTransaction.parse(txUpper)).toBe(txUpper.toLowerCase());
-        });
-
-        it('should reject transaction hashes with 0x prefix', () => {
-            expect(() =>
-                tvmTransaction.parse('0xa7c8e5f9b2d4c6e8a1b3c5d7e9f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7')
-            ).toThrow();
-        });
-
-        it('should reject invalid transaction hashes', () => {
-            expect(() => tvmTransaction.parse('invalid')).toThrow();
-            expect(() => tvmTransaction.parse('a7c8e5f9')).toThrow(); // Too short
-            expect(() =>
-                tvmTransaction.parse('g7c8e5f9b2d4c6e8a1b3c5d7e9f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7')
-            ).toThrow(); // Invalid char 'g'
-        });
-    });
-
     describe('dateTimeSchema', () => {
         it('should accept ISO 8601 with Z timezone', () => {
             expect(dateTimeSchema.parse('2025-11-07T07:13:23Z')).toBe('2025-11-07T07:13:23Z');
@@ -226,8 +176,6 @@ describe('OpenAPI metadata projection', () => {
         ['evmTransaction', evmTransaction, 'evm-tx-hash', '^(0[xX])?[0-9a-fA-F]{64}$'],
         ['svmAddress', svmAddress, 'svm-address', '^[1-9A-HJ-NP-Za-km-z]{32,44}$'],
         ['svmTransaction', svmTransaction, 'svm-signature', '^[1-9A-HJ-NP-Za-km-z]{87,88}$'],
-        ['tvmAddress', tvmAddress, 'tvm-address', '^T[1-9A-HJ-NP-Za-km-z]{33}$'],
-        ['tvmTransaction', tvmTransaction, 'tvm-tx-hash', '^[0-9a-fA-F]{64}$'],
     ];
 
     for (const [name, schema, expectedFormat, expectedPattern] of cases) {
@@ -244,30 +192,21 @@ describe('OpenAPI metadata projection', () => {
         expect(contract.format).toBe('evm-address');
         const mint = z.toJSONSchema(svmMintSchema, { io: 'input' }) as Record<string, unknown>;
         expect(mint.format).toBe('svm-address');
-        const tvmContract = z.toJSONSchema(tvmContractSchema, { io: 'input' }) as Record<string, unknown>;
-        expect(tvmContract.format).toBe('tvm-address');
     });
 });
 
 describe('Network Schemas', () => {
     describe('evmNetworkIdSchema', () => {
         it('should accept valid EVM network IDs', () => {
-            const result = evmNetworkIdSchema.parse('mainnet');
-            expect(result).toBeDefined();
+            expect(evmNetworkIdSchema.options).toEqual(config.evmNetworks);
+            expect(evmNetworkIdSchema.safeParse('mainnet').success).toBe(config.evmNetworks.includes('mainnet'));
         });
     });
 
     describe('svmNetworkIdSchema', () => {
         it('should accept valid SVM network IDs', () => {
-            const result = svmNetworkIdSchema.parse('solana');
-            expect(result).toBeDefined();
-        });
-    });
-
-    describe('tvmNetworkIdSchema', () => {
-        it('should accept valid TVM network IDs', () => {
-            const result = tvmNetworkIdSchema.parse('tron');
-            expect(result).toBeDefined();
+            expect(svmNetworkIdSchema.options).toEqual(config.svmNetworks);
+            expect(svmNetworkIdSchema.safeParse('solana').success).toBe(config.svmNetworks.includes('solana'));
         });
     });
 });
@@ -326,18 +265,6 @@ describe('Protocol Schemas', () => {
 
         it('should reject invalid protocols', () => {
             expect(() => svmProtocolSchema.parse('invalid')).toThrow();
-        });
-    });
-
-    describe('tvmProtocolSchema', () => {
-        it('should accept valid protocols', () => {
-            expect(tvmProtocolSchema.parse('uniswap_v2')).toBe('uniswap_v2');
-            expect(tvmProtocolSchema.parse('uniswap_v1')).toBe('uniswap_v1');
-            expect(tvmProtocolSchema.parse('sunpump')).toBe('sunpump');
-        });
-
-        it('should reject invalid protocols', () => {
-            expect(() => tvmProtocolSchema.parse('invalid')).toThrow();
         });
     });
 });
@@ -619,33 +546,6 @@ describe('Composable Field Schemas', () => {
             expect(result).toBeUndefined();
         });
     });
-
-    describe('TVM schemas', () => {
-        it('tvmContractSchema should validate contracts', () => {
-            const result = tvmContractSchema.parse('TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
-            expect(result).toBe('TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
-        });
-
-        it('tvmAddressSchema should validate addresses', () => {
-            const result = tvmAddressSchema.parse('TRX9Uehj3GuFVh5jjVjNqb6q9cgVHJ4jGX');
-            expect(result).toBe('TRX9Uehj3GuFVh5jjVjNqb6q9cgVHJ4jGX');
-        });
-
-        it('tvmPoolSchema should validate pool addresses', () => {
-            const pool = tvmPoolSchema.parse('TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE');
-            expect(pool).toBe('TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE');
-        });
-
-        it('tvmFactorySchema should validate factory addresses', () => {
-            const result = tvmFactorySchema.parse('TKzxdSv2FZKQrEqkKVgp5DcwEXBEKMg2Ax');
-            expect(result).toBe('TKzxdSv2FZKQrEqkKVgp5DcwEXBEKMg2Ax');
-        });
-
-        it('tvmTransactionSchema should validate transaction hashes', () => {
-            const tx = 'a7c8e5f9b2d4c6e8a1b3c5d7e9f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7';
-            expect(tvmTransactionSchema.parse(tx)).toBe(tx);
-        });
-    });
 });
 
 describe('Response Schemas', () => {
@@ -672,22 +572,6 @@ describe('Response Schemas', () => {
             };
             const result = svmMintResponseSchema.parse(mint);
             expect(result.decimals).toBe(9);
-        });
-    });
-
-    describe('tvmTokenResponseSchema', () => {
-        it('should validate token response objects', () => {
-            const token = {
-                address: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
-                symbol: 'USDT',
-                name: 'Tether USD',
-                decimals: 6,
-            };
-            const result = tvmTokenResponseSchema.parse(token);
-            expect(result.address).toBe('TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
-            expect(result.symbol).toBe('USDT');
-            expect(result.name).toBe('Tether USD');
-            expect(result.decimals).toBe(6);
         });
     });
 
@@ -795,7 +679,7 @@ describe('createQuerySchema', () => {
         it('should create a query schema with required fields', () => {
             const schema = createQuerySchema(
                 {
-                    network: { schema: svmNetworkIdSchema },
+                    network: { schema: z.enum(['solana']) },
                 },
                 false
             );
@@ -885,7 +769,7 @@ describe('createQuerySchema', () => {
     describe('pagination', () => {
         it('should include pagination when include_pagination is true', () => {
             const schema = createQuerySchema({
-                network: { schema: svmNetworkIdSchema },
+                network: { schema: z.enum(['solana']) },
             });
 
             const result = schema.parse({ network: 'solana', limit: 25, page: 2 });
@@ -896,7 +780,7 @@ describe('createQuerySchema', () => {
         it('should not include pagination when include_pagination is false', () => {
             const schema = createQuerySchema(
                 {
-                    network: { schema: svmNetworkIdSchema },
+                    network: { schema: z.enum(['solana']) },
                 },
                 false
             );
@@ -910,7 +794,7 @@ describe('createQuerySchema', () => {
     describe('complex query schema', () => {
         it('should handle mixed required and optional fields', () => {
             const schema = createQuerySchema({
-                network: { schema: svmNetworkIdSchema },
+                network: { schema: z.enum(['solana']) },
                 owner: { schema: svmOwnerSchema, batched: true },
                 token_account: { schema: svmTokenAccountSchema, batched: true, default: '' },
                 include_null_balances: { schema: includeNullBalancesSchema, default: false },
@@ -978,7 +862,7 @@ describe('createQuerySchema', () => {
         it('should reject array values for non-batched required fields', () => {
             const schema = createQuerySchema(
                 {
-                    network: { schema: svmNetworkIdSchema },
+                    network: { schema: z.enum(['solana']) },
                 },
                 false
             );
@@ -1061,7 +945,7 @@ describe('createQuerySchema', () => {
         it('should default to empty array when optional batched field is omitted', () => {
             const schema = createQuerySchema(
                 {
-                    network: { schema: svmNetworkIdSchema },
+                    network: { schema: z.enum(['solana']) },
                     mint: { schema: svmMintSchema, batched: true, optional: true },
                 },
                 false
@@ -1074,7 +958,7 @@ describe('createQuerySchema', () => {
         it('should default to null when optional scalar field is omitted', () => {
             const schema = createQuerySchema(
                 {
-                    network: { schema: svmNetworkIdSchema },
+                    network: { schema: z.enum(['solana']) },
                     start_time: { schema: timestampSchema, optional: true },
                 },
                 false
@@ -1113,7 +997,7 @@ describe('createQuerySchema', () => {
         it('should use prefault value when field is omitted', () => {
             const schema = createQuerySchema(
                 {
-                    network: { schema: svmNetworkIdSchema, prefault: 'solana' },
+                    network: { schema: z.enum(['solana']), prefault: 'solana' },
                 },
                 false
             );
@@ -1137,7 +1021,7 @@ describe('createQuerySchema', () => {
         it('should allow overriding the prefault value', () => {
             const schema = createQuerySchema(
                 {
-                    network: { schema: svmNetworkIdSchema, prefault: 'solana' },
+                    network: { schema: z.enum(['solana']), prefault: 'solana' },
                 },
                 false
             );

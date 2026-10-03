@@ -25,17 +25,6 @@ import {
     SVM_TOKEN_ACCOUNT_PUMP_EXAMPLE,
     SVM_TRANSACTION_SWAP_EXAMPLE,
     SVM_TRANSACTION_TRANSFER_EXAMPLE,
-    TVM_ADDRESS_FROM_EXAMPLE,
-    TVM_ADDRESS_NATIVE_TO_EXAMPLE,
-    TVM_ADDRESS_SWAP_EXAMPLE,
-    TVM_ADDRESS_TO_EXAMPLE,
-    TVM_CONTRACT_USDT_EXAMPLE,
-    TVM_CONTRACT_WTRX_EXAMPLE,
-    TVM_FACTORY_SUNSWAP_EXAMPLE,
-    TVM_POOL_USDT_WTRX_EXAMPLE,
-    TVM_TRANSACTION_NATIVE_TRANSFER_EXAMPLE,
-    TVM_TRANSACTION_SWAP_EXAMPLE,
-    TVM_TRANSACTION_TRC20_TRANSFER_EXAMPLE,
 } from '../types/examples.js';
 
 const DB_TESTS = !!process.env.DB_TESTS;
@@ -49,11 +38,8 @@ let hasEvmContracts: boolean;
 let hasSvmBalances: boolean;
 let hasSvmTransfers: boolean;
 let hasSvmDex: boolean;
-let hasTvmTransfers: boolean;
-let hasTvmDex: boolean;
 let evmNetwork: string;
 let svmNetwork: string;
-let tvmNetwork: string;
 
 const MAINNET_NETWORK = 'mainnet';
 const MAINNET_HEAD_BLOCK = 24_616_075;
@@ -116,55 +102,6 @@ const SINGLE_FILTER_ROUTE_CASES = [
             { param: 'input_contract', value: EVM_CONTRACT_USDC_EXAMPLE, responsePath: ['input_token', 'address'] },
             { param: 'output_contract', value: EVM_CONTRACT_WETH_EXAMPLE, responsePath: ['output_token', 'address'] },
             { param: 'protocol', value: 'uniswap_v3', responsePath: ['protocol'] },
-        ],
-    },
-    {
-        chain: 'TVM',
-        path: '/v1/tvm/transfers',
-        requires: () => hasTvmTransfers,
-        network: () => tvmNetwork,
-        filters: [
-            {
-                param: 'transaction_id',
-                value: TVM_TRANSACTION_TRC20_TRANSFER_EXAMPLE,
-                responsePath: ['transaction_id'],
-            },
-            { param: 'contract', value: TVM_CONTRACT_USDT_EXAMPLE, responsePath: ['contract'] },
-            { param: 'from_address', value: TVM_ADDRESS_FROM_EXAMPLE, responsePath: ['from'] },
-            { param: 'to_address', value: TVM_ADDRESS_TO_EXAMPLE, responsePath: ['to'] },
-        ],
-    },
-    {
-        chain: 'TVM',
-        path: '/v1/tvm/transfers/native',
-        requires: () => hasTvmTransfers,
-        network: () => tvmNetwork,
-        filters: [
-            {
-                param: 'transaction_id',
-                value: TVM_TRANSACTION_NATIVE_TRANSFER_EXAMPLE,
-                responsePath: ['transaction_id'],
-            },
-            { param: 'from_address', value: TVM_ADDRESS_FROM_EXAMPLE, responsePath: ['from'] },
-            { param: 'to_address', value: TVM_ADDRESS_NATIVE_TO_EXAMPLE, responsePath: ['to'] },
-        ],
-    },
-    {
-        chain: 'TVM',
-        path: '/v1/tvm/swaps',
-        requires: () => hasTvmDex,
-        network: () => tvmNetwork,
-        filters: [
-            { param: 'transaction_id', value: TVM_TRANSACTION_SWAP_EXAMPLE, responsePath: ['transaction_id'] },
-            { param: 'factory', value: TVM_FACTORY_SUNSWAP_EXAMPLE, responsePath: ['factory'] },
-            { param: 'pool', value: TVM_POOL_USDT_WTRX_EXAMPLE, responsePath: ['pool'] },
-            { param: 'caller', value: TVM_ADDRESS_SWAP_EXAMPLE, responsePath: ['caller'] },
-            { param: 'user', value: TVM_ADDRESS_SWAP_EXAMPLE, responsePath: ['user'] },
-            { param: 'sender', value: TVM_ADDRESS_SWAP_EXAMPLE, responsePath: ['sender'] },
-            { param: 'recipient', value: TVM_ADDRESS_SWAP_EXAMPLE, responsePath: ['recipient'] },
-            { param: 'input_contract', value: TVM_CONTRACT_USDT_EXAMPLE, responsePath: ['input_token', 'address'] },
-            { param: 'output_contract', value: TVM_CONTRACT_WTRX_EXAMPLE, responsePath: ['output_token', 'address'] },
-            { param: 'protocol', value: 'uniswap_v1', responsePath: ['protocol'] },
         ],
     },
     {
@@ -251,12 +188,9 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         hasSvmBalances = hasDatabase(config, config.defaultSvmNetwork, 'balances');
         hasSvmTransfers = hasDatabase(config, config.defaultSvmNetwork, 'transfers');
         hasSvmDex = hasDatabase(config, config.defaultSvmNetwork, 'dex');
-        hasTvmTransfers = hasDatabase(config, config.defaultTvmNetwork, 'transfers');
-        hasTvmDex = hasDatabase(config, config.defaultTvmNetwork, 'dex');
 
         evmNetwork = config.defaultEvmNetwork;
         svmNetwork = config.defaultSvmNetwork;
-        tvmNetwork = config.defaultTvmNetwork;
     });
 
     // --- Monitoring ---
@@ -322,25 +256,6 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         const { response, body } = await fetchRoute(
             `/v1/svm/tokens?network=${svmNetwork}&mint=${SVM_MINT_WSOL_EXAMPLE}`
         );
-        expect(response.status).toBe(200);
-        expect(body.data).toBeArray();
-        expect(body.data.length).toBeGreaterThan(0);
-    });
-
-    // --- TVM Tokens ---
-    it('GET /v1/tvm/tokens', async () => {
-        if (!hasTvmTransfers) return;
-        const { response, body } = await fetchRoute(
-            `/v1/tvm/tokens?network=${tvmNetwork}&contract=${TVM_CONTRACT_USDT_EXAMPLE}`
-        );
-        expect(response.status).toBe(200);
-        expect(body.data).toBeArray();
-        expect(body.data.length).toBeGreaterThan(0);
-    });
-
-    it('GET /v1/tvm/tokens/native', async () => {
-        if (!hasTvmTransfers) return;
-        const { response, body } = await fetchRoute(`/v1/tvm/tokens/native?network=${tvmNetwork}`);
         expect(response.status).toBe(200);
         expect(body.data).toBeArray();
         expect(body.data.length).toBeGreaterThan(0);
@@ -429,23 +344,6 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
     it('GET /v1/svm/transfers', async () => {
         if (!hasSvmTransfers) return;
         const { response, body } = await fetchRoute(`/v1/svm/transfers?network=${svmNetwork}`);
-        expect(response.status).toBe(200);
-        expect(body.data).toBeArray();
-        expect(body.data.length).toBeGreaterThan(0);
-    });
-
-    // --- TVM Transfers ---
-    it('GET /v1/tvm/transfers', async () => {
-        if (!hasTvmTransfers) return;
-        const { response, body } = await fetchRoute(`/v1/tvm/transfers?network=${tvmNetwork}`);
-        expect(response.status).toBe(200);
-        expect(body.data).toBeArray();
-        expect(body.data.length).toBeGreaterThan(0);
-    });
-
-    it('GET /v1/tvm/transfers/native', async () => {
-        if (!hasTvmTransfers) return;
-        const { response, body } = await fetchRoute(`/v1/tvm/transfers/native?network=${tvmNetwork}`);
         expect(response.status).toBe(200);
         expect(body.data).toBeArray();
         expect(body.data.length).toBeGreaterThan(0);
@@ -555,15 +453,6 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         expect(body.data.length).toBeGreaterThan(0);
     });
 
-    // --- TVM Swaps ---
-    it('GET /v1/tvm/swaps', async () => {
-        if (!hasTvmDex) return;
-        const { response, body } = await fetchRoute(`/v1/tvm/swaps?network=${tvmNetwork}`);
-        expect(response.status).toBe(200);
-        expect(body.data).toBeArray();
-        expect(body.data.length).toBeGreaterThan(0);
-    });
-
     // --- EVM DEXes ---
     it('GET /v1/evm/dexes', async () => {
         if (!hasEvmDex) return;
@@ -577,15 +466,6 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
     it('GET /v1/svm/dexes', async () => {
         if (!hasSvmDex) return;
         const { response, body } = await fetchRoute(`/v1/svm/dexes?network=${svmNetwork}`);
-        expect(response.status).toBe(200);
-        expect(body.data).toBeArray();
-        expect(body.data.length).toBeGreaterThan(0);
-    });
-
-    // --- TVM DEXes ---
-    it('GET /v1/tvm/dexes', async () => {
-        if (!hasTvmDex) return;
-        const { response, body } = await fetchRoute(`/v1/tvm/dexes?network=${tvmNetwork}`);
         expect(response.status).toBe(200);
         expect(body.data).toBeArray();
         expect(body.data.length).toBeGreaterThan(0);
@@ -611,15 +491,6 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         expect(body.data.length).toBeGreaterThan(0);
     });
 
-    // --- TVM Pools ---
-    it('GET /v1/tvm/pools', async () => {
-        if (!hasTvmDex) return;
-        const { response, body } = await fetchRoute(`/v1/tvm/pools?network=${tvmNetwork}`);
-        expect(response.status).toBe(200);
-        expect(body.data).toBeArray();
-        expect(body.data.length).toBeGreaterThan(0);
-    });
-
     // --- EVM OHLCV ---
     it('GET /v1/evm/pools/ohlc', async () => {
         if (!hasEvmDex) return;
@@ -636,17 +507,6 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         if (!hasSvmDex || !hasSvmBalances) return;
         const { response, body } = await fetchRoute(
             `/v1/svm/pools/ohlc?network=${svmNetwork}&amm_pool=${SVM_AMM_POOL_PUMP_EXAMPLE}`
-        );
-        expect(response.status).toBe(200);
-        expect(body.data).toBeArray();
-        expect(body.data.length).toBeGreaterThan(0);
-    });
-
-    // --- TVM OHLCV ---
-    it('GET /v1/tvm/pools/ohlc', async () => {
-        if (!hasTvmDex) return;
-        const { response, body } = await fetchRoute(
-            `/v1/tvm/pools/ohlc?network=${tvmNetwork}&pool=${TVM_POOL_USDT_WTRX_EXAMPLE}`
         );
         expect(response.status).toBe(200);
         expect(body.data).toBeArray();
@@ -786,7 +646,6 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         }
     }
 
-    // --- Single-filter coverage across EVM / TVM / SVM ---
     for (const routeCase of SINGLE_FILTER_ROUTE_CASES) {
         for (const filter of routeCase.filters) {
             it(`GET ${routeCase.path} single ${filter.param} filter on ${routeCase.chain}`, async () => {

@@ -35,7 +35,6 @@ export function logServerInit() {
     const networkTypes = [
         { label: 'EVM', networks: config.evmNetworks },
         { label: 'SVM', networks: config.svmNetworks },
-        { label: 'TVM', networks: config.tvmNetworks },
     ];
     console.log('Networks:');
     for (const { label, networks } of networkTypes) {

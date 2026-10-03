@@ -186,10 +186,6 @@ app.get(
                 { name: 'EVM Tokens (Native)' },
                 { name: 'EVM DEXs' },
                 { name: 'EVM NFTs' },
-                // TVM
-                { name: 'TVM Tokens (ERC-20)' },
-                { name: 'TVM Tokens (Native)' },
-                { name: 'TVM DEXs' },
                 // Polymarket
                 { name: 'Polymarket Markets' },
                 { name: 'Polymarket Platform' },

@@ -9,11 +9,11 @@ describe('ROUTE_DEFINITIONS', () => {
         const chains = new Set(ROUTE_DEFINITIONS.map((r) => r.chain));
         expect(chains.has('evm')).toBe(true);
         expect(chains.has('svm')).toBe(true);
-        expect(chains.has('tvm')).toBe(true);
+        expect([...chains].sort()).toEqual(['evm', 'svm']);
     });
 
     it('should have valid DB categories for all routes', () => {
-        const validCategories = ['balances', 'transfers', 'dex', 'nft', 'contracts'];
+        const validCategories = ['balances', 'transfers', 'dex', 'nft', 'contracts', 'accounts', 'metadata'];
         for (const route of ROUTE_DEFINITIONS) {
             expect(route.requires.length).toBeGreaterThan(0);
             for (const cat of route.requires) {

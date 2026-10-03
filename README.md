@@ -15,7 +15,7 @@
 
 Pinax API lets you access high-volume blockchain datasets via simple HTTP requests. This guide is designed to help you quickly integrate Pinax API into your application.
 
-The current Pinax API surface includes Token API data for EVM, SVM, and TVM networks, prediction market data, and perp exchange data. The Token API dataset covers onchain NFT and fungible token data, including live and historical balances, holders, prices, market data, token metadata, and token transfers. Pinax API also exposes agent-friendly discovery files so AI tools can enrich raw blockchain data with contextual insights.
+The current Pinax API surface includes Token API data for EVM and SVM networks, prediction market data, and perp exchange data. The Token API dataset covers onchain NFT and fungible token data, including live and historical balances, holders, prices, market data, token metadata, and token transfers. Pinax API also exposes agent-friendly discovery files so AI tools can enrich raw blockchain data with contextual insights.
 
 ## Features
 
@@ -55,7 +55,6 @@ The current Pinax API surface includes Token API data for EVM, SVM, and TVM netw
 
 - **EVM Networks**: Ethereum, Base, Arbitrum, BSC, Polygon, Optimism, Avalanche, Unichain
 - **SVM Networks**: Solana with full SPL token and DEX swap support
-- **TVM Networks**: Tron with token, transfer, pool, and swap coverage
 - **Real-time Sync**: Sub-second data latency across all supported networks
 
 ## Quick Start
@@ -168,7 +167,6 @@ The current Pinax API surface includes Token API data for EVM, SVM, and TVM netw
 | `CACHE_STALE_WHILE_REVALIDATE` | `stale-while-revalidate` window (seconds, [RFC 5861](https://datatracker.ietf.org/doc/html/rfc5861)) | `30` | No |
 | `DEFAULT_EVM_NETWORK` | Default EVM network used when not explicitly provided | `mainnet` | No |
 | `DEFAULT_SVM_NETWORK` | Default SVM network used when not explicitly provided | `solana` | No |
-| `DEFAULT_TVM_NETWORK` | Default TVM network used when not explicitly provided | `tron` | No |
 | `MAX_QUERY_EXECUTION_TIME` | Maximum SQL query execution time (seconds) | `10` | No |
 | `DB_RESPONSE_TIME_TRIGGER_MS` | Health-check degraded threshold for DB response time | `1000` | No |
 | `LARGE_QUERIES_ROWS_TRIGGER` | Row threshold for large-query metrics | `10000000` | No |
@@ -314,10 +312,6 @@ Supported networks are derived from `dbs-config.yaml` (`networks.*`) at startup.
 ### SVM Networks
 
 - **Solana Mainnet** (`solana`)
-
-### TVM Networks
-
-- **Tron Mainnet** (`tron`)
 
 ## Docker Deployment
 
