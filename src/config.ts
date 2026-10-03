@@ -31,7 +31,6 @@ export const DEFAULT_LIMIT = 10;
 export const DEFAULT_MAX_QUERY_EXECUTION_TIME = 10; // 10 seconds query timeout to match `fetch` MCP timeout
 export const DEFAULT_DEFAULT_EVM_NETWORK = 'mainnet';
 export const DEFAULT_DEFAULT_SVM_NETWORK = 'solana';
-export const DEFAULT_DEFAULT_TVM_NETWORK = 'tron';
 export const DEFAULT_LOW_LIQUIDITY_CHECK = 10000; // $10K USD
 // EVM DEX protocols to filter out at the API layer because the substreams
 // decoder emits them as duplicates of another protocol (currently kyber_elastic
@@ -100,11 +99,6 @@ const opts = program
         new Option('--default-svm-network <string>', 'Default SVM Network ID')
             .env('DEFAULT_SVM_NETWORK')
             .default(DEFAULT_DEFAULT_SVM_NETWORK)
-    )
-    .addOption(
-        new Option('--default-tvm-network <string>', 'Default TVM Network ID')
-            .env('DEFAULT_TVM_NETWORK')
-            .default(DEFAULT_DEFAULT_TVM_NETWORK)
     )
     .addOption(
         new Option('--ohlc-quantile <number>', 'High and low quantiles for OHLC aggregations')
@@ -219,7 +213,6 @@ const config = z
         password: z.string(),
         defaultEvmNetwork: z.string().min(1, 'Default EVM network cannot be empty'),
         defaultSvmNetwork: z.string().min(1, 'Default SVM network cannot be empty'),
-        defaultTvmNetwork: z.string().min(1, 'Default TVM network cannot be empty'),
         ohlcQuantile: z.coerce.number().positive('OHLC quantile must be positive'),
         maxLimit: z.coerce.number().positive('Max limit must be positive'),
         maxQueryExecutionTime: z.coerce.number().positive('Max query execution time must be positive'),
@@ -270,6 +263,8 @@ const config = z
             .sort(),
         svmNetworks: Object.keys({
             ...data.balancesDatabases,
+            ...data.accountsDatabases,
+            ...data.metadataDatabases,
             ...data.transfersDatabases,
             ...data.nftsDatabases,
             ...data.dexesDatabases,
@@ -279,6 +274,8 @@ const config = z
                 return (
                     {
                         ...data.balancesDatabases,
+                        ...data.accountsDatabases,
+                        ...data.metadataDatabases,
                         ...data.transfersDatabases,
                         ...data.nftsDatabases,
                         ...data.dexesDatabases,
@@ -287,23 +284,10 @@ const config = z
                 );
             })
             .sort(),
-        tvmNetworks: Object.keys({
-            ...data.transfersDatabases,
-            ...data.dexesDatabases,
-        })
-            .filter((networkId) => {
-                return (
-                    {
-                        ...data.transfersDatabases,
-                        ...data.dexesDatabases,
-                    }[networkId]?.type === 'tvm'
-                );
-            })
-            .sort(),
     }))
     .transform((data) => ({
         ...data,
-        networks: [...data.evmNetworks, ...data.svmNetworks, ...data.tvmNetworks],
+        networks: [...data.evmNetworks, ...data.svmNetworks],
     }))
     .parse(opts);
 

@@ -1,16 +1,10 @@
 const m = await import('./src/supported-routes.js');
 const cfg = (await import('./src/config.js')).config;
 
-console.log('=== Testing TVM dexes ===');
-let route = { chain: 'tvm', requires: ['dex'] };
-let network = 'tron';
+console.log('=== Testing SVM dexes ===');
+let route = { chain: 'svm', requires: ['dex'] };
+let network = 'solana';
 let hasAllDbs = route.requires.every((cat) => m.hasDatabase(cfg, network, cat));
-console.log(`Network: ${network}, requires: ${route.requires}, hasAllDbs: ${hasAllDbs}`);
-
-console.log('\n=== Testing SVM dexes ===');
-route = { chain: 'svm', requires: ['dex'] };
-network = 'solana';
-hasAllDbs = route.requires.every((cat) => m.hasDatabase(cfg, network, cat));
 console.log(`Network: ${network}, requires: ${route.requires}, hasAllDbs: ${hasAllDbs}`);
 
 console.log('\n=== Testing EVM NFT collections ===');

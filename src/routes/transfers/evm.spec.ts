@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { normalizeSQL } from '../../sql/index.js';
 import query from './evm.sql' with { type: 'text' };
 
-describe('EVM/TVM transfers SQL regressions', () => {
+describe('EVM transfers SQL regressions', () => {
     const sql = normalizeSQL(query);
 
     it('filters transfer contracts on the source log_address column', () => {

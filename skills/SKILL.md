@@ -3,12 +3,12 @@ name: pinax-api
 type: skill
 title: Pinax API
 description: >
-  Query Pinax API datasets, including Token API for EVM/SVM/TVM token data,
+  Query Pinax API datasets, including Token API for EVM/SVM token data,
   prediction markets, and perp exchange data. Use when: integrating with Pinax
   API, choosing endpoints, building API requests, handling pagination, or
   discovering supported networks.
 resource: https://api.pinax.network
-tags: [pinax, token-api, evm, svm, tvm, polymarket, hyperliquid, blockchain]
+tags: [pinax, token-api, evm, svm, polymarket, hyperliquid, blockchain]
 timestamp: 2026-06-19T00:00:00Z
 ---
 
@@ -45,7 +45,6 @@ An `X-Api-Key: <your-api-key>` header is accepted as an alternative.
 - `GET /v1/networks`
 - `GET /v1/evm/dexes`
 - `GET /v1/svm/dexes`
-- `GET /v1/tvm/dexes`
 - `GET /v1/polymarket/markets`
 - `GET /v1/hyperliquid/dexes`
 - `GET /v1/hyperliquid/markets`
@@ -68,16 +67,16 @@ Common codes: `bad_query_input` (400), `authentication_failed` (401), `route_not
 
 Map a goal to the relevant dataset and endpoint family:
 
-- **Token API: look up wallet balances and transfer history** — `/v1/{evm,svm,tvm}/balances`, `/v1/{evm,svm,tvm}/transfers`
+- **Token API: look up wallet balances and transfer history** — `/v1/{evm,svm}/balances`, `/v1/{evm,svm}/transfers`
 - **Token API: track balance changes over time** — `/v1/evm/balances/historical`, `/v1/evm/balances/historical/native`
-- **Token API: resolve token metadata** — `/v1/{evm,svm,tvm}/tokens`, `/v1/{evm,svm,tvm}/tokens/native`
+- **Token API: resolve token metadata** — `/v1/{evm,svm}/tokens`, `/v1/{evm,svm}/tokens/native`
 - **Token API: find holders of a token** — `/v1/{evm,svm}/holders`, `/v1/evm/holders/native`, `/v1/evm/nft/holders`
-- **Token API: trace DEX swaps and liquidity pools** — `/v1/{evm,svm,tvm}/swaps`, `/v1/{evm,svm,tvm}/pools`, `/v1/{evm,svm,tvm}/dexes`
-- **Token API: get OHLC time-series** — `/v1/{evm,svm,tvm}/pools/ohlc`
+- **Token API: trace DEX swaps and liquidity pools** — `/v1/{evm,svm}/swaps`, `/v1/{evm,svm}/pools`, `/v1/{evm,svm}/dexes`
+- **Token API: get OHLC time-series** — `/v1/{evm,svm}/pools/ohlc`
 - **Token API: list a wallet's NFT holdings and activity** — `/v1/evm/nft/ownerships`, `/v1/evm/nft/transfers`, `/v1/evm/nft/sales`, `/v1/evm/nft/items`, `/v1/evm/nft/collections`
 - **Prediction Markets: discover markets, OI, and per-user PNL** — `/v1/polymarket/markets`, `/v1/polymarket/markets/ohlc`, `/v1/polymarket/markets/oi`, `/v1/polymarket/markets/activity`, `/v1/polymarket/users`, `/v1/polymarket/users/positions`, `/v1/hyperliquid/outcomes`, `/v1/hyperliquid/outcomes/ohlc`, `/v1/hyperliquid/outcomes/trades`, `/v1/hyperliquid/outcomes/users`, `/v1/hyperliquid/outcomes/users/positions`, `/v1/hyperliquid/outcomes/users/activity`
 - **Perp Exchanges: discover markets, OHLC, OI, liquidations, and per-user PnL** — `/v1/hyperliquid/markets`, `/v1/hyperliquid/markets/ohlc`, `/v1/hyperliquid/markets/oi`, `/v1/hyperliquid/markets/liquidations`, `/v1/hyperliquid/users`, `/v1/hyperliquid/users/positions`, `/v1/hyperliquid/vaults`
-- **Discover supported chains and protocols** (free) — `/v1/networks`, `/v1/{evm,svm,tvm}/dexes`, `/v1/hyperliquid/dexes`
+- **Discover supported chains and protocols** (free) — `/v1/networks`, `/v1/{evm,svm}/dexes`, `/v1/hyperliquid/dexes`
 
 ## Common patterns
 
@@ -107,7 +106,7 @@ Historical and OHLC endpoints use an `interval` enum: `1h`, `4h`, `1d` (default)
 
 ### Network discovery
 
-Call `GET /v1/networks` first to enumerate supported network IDs (`mainnet`, `base`, `bsc`, `solana`, `tron`, …) and see how current each indexer is via `indexed_to`.
+Call `GET /v1/networks` first to enumerate supported network IDs (`mainnet`, `base`, `bsc`, `solana`, …) and see how current each indexer is via `indexed_to`.
 
 ## Worked example
 
@@ -250,37 +249,6 @@ In `/v1/svm/holders`, the `owner` field is the wallet and `token_account` is the
 | Endpoint | Required | Optional |
 |----------|----------|----------|
 | `GET /v1/svm/owner` | `network`, `account` | — |
-
----
-
-## TVM endpoints
-
-TRON Virtual Machine chains. Balances and holders are not yet exposed.
-
-### Tokens (TRC-20)
-
-| Endpoint | Required | Optional |
-|----------|----------|----------|
-| `GET /v1/tvm/tokens` | `network`, `contract` | — |
-| `GET /v1/tvm/tokens/native` | `network` | — |
-
-### Transfers
-
-| Endpoint | Required | Optional |
-|----------|----------|----------|
-| `GET /v1/tvm/transfers` | `network` | `transaction_id`, `contract`, `from_address`, `to_address`, `start_time`, `end_time`, `start_block`, `end_block` |
-| `GET /v1/tvm/transfers/native` | `network` | `transaction_id`, `from_address`, `to_address`, `start_time`, `end_time`, `start_block`, `end_block` |
-
-### DEX / swaps / pools
-
-| Endpoint | Required | Optional |
-|----------|----------|----------|
-| `GET /v1/tvm/swaps` | `network` | `transaction_id`, `factory`, `pool`, `caller`, `user`, `sender`, `recipient`, `input_contract`, `output_contract`, `protocol`, `start_time`, `end_time`, `start_block`, `end_block` |
-| `GET /v1/tvm/dexes` | `network` | — |
-| `GET /v1/tvm/pools` | `network` | `factory`, `pool`, `input_token`, `output_token`, `protocol` |
-| `GET /v1/tvm/pools/ohlc` | `network`, `pool` | `interval`, `start_time`, `end_time` |
-
-TVM swap address fields follow the same `user` / `sender` / `recipient` convention as EVM (prefer `user`).
 
 ---
 

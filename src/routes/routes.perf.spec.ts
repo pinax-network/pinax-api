@@ -42,12 +42,6 @@ import {
     SVM_TOKEN_ACCOUNT_PUMP_EXAMPLE,
     SVM_TRANSACTION_SWAP_EXAMPLE,
     SVM_TRANSACTION_TRANSFER_EXAMPLE,
-    TVM_ADDRESS_SWAP_EXAMPLE,
-    TVM_CONTRACT_USDT_EXAMPLE,
-    TVM_FACTORY_SUNSWAP_EXAMPLE,
-    TVM_POOL_USDT_WTRX_EXAMPLE,
-    TVM_TRANSACTION_SWAP_EXAMPLE,
-    TVM_TRANSACTION_TRANSFER_EXAMPLE,
 } from '../types/examples.js';
 
 const DB_TESTS = !!process.env.DB_TESTS;
@@ -83,7 +77,7 @@ const BUDGET = {
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type DbCategory = 'balances' | 'transfers' | 'dex' | 'nft' | 'contracts';
-type ChainType = 'evm' | 'svm' | 'tvm';
+type ChainType = 'evm' | 'svm';
 
 interface BenchConfig {
     startBlock: number;
@@ -119,13 +113,11 @@ const BENCH: Record<string, BenchConfig> = {
     polygon: { startBlock: 80_000_000, endBlock: 80_000_005, startTime: 1727592950, endTime: 1727592960 },
     unichain: { startBlock: 38_000_100, endBlock: 38_000_300, startTime: 1768766360, endTime: 1768766370 },
     solana: { startBlock: 370_000_002, endBlock: 370_000_005, startTime: 1727592950, endTime: 1727592960 },
-    tron: { startBlock: 68_000_000, endBlock: 68_000_005, startTime: 1727592950, endTime: 1727592960 },
 };
 
 const CHAIN_BENCH_DEFAULT: Record<ChainType, BenchConfig> = {
     evm: BENCH.mainnet as BenchConfig,
     svm: BENCH.solana as BenchConfig,
-    tvm: BENCH.tron as BenchConfig,
 };
 
 function getBench(network: string, chain: ChainType): BenchConfig {
@@ -398,8 +390,6 @@ const PERF_ROUTES: PerfRoute[] = [
     lookup('/v1/evm/tokens', 'evm', ['balances', 'transfers'], (n) => `contract=${getEvmExamples(n).contract}`),
     lookup('/v1/evm/tokens/native', 'evm', ['balances']),
     lookup('/v1/svm/tokens', 'svm', ['balances'], `mint=${SVM_MINT_WSOL_EXAMPLE}`),
-    lookup('/v1/tvm/tokens', 'tvm', ['transfers'], `contract=${TVM_CONTRACT_USDT_EXAMPLE}`),
-    lookup('/v1/tvm/tokens/native', 'tvm', ['transfers']),
     lookup('/v1/evm/balances', 'evm', ['balances'], `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`),
     lookup('/v1/evm/balances/native', 'evm', ['balances'], `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`),
     lookup('/v1/evm/balances/historical', 'evm', ['balances'], `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`),
@@ -411,13 +401,10 @@ const PERF_ROUTES: PerfRoute[] = [
     lookup('/v1/svm/holders', 'svm', ['balances'], `mint=${SVM_MINT_WSOL_EXAMPLE}`),
     lookup('/v1/evm/dexes', 'evm', ['dex'], '', BUDGET.heavyLookup),
     lookup('/v1/svm/dexes', 'svm', ['dex']),
-    lookup('/v1/tvm/dexes', 'tvm', ['dex']),
     lookup('/v1/evm/pools', 'evm', ['dex'], '', BUDGET.heavyLookup),
     lookup('/v1/svm/pools', 'svm', ['dex'], '', BUDGET.heavyLookup),
-    lookup('/v1/tvm/pools', 'tvm', ['dex']),
     lookup('/v1/evm/pools/ohlc', 'evm', ['dex'], (n) => `pool=${getEvmExamples(n).pool}`),
     lookup('/v1/svm/pools/ohlc', 'svm', ['dex', 'balances'], `amm_pool=${SVM_AMM_POOL_PUMP_EXAMPLE}`),
-    lookup('/v1/tvm/pools/ohlc', 'tvm', ['dex'], `pool=${TVM_POOL_USDT_WTRX_EXAMPLE}`),
     lookup('/v1/svm/owner', 'svm', ['balances'], `account=${SVM_TOKEN_ACCOUNT_PUMP_EXAMPLE}`),
 
     // ── EVM Transfers ────────────────────────────────────────────────────────
@@ -455,24 +442,6 @@ const PERF_ROUTES: PerfRoute[] = [
         BUDGET.filterBounded,
         `mint=${SVM_MINT_WSOL_EXAMPLE}`
     ),
-
-    // ── TVM Transfers ────────────────────────────────────────────────────────
-    ...timeBlockVariants('/v1/tvm/transfers', 'tvm', ['transfers'], BUDGET.bare, BUDGET.singleBound, BUDGET.bounded),
-    ...filterVariants('/v1/tvm/transfers', 'tvm', ['transfers'], BUDGET.filter, {
-        transaction_id: TVM_TRANSACTION_TRANSFER_EXAMPLE,
-        contract: TVM_CONTRACT_USDT_EXAMPLE,
-        from_address: TVM_ADDRESS_SWAP_EXAMPLE,
-    }),
-    ...timeBlockVariants(
-        '/v1/tvm/transfers',
-        'tvm',
-        ['transfers'],
-        BUDGET.filterBounded,
-        BUDGET.filterBounded,
-        BUDGET.filterBounded,
-        `contract=${TVM_CONTRACT_USDT_EXAMPLE}`
-    ),
-    lookup('/v1/tvm/transfers/native', 'tvm', ['transfers'], '', BUDGET.bare),
 
     // ── EVM Swaps ────────────────────────────────────────────────────────────
     ...timeBlockVariants('/v1/evm/swaps', 'evm', ['dex'], BUDGET.swapBare, BUDGET.swapFilter, BUDGET.swapFilter),
@@ -517,29 +486,6 @@ const PERF_ROUTES: PerfRoute[] = [
         `amm_pool=${SVM_AMM_POOL_PUMP_EXAMPLE}`
     ),
 
-    // ── TVM Swaps ────────────────────────────────────────────────────────────
-    ...timeBlockVariants('/v1/tvm/swaps', 'tvm', ['dex'], BUDGET.swapBare, BUDGET.swapFilter, BUDGET.swapFilter),
-    ...filterVariants('/v1/tvm/swaps', 'tvm', ['dex'], BUDGET.swapFilter, {
-        transaction_id: TVM_TRANSACTION_SWAP_EXAMPLE,
-        factory: TVM_FACTORY_SUNSWAP_EXAMPLE,
-        pool: TVM_POOL_USDT_WTRX_EXAMPLE,
-        caller: TVM_ADDRESS_SWAP_EXAMPLE,
-        user: TVM_ADDRESS_SWAP_EXAMPLE,
-        sender: TVM_ADDRESS_SWAP_EXAMPLE,
-        recipient: TVM_ADDRESS_SWAP_EXAMPLE,
-        input_contract: TVM_CONTRACT_USDT_EXAMPLE,
-        output_contract: TVM_CONTRACT_USDT_EXAMPLE,
-    }),
-    ...timeBlockVariants(
-        '/v1/tvm/swaps',
-        'tvm',
-        ['dex'],
-        BUDGET.swapFilter,
-        BUDGET.swapFilter,
-        BUDGET.swapFilter,
-        `pool=${TVM_POOL_USDT_WTRX_EXAMPLE}`
-    ),
-
     // ── NFT ──────────────────────────────────────────────────────────────────
     lookup('/v1/evm/nft/collections', 'evm', ['contracts', 'nft'], (n) => `contract=${getEvmExamples(n).nftContract}`),
     lookup('/v1/evm/nft/holders', 'evm', ['nft'], (n) => `contract=${getEvmExamples(n).nftContract}`),
@@ -572,7 +518,6 @@ const PERF_ROUTES: PerfRoute[] = [
 let app: Hono;
 let evmNetwork: string;
 let svmNetwork: string;
-let tvmNetwork: string;
 
 function getNetworkForChain(chain: ChainType): string {
     switch (chain) {
@@ -580,8 +525,6 @@ function getNetworkForChain(chain: ChainType): string {
             return evmNetwork;
         case 'svm':
             return svmNetwork;
-        case 'tvm':
-            return tvmNetwork;
     }
 }
 
@@ -620,7 +563,6 @@ describe.skipIf(!DB_TESTS)('Database performance', () => {
 
         evmNetwork = config.defaultEvmNetwork;
         svmNetwork = config.defaultSvmNetwork;
-        tvmNetwork = config.defaultTvmNetwork;
     });
 
     // Group routes by section for readable output

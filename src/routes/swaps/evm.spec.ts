@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { normalizeSQL } from '../../sql/index.js';
 import query from './evm.sql' with { type: 'text' };
 
-describe('EVM/TVM swaps SQL regressions', () => {
+describe('EVM swaps SQL regressions', () => {
     const sql = normalizeSQL(query);
 
     it('applies the same protocol comparison in prefilter and final row filter', () => {

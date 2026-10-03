@@ -20,7 +20,6 @@ import { parse } from 'yaml';
 const PLATFORM_TO_NETWORK: Record<string, string> = {
     // Direct matches
     ethereum: 'mainnet',
-    tron: 'tron',
     solana: 'solana',
     // EVM L1s
     'binance-smart-chain': 'bsc',

@@ -35,12 +35,6 @@ networks:
     metadata: solana:svm-metadata@v0.3.1
     dexes: solana:svm-dex@v0.5.2
 
-  # TVM Networks
-  tron:
-    type: tvm
-    cluster: b
-    transfers: tron:evm-transfers@v0.2.3
-    dexes: tron:evm-dex@v0.5.0
 
   # Polymarket
   polymarket:

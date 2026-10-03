@@ -209,14 +209,6 @@ async function queryIndexedTo(): Promise<Map<string, IndexedToEntry[]>> {
 async function validateNetworks() {
     if (config.skipNetworksValidation) return;
 
-    if (
-        !config.networks.includes(config.defaultEvmNetwork) &&
-        !config.networks.includes(config.defaultSvmNetwork) &&
-        !config.networks.includes(config.defaultTvmNetwork)
-    ) {
-        throw new Error('Default network for EVM, SVM or TVM not found');
-    }
-
     // Group networks by their cluster
     const networksByCluster = new Map<string, string[]>();
     for (const network of config.networks) {
@@ -225,7 +217,9 @@ async function validateNetworks() {
             config.transfersDatabases[network] ||
             config.nftsDatabases[network] ||
             config.dexesDatabases[network] ||
-            config.contractsDatabases[network];
+            config.contractsDatabases[network] ||
+            config.accountsDatabases[network] ||
+            config.metadataDatabases[network];
 
         if (!networkDb) {
             throw new Error(`No database configuration found for network: ${network}`);
@@ -260,7 +254,6 @@ await validateNetworks();
 logger.trace('Supported networks:\n', config.networks);
 logger.trace(`Default EVM network: ${config.defaultEvmNetwork}`);
 logger.trace(`Default SVM network: ${config.defaultSvmNetwork}`);
-logger.trace(`Default TVM network: ${config.defaultTvmNetwork}`);
 
 route.get(
     '/networks',

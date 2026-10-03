@@ -18,11 +18,6 @@ describe('extractVersion', () => {
         expect(extractVersion('solana:svm-dex@v0.3.1')).toBe('0.3.1');
     });
 
-    it('should extract version from TVM database names', () => {
-        expect(extractVersion('tron:evm-transfers@v0.2.3')).toBe('0.2.3');
-        expect(extractVersion('tron:evm-dex@v0.2.6')).toBe('0.2.6');
-    });
-
     it('should return "unknown" for database names without version', () => {
         expect(extractVersion('mainnet:evm-transfers')).toBe('unknown');
         expect(extractVersion('some-database')).toBe('unknown');
