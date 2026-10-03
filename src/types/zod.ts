@@ -95,12 +95,12 @@ export type Commit = z.infer<typeof commit>;
 
 export const evmNetworkIdSchema = z.enum(config.evmNetworks).meta({
     description: 'The Graph Network ID for EVM networks https://thegraph.com/networks',
-    example: config.evmNetworks[0],
+    example: config.evmNetworks.includes(config.defaultEvmNetwork) ? config.defaultEvmNetwork : config.evmNetworks[0],
 });
 
 export const svmNetworkIdSchema = z.enum(config.svmNetworks).meta({
     description: 'The Graph Network ID for SVM networks https://thegraph.com/networks',
-    example: config.svmNetworks[0],
+    example: config.svmNetworks.includes(config.defaultSvmNetwork) ? config.defaultSvmNetwork : config.svmNetworks[0],
 });
 
 // ----------------------
