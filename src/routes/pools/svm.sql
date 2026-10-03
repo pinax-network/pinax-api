@@ -54,7 +54,11 @@ WITH
 ) AS ranked_by_mint,
 /* No mint filter: rank across all pools from state_pools_aggregating_by_pool. Gated
    on empty({mint}) so this full-table aggregation is skipped entirely (constant-false
-   WHERE → no scan) whenever the mint path above is in use. */
+   WHERE → no scan) whenever the mint path above is in use. FINAL merges the
+   SimpleAggregateFunction(sum, UInt64) transaction counts using the table's full
+   sorting key (amm_pool, protocol, program_id, amm), avoiding a hash GROUP BY over
+   every pool. All predicates below use sorting-key columns, so filtering does not
+   remove partial counts from a matching pool. */
 (
     SELECT groupArray((amm_pool, protocol, program_id, amm, transactions)) FROM (
         SELECT
@@ -62,14 +66,13 @@ WITH
             protocol,
             program_id,
             amm,
-            sum(transactions) AS transactions
-        FROM {db_dex:Identifier}.state_pools_aggregating_by_pool
+            transactions
+        FROM {db_dex:Identifier}.state_pools_aggregating_by_pool FINAL
         WHERE empty({mint:Array(String)})
           AND amm_pool != ''
           AND (empty({amm_pool:Array(String)}) OR amm_pool IN {amm_pool:Array(String)})
           AND (empty({amm:Array(String)}) OR amm IN {amm:Array(String)})
           AND (isNull({protocol:Nullable(String)}) OR protocol = {protocol:Nullable(String)})
-        GROUP BY amm_pool, protocol, program_id, amm
         ORDER BY transactions DESC, amm_pool ASC, protocol ASC, program_id ASC, amm ASC
         LIMIT  {limit:UInt64}
         OFFSET {offset:UInt64}
