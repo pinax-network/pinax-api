@@ -26,6 +26,13 @@ describe('Configured route availability', () => {
     const cases = [
         { name: 'both families', networks: { mainnet: evm, solana: svm }, evm: 20, svm: 13 },
         { name: 'EVM only', networks: { mainnet: evm }, evm: 20, svm: 0 },
+        {
+            name: 'default EVM network after another network',
+            networks: { 'arbitrum-one': evm, mainnet: evm },
+            evm: 20,
+            svm: 0,
+        },
+        { name: 'EVM without the default network', networks: { 'arbitrum-one': evm }, evm: 20, svm: 0 },
         { name: 'SVM only', networks: { solana: svm }, evm: 0, svm: 13 },
         { name: 'no families', networks: {}, evm: 0, svm: 0 },
         {
@@ -88,8 +95,11 @@ describe('Configured route availability', () => {
                     const retired = await request('/v1/tvm/transfers?network=tron');
                     assert.equal(retired.status, 404);
                     assert.equal((await retired.json()).code, 'route_not_found');
-                    assert.equal(evmNetworkIdSchema.safeParse('mainnet').success, ${fixture.evm > 0});
+                    assert.equal(evmNetworkIdSchema.safeParse('mainnet').success, ${Object.hasOwn(fixture.networks, 'mainnet')});
                     assert.equal(svmNetworkIdSchema.safeParse('solana').success, ${fixture.svm > 0});
+                    const expectedEvmExample = ${JSON.stringify(Object.hasOwn(fixture.networks, 'mainnet') ? 'mainnet' : Object.hasOwn(fixture.networks, 'arbitrum-one') ? 'arbitrum-one' : null)};
+                    assert.equal(evmNetworkIdSchema.meta()?.example, expectedEvmExample ?? undefined);
+                    assert.equal(svmNetworkIdSchema.meta()?.example, ${fixture.svm > 0 ? "'solana'" : 'undefined'});
                     for (const family of ['evm', 'svm']) {
                         if (!tokenPaths.some(p => p.startsWith('/v1/' + family + '/'))) {
                             assert.equal((await request('/v1/' + family + '/transfers')).status, 404);
