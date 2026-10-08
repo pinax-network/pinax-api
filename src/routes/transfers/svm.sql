@@ -136,7 +136,9 @@ filtered_transfers AS
         compute_units_consumed
     FROM {db_transfers:Identifier}.transfers t
     WHERE
-            ((SELECT n FROM active_filters) = 0 OR toRelativeMinuteNum(timestamp) IN (SELECT minute FROM filtered_minutes))
+            /* Scalar subquery: computed once per query, while a plain `IN (SELECT minute FROM filtered_minutes)`
+               re-runs the minute pre-filter every time this CTE is inlined. */
+            ((SELECT n FROM active_filters) = 0 OR toRelativeMinuteNum(timestamp) IN (SELECT arrayJoin((SELECT groupArray(minute) FROM filtered_minutes))))
 
         /* Primary-key pruning via unified timestamp bounds from start_ts/end_ts/clamped_start_ts CTEs */
         AND timestamp >= (SELECT ts FROM clamped_start_ts)
@@ -159,14 +161,19 @@ filtered_transfers AS
     LIMIT   {limit:UInt64}
     OFFSET  {offset:UInt64}
 ),
-mints AS (
-    SELECT DISTINCT mint FROM filtered_transfers
+/*
+    ClickHouse inlines a CTE at every reference. A `mints` CTE read through `IN mints` re-ran
+    filtered_transfers inside both the metadata and decimals lookups (3 scans per request).
+    Read through a scalar subquery, the page's mints are collected once.
+*/
+page_mints AS (
+    SELECT groupUniqArray(mint) AS mints FROM filtered_transfers
 ),
 metadata AS
 (
     SELECT mint, name, symbol, uri
     FROM {db_metadata:Identifier}.metadata
-    WHERE mint IN mints
+    WHERE mint IN (SELECT arrayJoin((SELECT mints FROM page_mints)))
     ORDER BY timestamp DESC
     LIMIT 1 BY mint
 ),
@@ -174,7 +181,7 @@ decimals AS
 (
     SELECT mint, decimals
     FROM {db_accounts:Identifier}.decimals_state
-    WHERE mint IN mints
+    WHERE mint IN (SELECT arrayJoin((SELECT mints FROM page_mints)))
     LIMIT 1 BY mint
 )
 SELECT
