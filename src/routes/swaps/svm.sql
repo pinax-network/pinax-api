@@ -152,7 +152,9 @@ filtered_swaps AS
         compute_units_consumed
     FROM {db_dex:Identifier}.swaps t
     WHERE
-            ((SELECT n FROM active_filters) = 0 OR toRelativeMinuteNum(timestamp) IN (SELECT minute FROM filtered_minutes))
+            /* Scalar subquery: computed once per query, while a plain `IN (SELECT minute FROM filtered_minutes)`
+               re-runs the minute pre-filter every time this CTE is inlined. */
+            ((SELECT n FROM active_filters) = 0 OR toRelativeMinuteNum(timestamp) IN (SELECT arrayJoin((SELECT groupArray(minute) FROM filtered_minutes))))
 
         /* Primary-key pruning via unified timestamp bounds from start_ts/end_ts/clamped_start_ts CTEs */
         AND timestamp >= (SELECT ts FROM clamped_start_ts)
@@ -177,16 +179,20 @@ filtered_swaps AS
     LIMIT   {limit:UInt64}
     OFFSET  {offset:UInt64}
 ),
-mints AS (
-    SELECT DISTINCT input_mint AS mint FROM filtered_swaps
-    UNION DISTINCT
-    SELECT DISTINCT output_mint AS mint FROM filtered_swaps
+/*
+    ClickHouse inlines a CTE at every reference. A `mints` CTE read through `IN mints` ran
+    filtered_swaps twice inside each of the four metadata/decimals joins below (9 scans per request).
+    Read through a scalar subquery, the page's mints are collected once.
+*/
+page_mints AS (
+    SELECT arrayDistinct(arrayConcat(groupArray(input_mint), groupArray(output_mint))) AS mints
+    FROM filtered_swaps
 ),
 metadata AS
 (
     SELECT mint, name, symbol, uri
     FROM {db_metadata:Identifier}.metadata
-    WHERE mint IN mints
+    WHERE mint IN (SELECT arrayJoin((SELECT mints FROM page_mints)))
     ORDER BY timestamp DESC
     LIMIT 1 BY mint
 ),
@@ -194,7 +200,7 @@ decimals AS
 (
     SELECT mint, decimals
     FROM {db_accounts:Identifier}.decimals_state
-    WHERE mint IN mints
+    WHERE mint IN (SELECT arrayJoin((SELECT mints FROM page_mints)))
     LIMIT 1 BY mint
 )
 SELECT
