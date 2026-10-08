@@ -142,7 +142,9 @@ filtered_swaps AS
     FROM {db_dex:Identifier}.swaps
 
     WHERE
-            ((SELECT n FROM active_filters) = 0 OR minute IN (SELECT minute FROM filtered_minutes))
+            /* Scalar subquery: computed once per query, while a plain `IN (SELECT minute FROM filtered_minutes)`
+               re-runs the minute pre-filter every time this CTE is inlined. */
+            ((SELECT n FROM active_filters) = 0 OR minute IN (SELECT arrayJoin((SELECT groupArray(minute) FROM filtered_minutes))))
 
         /* Primary-key pruning via unified timestamp bounds from start_ts/end_ts CTEs */
         AND minute >= toRelativeMinuteNum((SELECT ts FROM clamped_start_ts))
@@ -190,10 +192,14 @@ oriented_swaps AS (
     FROM filtered_swaps
 ),
 /* --- END HOTFIX --- */
-contracts AS (
-    SELECT DISTINCT input_contract AS contract FROM oriented_swaps
-    UNION DISTINCT
-    SELECT DISTINCT output_contract AS contract FROM oriented_swaps
+/*
+    ClickHouse inlines a CTE at every reference. A `contracts` CTE read through `IN (SELECT contract FROM contracts)`
+    ran oriented_swaps twice inside each of the two metadata joins below (5 scans per request).
+    Read through a scalar subquery, the page's contracts are collected once.
+*/
+page_contracts AS (
+    SELECT arrayDistinct(arrayConcat(groupArray(input_contract), groupArray(output_contract))) AS contracts
+    FROM oriented_swaps
 ),
 contracts_metadata AS (
     SELECT
@@ -203,7 +209,7 @@ contracts_metadata AS (
         argMax(symbol, block_num) as symbol,
         argMax(decimals, block_num) as decimals
     FROM metadata.metadata
-    WHERE network = {network:String} AND contract IN (SELECT contract FROM contracts)
+    WHERE network = {network:String} AND contract IN (SELECT arrayJoin((SELECT contracts FROM page_contracts)))
     GROUP BY network, contract
 )
 SELECT
