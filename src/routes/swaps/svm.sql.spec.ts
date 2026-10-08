@@ -16,6 +16,19 @@ function whitespaceAgnostic(pattern: string) {
 }
 
 describe('SVM swaps SQL filters', () => {
+    // minutes_union has a protocol branch; uncounted, protocol + another filter took the union of their
+    // minutes instead of the intersection and could return no rows despite matches.
+    it('counts protocol as an active filter', () => {
+        expect(query).toMatch(
+            whitespaceAgnostic('n_other + toUInt8(n_other > 0 AND isNotNull({protocol:Nullable(String)})) AS n')
+        );
+        expect(query).toMatch(
+            whitespaceAgnostic(
+                'WHERE (isNotNull({protocol:Nullable(String)}) AND protocol = {protocol:Nullable(String)})'
+            )
+        );
+    });
+
     for (const [filter, predicate] of Object.entries(requiredPredicates)) {
         it(`applies ${filter} as a row-level predicate`, () => {
             expect(query).toMatch(whitespaceAgnostic(predicate));
