@@ -22,3 +22,19 @@ describe('SVM swaps SQL filters', () => {
         });
     }
 });
+
+describe('SVM swaps SQL scan count', () => {
+    // ClickHouse inlines a CTE at every reference; each `IN <cte>` below a join re-ran the swaps scan (#593).
+    it('collects the page mints once through a scalar subquery', () => {
+        expect(query).not.toMatch(/WHERE\s+mint\s+IN\s+mints\b/);
+        expect(query.match(/WHERE mint IN \(SELECT arrayJoin\(\(SELECT mints FROM page_mints\)\)\)/g)).toHaveLength(2);
+    });
+
+    it('reads the candidate minutes through a scalar subquery', () => {
+        expect(query).toMatch(
+            whitespaceAgnostic(
+                'toRelativeMinuteNum(timestamp) IN (SELECT arrayJoin((SELECT groupArray(minute) FROM filtered_minutes)))'
+            )
+        );
+    });
+});
