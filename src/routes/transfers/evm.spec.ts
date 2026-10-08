@@ -11,3 +11,17 @@ describe('EVM transfers SQL regressions', () => {
         expect(sql).toContain('OR log_address IN {contract:Array(String)})');
     });
 });
+
+describe('EVM transfers SQL scan count', () => {
+    const sql = normalizeSQL(query);
+
+    // ClickHouse inlines a CTE at every reference; `IN (SELECT contract FROM contracts)` re-ran filtered_transfers inside the metadata lookup (2 scans per request).
+    it('collects the page contracts once through a scalar subquery', () => {
+        expect(sql).not.toContain('contract IN (SELECT contract FROM contracts)');
+        expect(sql).toContain('contract IN (SELECT arrayJoin((SELECT contracts FROM page_contracts)))');
+    });
+
+    it('reads the candidate minutes through a scalar subquery', () => {
+        expect(sql).toContain('minute IN (SELECT arrayJoin((SELECT groupArray(minute) FROM filtered_minutes)))');
+    });
+});

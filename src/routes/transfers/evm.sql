@@ -85,7 +85,9 @@ filtered_transfers AS
     SELECT *
     FROM {db_transfers:Identifier}.transfers t
     WHERE
-            ((SELECT n FROM active_filters) = 0 OR minute IN (SELECT minute FROM filtered_minutes))
+            /* Scalar subquery: computed once per query, while a plain `IN (SELECT minute FROM filtered_minutes)`
+               re-runs the minute pre-filter every time this CTE is inlined. */
+            ((SELECT n FROM active_filters) = 0 OR minute IN (SELECT arrayJoin((SELECT groupArray(minute) FROM filtered_minutes))))
 
         /* Primary-key pruning via unified timestamp bounds from start_ts/end_ts/clamped_start_ts CTEs */
         AND minute >= toRelativeMinuteNum((SELECT ts FROM clamped_start_ts))
@@ -105,8 +107,13 @@ filtered_transfers AS
     LIMIT   {limit:UInt64}
     OFFSET  {offset:UInt64}
 ),
-contracts AS (
-    SELECT DISTINCT log_address AS contract FROM filtered_transfers
+/*
+    ClickHouse inlines a CTE at every reference. A `contracts` CTE read through `IN (SELECT contract FROM contracts)`
+    re-ran filtered_transfers inside the metadata lookup (2 scans per request).
+    Read through a scalar subquery, the page's contracts are collected once.
+*/
+page_contracts AS (
+    SELECT groupUniqArray(toString(log_address)) AS contracts FROM filtered_transfers
 ),
 contracts_metadata AS (
     SELECT
@@ -116,7 +123,7 @@ contracts_metadata AS (
         argMax(symbol, block_num) as symbol,
         argMax(decimals, block_num) as decimals
     FROM metadata.metadata
-    WHERE network = {network:String} AND contract IN (SELECT contract FROM contracts)
+    WHERE network = {network:String} AND contract IN (SELECT arrayJoin((SELECT contracts FROM page_contracts)))
     GROUP BY network, contract
 )
 SELECT

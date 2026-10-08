@@ -39,3 +39,17 @@ describe('EVM swaps SQL regressions', () => {
         expect(sql).toContain('s.user AS recipient');
     });
 });
+
+describe('EVM swaps SQL scan count', () => {
+    const sql = normalizeSQL(query);
+
+    // ClickHouse inlines a CTE at every reference; `IN (SELECT contract FROM contracts)` re-ran oriented_swaps twice inside each metadata join (5 scans per request).
+    it('collects the page contracts once through a scalar subquery', () => {
+        expect(sql).not.toContain('contract IN (SELECT contract FROM contracts)');
+        expect(sql).toContain('contract IN (SELECT arrayJoin((SELECT contracts FROM page_contracts)))');
+    });
+
+    it('reads the candidate minutes through a scalar subquery', () => {
+        expect(sql).toContain('minute IN (SELECT arrayJoin((SELECT groupArray(minute) FROM filtered_minutes)))');
+    });
+});
