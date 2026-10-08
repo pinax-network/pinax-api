@@ -605,11 +605,11 @@ type ProcessedFields<T extends Record<string, FieldConfig>> = {
 export function createQuerySchema<T extends Record<string, FieldConfig>>(
     definitions: T,
     include_pagination: false
-): z.ZodObject<ProcessedFields<T>>;
+): z.ZodObject<ProcessedFields<T>, z.core.$strict>;
 export function createQuerySchema<T extends Record<string, FieldConfig>>(
     definitions: T,
     include_pagination?: true
-): z.ZodObject<ProcessedFields<T> & typeof paginationQuerySchema.shape>;
+): z.ZodObject<ProcessedFields<T> & typeof paginationQuerySchema.shape, z.core.$strict>;
 
 /**
  * Creates a Zod object schema with automatic field name injection and batching support.
@@ -657,124 +657,167 @@ export function createQuerySchema<T extends Record<string, FieldConfig>>(
     definitions: T,
     include_pagination: boolean = true
 ) {
-    const querySchema = z.object(
-        Object.fromEntries(
-            Object.entries(definitions).map(([fieldName, config]) => {
-                const {
-                    schema,
-                    batched = false,
-                    default: defaultValue,
-                    prefault: prefaultValue,
-                    separator = ',',
-                    meta,
-                } = config;
-                const isOptional = 'optional' in config && config.optional === true;
+    const fields = Object.fromEntries(
+        Object.entries(definitions).map(([fieldName, config]) => {
+            const {
+                schema,
+                batched = false,
+                default: defaultValue,
+                prefault: prefaultValue,
+                separator = ',',
+                meta,
+            } = config;
+            const isOptional = 'optional' in config && config.optional === true;
 
-                let resultSchema = schema;
+            let resultSchema = schema;
 
-                // Apply batching if requested
-                if (batched) {
-                    resultSchema = z
-                        .union([
-                            schema,
-                            z.string().transform((str, ctx) => {
-                                const items = str.split(separator).map((item) => item.trim());
-                                const parsed: z.infer<typeof schema>[] = [];
+            // Apply batching if requested
+            if (batched) {
+                resultSchema = z
+                    .union([
+                        schema,
+                        z.string().transform((str, ctx) => {
+                            const items = str.split(separator).map((item) => item.trim());
+                            const parsed: z.infer<typeof schema>[] = [];
 
-                                for (const item of items) {
-                                    const result = schema.safeParse(item);
-                                    if (!result.success) {
-                                        // Add the error to the current parsing context
-                                        for (const issue of result.error.issues) {
-                                            ctx.addIssue({
-                                                ...issue,
-                                                message: `Invalid value in ${fieldName}: ${issue.message}`,
-                                            });
-                                        }
-                                        return z.NEVER;
+                            for (const item of items) {
+                                const result = schema.safeParse(item);
+                                if (!result.success) {
+                                    // Add the error to the current parsing context
+                                    for (const issue of result.error.issues) {
+                                        ctx.addIssue({
+                                            ...issue,
+                                            message: `Invalid value in ${fieldName}: ${issue.message}`,
+                                        });
                                     }
-                                    parsed.push(result.data);
+                                    return z.NEVER;
                                 }
-
-                                return parsed;
-                            }),
-                            z.array(schema),
-                        ])
-                        .transform((value) => {
-                            return Array.isArray(value) ? value : [value];
-                        })
-                        .meta({
-                            ...schema.meta(),
-                            description: `${schema.description}<br>Single value or array of values* (separate multiple values with \`${separator}\`)<br>*Plan restricted.`,
-                        });
-                }
-
-                // If no default, prefault, or optional flag, make it required with proper error message
-                if (defaultValue === undefined && prefaultValue === undefined && !isOptional) {
-                    resultSchema = z
-                        .preprocess((val, ctx) => {
-                            if (val === undefined || val === '') {
-                                ctx.addIssue({
-                                    code: 'invalid_type',
-                                    expected: 'string',
-                                    received: typeof val,
-                                    message: `${fieldName} is required`,
-                                });
-                                return z.NEVER;
+                                parsed.push(result.data);
                             }
 
-                            // Check if multiple values provided for non-batched field
-                            if (!batched && Array.isArray(val)) {
-                                ctx.addIssue({
-                                    code: 'custom',
-                                    message: `multiple values are not supported on this endpoint. Please provide only a single value.`,
-                                });
-                                return z.NEVER;
-                            }
-
-                            return val;
-                        }, resultSchema)
-                        .meta({ ...resultSchema.meta() });
-                } else if (isOptional) {
-                    // Optional field: use empty array for batched, null for scalar
-                    const optionalDefault = batched ? [] : null;
-                    resultSchema = resultSchema.default(optionalDefault).meta({
-                        ...resultSchema.meta(),
-                        ...(optionalDefault === null ? { default: undefined } : {}),
+                            return parsed;
+                        }),
+                        z.array(schema),
+                    ])
+                    .transform((value) => {
+                        return Array.isArray(value) ? value : [value];
+                    })
+                    .meta({
+                        ...schema.meta(),
+                        description: `${schema.description}<br>Single value or array of values* (separate multiple values with \`${separator}\`)<br>*Plan restricted.`,
                     });
-                } else if (defaultValue !== undefined) {
-                    // Apply default (output-level) if provided - takes precedence over prefault
-                    // For batched fields with null default, use empty array instead of [null]
-                    resultSchema = resultSchema
-                        .default(batched ? (defaultValue === null ? [] : [defaultValue]) : defaultValue)
-                        .optional()
-                        .meta({ ...resultSchema.meta(), default: defaultValue });
-                } else if (prefaultValue !== undefined) {
-                    // Apply prefault (input-level) - value goes through parsing
-                    resultSchema = resultSchema
-                        .prefault(prefaultValue)
-                        .optional()
-                        .meta({ ...resultSchema.meta(), default: prefaultValue });
-                }
+            }
 
-                // Apply custom metadata if provided
-                if (meta) resultSchema = resultSchema.meta({ ...resultSchema.meta(), ...meta });
+            // If no default, prefault, or optional flag, make it required with proper error message
+            if (defaultValue === undefined && prefaultValue === undefined && !isOptional) {
+                resultSchema = z
+                    .preprocess((val, ctx) => {
+                        if (val === undefined || val === '') {
+                            ctx.addIssue({
+                                code: 'invalid_type',
+                                expected: 'string',
+                                received: typeof val,
+                                message: `${fieldName} is required`,
+                            });
+                            return z.NEVER;
+                        }
 
-                const description = resultSchema.meta()?.description;
-                // Hard-limit on OpenAPI schema description length for GPT agents
-                if (description && description.length >= 300)
-                    throw new Error(`'${fieldName}' description field has more than 300 characters.`);
+                        // Check if multiple values provided for non-batched field
+                        if (!batched && Array.isArray(val)) {
+                            ctx.addIssue({
+                                code: 'custom',
+                                message: `multiple values are not supported on this endpoint. Please provide only a single value.`,
+                            });
+                            return z.NEVER;
+                        }
 
-                return [fieldName, resultSchema];
-            })
-        )
+                        return val;
+                    }, resultSchema)
+                    .meta({ ...resultSchema.meta() });
+            } else if (isOptional) {
+                // Optional field: use empty array for batched, null for scalar
+                const optionalDefault = batched ? [] : null;
+                resultSchema = resultSchema.default(optionalDefault).meta({
+                    ...resultSchema.meta(),
+                    ...(optionalDefault === null ? { default: undefined } : {}),
+                });
+            } else if (defaultValue !== undefined) {
+                // Apply default (output-level) if provided - takes precedence over prefault
+                // For batched fields with null default, use empty array instead of [null]
+                resultSchema = resultSchema
+                    .default(batched ? (defaultValue === null ? [] : [defaultValue]) : defaultValue)
+                    .optional()
+                    .meta({ ...resultSchema.meta(), default: defaultValue });
+            } else if (prefaultValue !== undefined) {
+                // Apply prefault (input-level) - value goes through parsing
+                resultSchema = resultSchema
+                    .prefault(prefaultValue)
+                    .optional()
+                    .meta({ ...resultSchema.meta(), default: prefaultValue });
+            }
+
+            // Apply custom metadata if provided
+            if (meta) resultSchema = resultSchema.meta({ ...resultSchema.meta(), ...meta });
+
+            const description = resultSchema.meta()?.description;
+            // Hard-limit on OpenAPI schema description length for GPT agents
+            if (description && description.length >= 300)
+                throw new Error(`'${fieldName}' description field has more than 300 characters.`);
+
+            return [fieldName, resultSchema];
+        })
     );
 
+    const shape = include_pagination ? { ...fields, ...paginationQuerySchema.shape } : fields;
+    const knownParams = Object.keys(shape);
+
+    // Reject undeclared parameters instead of stripping them: a filter sent under the wrong name
+    // (e.g. `mint` on /svm/swaps) would otherwise be dropped and return unfiltered rows with a 200.
+    const querySchema = z.strictObject(shape, {
+        error: (issue) =>
+            issue.code === 'unrecognized_keys' ? unknownQueryParamsMessage(issue.keys, knownParams) : undefined,
+    });
+
     if (include_pagination)
-        return querySchema.extend(paginationQuerySchema.shape) as z.ZodObject<
-            ProcessedFields<T> & typeof paginationQuerySchema.shape
-        >;
-    else return querySchema as z.ZodObject<ProcessedFields<T>>;
+        return querySchema as z.ZodObject<ProcessedFields<T> & typeof paginationQuerySchema.shape, z.core.$strict>;
+    else return querySchema as z.ZodObject<ProcessedFields<T>, z.core.$strict>;
+}
+
+/**
+ * Builds the `bad_query_input` message for undeclared query parameters, suggesting declared
+ * parameters with a similar name (e.g. `mint` → `input_mint`/`output_mint` on swaps).
+ */
+export function unknownQueryParamsMessage(unknownParams: string[], knownParams: string[]): string {
+    const described = unknownParams.map((param) => {
+        const suggestions = suggestQueryParams(param, knownParams).map((s) => `'${s}'`);
+        return suggestions.length > 0 ? `'${param}' (did you mean ${suggestions.join(' or ')}?)` : `'${param}'`;
+    });
+    const noun = unknownParams.length === 1 ? 'parameter' : 'parameters';
+    return `Unknown query ${noun} ${described.join(', ')}. Valid parameters: ${knownParams.join(', ')}.`;
+}
+
+function suggestQueryParams(param: string, knownParams: string[]): string[] {
+    const needle = param.toLowerCase();
+    return knownParams
+        .filter((known) => {
+            if (needle.length >= 3 && known.length >= 3 && (known.includes(needle) || needle.includes(known)))
+                return true;
+            return needle.length >= 4 && editDistance(needle, known) <= 2;
+        })
+        .slice(0, 3);
+}
+
+function editDistance(a: string, b: string): number {
+    let previous = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+        const current = [i];
+        for (let j = 1; j <= b.length; j++) {
+            const substitution = (previous[j - 1] as number) + (a[i - 1] === b[j - 1] ? 0 : 1);
+            current[j] = Math.min((previous[j] as number) + 1, (current[j - 1] as number) + 1, substitution);
+        }
+        previous = current;
+    }
+    return previous[b.length] as number;
 }
 
 // ── Polymarket Schemas ──

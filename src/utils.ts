@@ -28,6 +28,12 @@ function parseLimitHeader(raw: string | undefined): number | null {
     return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
+// Object-level issues (e.g. unknown query parameters) have an empty path; omit the `path:` prefix for them.
+function formatValidationIssue(issue: { code: string; path: PropertyKey[]; message: string }) {
+    const path = issue.path.join('/');
+    return `[${issue.code}] ${path ? `${path}: ` : ''}${issue.message}`;
+}
+
 export function APIErrorResponse(
     c: Context,
     status: ApiErrorResponse['status'],
@@ -39,10 +45,10 @@ export function APIErrorResponse(
     if (typeof err === 'string') {
         message = err;
     } else if (err instanceof ZodError) {
-        message = err.issues.map((issue) => `[${issue.code}] ${issue.path.join('/')}: ${issue.message}`).join(' | ');
+        message = err.issues.map(formatValidationIssue).join(' | ');
     } else if (Array.isArray(err)) {
         // Handle Hono's reformatted validation errors
-        message = err.map((issue) => `[${issue.code}] ${issue.path.join('/')}: ${issue.message}`).join(' | ');
+        message = err.map(formatValidationIssue).join(' | ');
     } else if (err instanceof Error) {
         message = err.message;
     }

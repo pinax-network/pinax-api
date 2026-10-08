@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'bun:test';
+import { zValidator } from '@hono/zod-validator';
+import { Hono } from 'hono';
 import { z } from 'zod';
 import { config } from '../config.js';
+import { validatorHook } from '../utils.js';
+import { SVM_MINT_USDC_EXAMPLE } from './examples.js';
 import {
     apiErrorResponseSchema,
     apiUsageResponseSchema,
@@ -1142,6 +1146,68 @@ describe('Polymarket schemas', () => {
         it('user interval should reject invalid values', () => {
             expect(() => userLookbackIntervalSchema.parse('4h')).toThrow();
             expect(() => userLookbackIntervalSchema.parse('ALL')).toThrow();
+        });
+    });
+
+    describe('unknown parameters', () => {
+        const swapsLikeSchema = createQuerySchema({
+            network: { schema: z.enum(['solana']) },
+            input_mint: { schema: svmMintSchema, batched: true, optional: true },
+            output_mint: { schema: svmMintSchema, batched: true, optional: true },
+            amm_pool: { schema: svmAmmPoolSchema, batched: true, optional: true },
+        });
+
+        it('rejects a parameter the endpoint does not declare', () => {
+            const result = swapsLikeSchema.safeParse({ network: 'solana', foo: 'bar' });
+            expect(result.success).toBe(false);
+            expect(result.error?.issues[0]?.code).toBe('unrecognized_keys');
+            expect(result.error?.issues[0]?.message).toStartWith("Unknown query parameter 'foo'.");
+        });
+
+        it('suggests declared parameters with a similar name', () => {
+            const result = swapsLikeSchema.safeParse({
+                network: 'solana',
+                mint: SVM_MINT_USDC_EXAMPLE,
+                pool: SVM_MINT_USDC_EXAMPLE,
+            });
+            const message = result.error?.issues[0]?.message;
+            expect(message).toContain("'mint' (did you mean 'input_mint' or 'output_mint'?)");
+            expect(message).toContain("'pool' (did you mean 'amm_pool'?)");
+            expect(message).toContain('Valid parameters: network, input_mint, output_mint, amm_pool, limit, page.');
+        });
+
+        it('suggests the intended parameter for a typo', () => {
+            const result = swapsLikeSchema.safeParse({ netwrok: 'solana' });
+            expect(result.error?.issues.map((issue) => issue.message).join(' | ')).toContain(
+                "'netwrok' (did you mean 'network'?)"
+            );
+        });
+
+        it('still accepts pagination parameters', () => {
+            const result = swapsLikeSchema.safeParse({ network: 'solana', limit: '10', page: '2' });
+            expect(result.success).toBe(true);
+        });
+
+        it('rejects pagination parameters on endpoints without pagination', () => {
+            const schema = createQuerySchema({ network: { schema: z.enum(['solana']) } }, false);
+            expect(schema.safeParse({ network: 'solana', limit: '10' }).success).toBe(false);
+        });
+
+        it('returns 400 bad_query_input through the validator hook', async () => {
+            const app = new Hono().get('/', zValidator('query', swapsLikeSchema, validatorHook), (c) =>
+                c.json({ ok: true })
+            );
+
+            const res = await app.request(`/?network=solana&mint=${SVM_MINT_USDC_EXAMPLE}`);
+            expect(res.status).toBe(400);
+            const body = (await res.json()) as { code: string; message: string };
+            expect(body.code).toBe('bad_query_input');
+            expect(body.message).toStartWith(
+                "[unrecognized_keys] Unknown query parameter 'mint' (did you mean 'input_mint' or 'output_mint'?)."
+            );
+
+            const ok = await app.request(`/?network=solana&input_mint=${SVM_MINT_USDC_EXAMPLE}`);
+            expect(ok.status).toBe(200);
         });
     });
 });
