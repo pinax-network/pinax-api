@@ -12,7 +12,10 @@ active_filters AS
         toUInt8(notEmpty({program_id:Array(String)})) +
         toUInt8(notEmpty({fee_payer:Array(String)})) +
         toUInt8(notEmpty({signer:Array(String)}))
-    AS n
+    AS n_other,
+    /* protocol has a minutes_union branch, so it must join the intersection when combined with another
+       filter. On its own it is dense and keeps the default 1-hour window (n = 0). */
+    n_other + toUInt8(n_other > 0 AND isNotNull({protocol:Nullable(String)})) AS n
 ),
 /* 2) Union minutes from only active filters */
 minutes_union AS
