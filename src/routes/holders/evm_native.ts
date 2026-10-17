@@ -2,6 +2,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
+import { evmBalancesDatabase } from '../../config/dbsConfig.js';
 import { config } from '../../config.js';
 import { handleUsageQueryError, makeUsageQueryJson } from '../../handleQuery.js';
 import {
@@ -97,7 +98,7 @@ const route = new Hono<{ Variables: { validatedData: z.infer<typeof querySchema>
 route.get('/', openapi, zValidator('query', querySchema, validatorHook), validator('query', querySchema), async (c) => {
     const params = c.req.valid('query');
 
-    const dbBalances = config.balancesDatabases[params.network];
+    const dbBalances = evmBalancesDatabase(config, params.network, 'native');
     const dbContracts = config.contractsDatabases[params.network];
 
     if (!dbBalances || !dbContracts) {

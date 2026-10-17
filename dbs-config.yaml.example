@@ -3,7 +3,16 @@
 # Set DBS_CONFIG_PATH environment variable to point to this file.
 #
 # Each network entry has `type` and `cluster` (required), plus any number of
-# database keys. Each key `foo` maps to `fooDatabases` in the parsed config.
+# database keys. Each key `foo` maps to `fooDatabases` in the parsed config,
+# except the split EVM balances keys below (`balances-native` →
+# `balancesNativeDatabases`, `balances-erc20` → `balancesErc20Databases`).
+#
+# EVM balances: `balances` is a database with both native and ERC-20 tables.
+# `balances-native` (evm-balances-native) and `balances-erc20`
+# (evm-balances-erc20) are the split databases: the native routes
+# (`/v1/evm/{balances,holders,tokens,balances/historical}/native`) read
+# `balances-native`, the other EVM balances routes read `balances-erc20`, and
+# either side falls back to `balances` when its split key is absent.
 clusters:
   a:
     url: http://127.0.0.1:8123
@@ -24,6 +33,16 @@ networks:
     nfts: mainnet:evm-nft-tokens@v0.6.2
     dexes: mainnet:evm-dex@v0.5.0
     contracts: mainnet:evm-contracts@v0.3.0
+
+  # EVM network with split balances databases
+  bsc:
+    type: evm
+    cluster: b
+    transfers: bsc:evm-transfers@v0.3.3
+    balances-native: bsc:evm-balances-native@v0.7.2
+    balances-erc20: bsc:evm-balances-erc20@v0.7.0
+    dexes: bsc:evm-dex@v0.5.0
+    contracts: bsc:evm-contracts@v0.3.0
 
   # SVM Networks
   solana:

@@ -244,6 +244,8 @@ const config = z
         ...data,
         evmNetworks: Object.keys({
             ...data.balancesDatabases,
+            ...data.balancesNativeDatabases,
+            ...data.balancesErc20Databases,
             ...data.transfersDatabases,
             ...data.nftsDatabases,
             ...data.dexesDatabases,
@@ -253,6 +255,8 @@ const config = z
                 return (
                     {
                         ...data.balancesDatabases,
+                        ...data.balancesNativeDatabases,
+                        ...data.balancesErc20Databases,
                         ...data.transfersDatabases,
                         ...data.nftsDatabases,
                         ...data.dexesDatabases,

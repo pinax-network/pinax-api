@@ -46,6 +46,8 @@ export function logServerInit() {
     // Database mappings per network
     const dbTypes = [
         { label: 'balances', mapping: config.balancesDatabases },
+        { label: 'balances-native', mapping: config.balancesNativeDatabases },
+        { label: 'balances-erc20', mapping: config.balancesErc20Databases },
         { label: 'transfers', mapping: config.transfersDatabases },
         { label: 'nfts', mapping: config.nftsDatabases },
         { label: 'dexes', mapping: config.dexesDatabases },

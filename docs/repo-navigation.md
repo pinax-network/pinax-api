@@ -28,7 +28,7 @@ This document captures stable, tool-agnostic navigation knowledge for the `pinax
 1. Request enters `index.ts` and is routed to `src/routes/index.ts` under `/v1/*`.
 2. Route-level middleware applies cache-control defaults/overrides and route-specific hooks.
 3. Route handler validates query/path input with schemas from `src/types/zod.ts`.
-4. Handler maps requested `network` to ClickHouse DB mapping from config (`balancesDatabases`, `transfersDatabases`, etc.).
+4. Handler maps requested `network` to ClickHouse DB mapping from config (`balancesDatabases`, `transfersDatabases`, etc.; EVM balances routes use `evmBalancesDatabase()` for the split `balances-native`/`balances-erc20` databases).
 5. Handler loads SQL text (`*.sql` colocated with route module) and calls `makeUsageQueryJson`.
 6. `src/handleQuery.ts` injects pagination defaults, normalizes SQL, and calls `src/clickhouse/makeQuery.ts`.
 7. ClickHouse client is selected per-network/cluster (`src/clickhouse/client.ts`) and response is streamed.

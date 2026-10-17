@@ -31,7 +31,7 @@ import {
 const app = new Hono();
 app.route('/', routes);
 
-type DbCategory = 'balances' | 'transfers' | 'dex' | 'nft' | 'contracts';
+type DbCategory = 'balances' | 'balances-native' | 'balances-erc20' | 'transfers' | 'dex' | 'nft' | 'contracts';
 type ChainType = 'evm' | 'svm';
 
 interface BenchConfig {
@@ -293,9 +293,9 @@ const PERF_ROUTES: PerfRoute[] = [
         path: '/v1/evm/tokens',
         chain: 'evm',
         params: (n) => `contract=${getEvmExamples(n).contract}`,
-        requires: ['balances', 'transfers'],
+        requires: ['balances-erc20', 'transfers'],
     },
-    { path: '/v1/evm/tokens/native', chain: 'evm', params: '', requires: ['balances'] },
+    { path: '/v1/evm/tokens/native', chain: 'evm', params: '', requires: ['balances-native'] },
     // SVM Tokens
     { path: '/v1/svm/tokens', chain: 'svm', params: `mint=${SVM_MINT_WSOL_EXAMPLE}`, requires: ['balances'] },
     // EVM Balances
@@ -303,25 +303,25 @@ const PERF_ROUTES: PerfRoute[] = [
         path: '/v1/evm/balances',
         chain: 'evm',
         params: `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`,
-        requires: ['balances'],
+        requires: ['balances-erc20'],
     },
     {
         path: '/v1/evm/balances/native',
         chain: 'evm',
         params: `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`,
-        requires: ['balances'],
+        requires: ['balances-native'],
     },
     {
         path: '/v1/evm/balances/historical',
         chain: 'evm',
         params: `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`,
-        requires: ['balances'],
+        requires: ['balances-erc20'],
     },
     {
         path: '/v1/evm/balances/historical/native',
         chain: 'evm',
         params: `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`,
-        requires: ['balances'],
+        requires: ['balances-native'],
     },
     // SVM Balances
     { path: '/v1/svm/balances', chain: 'svm', params: `owner=${SVM_OWNER_USER_EXAMPLE}`, requires: ['balances'] },
@@ -354,9 +354,9 @@ const PERF_ROUTES: PerfRoute[] = [
         path: '/v1/evm/holders',
         chain: 'evm',
         params: (n) => `contract=${getEvmExamples(n).contract}`,
-        requires: ['balances'],
+        requires: ['balances-erc20'],
     },
-    { path: '/v1/evm/holders/native', chain: 'evm', params: '', requires: ['balances'] },
+    { path: '/v1/evm/holders/native', chain: 'evm', params: '', requires: ['balances-native'] },
     // SVM Holders
     { path: '/v1/svm/holders', chain: 'svm', params: `mint=${SVM_MINT_WSOL_EXAMPLE}`, requires: ['balances'] },
     // EVM Swaps

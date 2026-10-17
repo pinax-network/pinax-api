@@ -13,7 +13,17 @@ describe('ROUTE_DEFINITIONS', () => {
     });
 
     it('should have valid DB categories for all routes', () => {
-        const validCategories = ['balances', 'transfers', 'dex', 'nft', 'contracts', 'accounts', 'metadata'];
+        const validCategories = [
+            'balances',
+            'balances-native',
+            'balances-erc20',
+            'transfers',
+            'dex',
+            'nft',
+            'contracts',
+            'accounts',
+            'metadata',
+        ];
         for (const route of ROUTE_DEFINITIONS) {
             expect(route.requires.length).toBeGreaterThan(0);
             for (const cat of route.requires) {
@@ -35,6 +45,53 @@ describe('getSupportedRoutes', () => {
     it('should have total count equal to ROUTE_DEFINITIONS length', () => {
         const result = getSupportedRoutes(config);
         expect(result.supported.length + result.unsupported.length).toBe(ROUTE_DEFINITIONS.length);
+    });
+
+    it('should serve EVM balances routes from split, combined or mixed databases', () => {
+        const mapping = (database: string) => ({ database, type: 'evm', cluster: 'c' });
+        const native = ['/v1/evm/balances/native', '/v1/evm/tokens/native', '/v1/evm/balances/historical/native'];
+        const erc20 = ['/v1/evm/balances', '/v1/evm/balances/historical'];
+        const routesWith = (dbs: Partial<typeof config>) =>
+            getSupportedRoutes({
+                ...config,
+                evmNetworks: ['bsc'],
+                svmNetworks: [],
+                balancesDatabases: {},
+                balancesNativeDatabases: {},
+                balancesErc20Databases: {},
+                transfersDatabases: {},
+                dexesDatabases: {},
+                nftsDatabases: {},
+                contractsDatabases: {},
+                accountsDatabases: {},
+                metadataDatabases: {},
+                ...dbs,
+            }).supported;
+
+        const split = routesWith({
+            balancesNativeDatabases: { bsc: mapping('bsc:evm-balances-native@v0.7.2') },
+            balancesErc20Databases: { bsc: mapping('bsc:evm-balances-erc20@v0.7.0') },
+        });
+        expect(split.sort()).toEqual([...native, ...erc20].sort());
+
+        const combined = routesWith({ balancesDatabases: { bsc: mapping('bsc:evm-balances@v0.3.3') } });
+        expect(combined.sort()).toEqual([...native, ...erc20].sort());
+
+        const nativeOnly = routesWith({ balancesNativeDatabases: { bsc: mapping('bsc:evm-balances-native@v0.7.2') } });
+        expect(nativeOnly.sort()).toEqual([...native].sort());
+
+        const mixed = routesWith({
+            balancesDatabases: { bsc: mapping('bsc:evm-balances@v0.3.3') },
+            balancesNativeDatabases: { bsc: mapping('bsc:evm-balances-native@v0.7.2') },
+        });
+        expect(mixed.sort()).toEqual([...native, ...erc20].sort());
+
+        // Holders also need contracts.
+        const withContracts = routesWith({
+            balancesErc20Databases: { bsc: mapping('bsc:evm-balances-erc20@v0.7.0') },
+            contractsDatabases: { bsc: mapping('bsc:evm-contracts@v0.3.0') },
+        });
+        expect(withContracts.sort()).toEqual([...erc20, '/v1/evm/holders'].sort());
     });
 
     it('should not have duplicates between supported and unsupported', () => {

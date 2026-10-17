@@ -104,6 +104,14 @@ The current Pinax API surface includes Token API data for EVM and SVM networks, 
        dexes: mainnet:evm-dex@v0.2.6
        contracts: mainnet:evm-contracts@v0.3.0
 
+     # EVM network with split native and ERC-20 balances databases
+     bsc:
+       type: evm
+       cluster: default
+       transfers: bsc:evm-transfers@v0.3.3
+       balances-native: bsc:evm-balances-native@v0.7.2
+       balances-erc20: bsc:evm-balances-erc20@v0.7.0
+
      # SVM Networks
      solana:
        type: svm
@@ -112,6 +120,8 @@ The current Pinax API surface includes Token API data for EVM and SVM networks, 
        balances: solana:solana-tokens@v0.2.8
        dexes: solana:svm-dex@v0.3.1
    ```
+
+   On EVM networks, `balances` holds both native and ERC-20 balances. The split databases `balances-native` and `balances-erc20` take precedence for their routes (native routes and ERC-20 routes); a side without its split key reads `balances`. See [`dbs-config.yaml.example`](dbs-config.yaml.example).
 
    Then set the path to your config file:
 

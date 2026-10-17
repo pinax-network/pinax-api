@@ -76,7 +76,7 @@ const BUDGET = {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type DbCategory = 'balances' | 'transfers' | 'dex' | 'nft' | 'contracts';
+type DbCategory = 'balances' | 'balances-native' | 'balances-erc20' | 'transfers' | 'dex' | 'nft' | 'contracts';
 type ChainType = 'evm' | 'svm';
 
 interface BenchConfig {
@@ -387,17 +387,17 @@ function lookup(
 
 const PERF_ROUTES: PerfRoute[] = [
     // ── Lookups (tokens, balances, holders, dexes, pools, ohlcv, owner) ──────
-    lookup('/v1/evm/tokens', 'evm', ['balances', 'transfers'], (n) => `contract=${getEvmExamples(n).contract}`),
-    lookup('/v1/evm/tokens/native', 'evm', ['balances']),
+    lookup('/v1/evm/tokens', 'evm', ['balances-erc20', 'transfers'], (n) => `contract=${getEvmExamples(n).contract}`),
+    lookup('/v1/evm/tokens/native', 'evm', ['balances-native']),
     lookup('/v1/svm/tokens', 'svm', ['balances'], `mint=${SVM_MINT_WSOL_EXAMPLE}`),
-    lookup('/v1/evm/balances', 'evm', ['balances'], `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`),
-    lookup('/v1/evm/balances/native', 'evm', ['balances'], `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`),
-    lookup('/v1/evm/balances/historical', 'evm', ['balances'], `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`),
-    lookup('/v1/evm/balances/historical/native', 'evm', ['balances'], `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`),
+    lookup('/v1/evm/balances', 'evm', ['balances-erc20'], `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`),
+    lookup('/v1/evm/balances/native', 'evm', ['balances-native'], `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`),
+    lookup('/v1/evm/balances/historical', 'evm', ['balances-erc20'], `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`),
+    lookup('/v1/evm/balances/historical/native', 'evm', ['balances-native'], `address=${EVM_ADDRESS_VITALIK_EXAMPLE}`),
     lookup('/v1/svm/balances', 'svm', ['balances'], `owner=${SVM_OWNER_USER_EXAMPLE}`),
     lookup('/v1/svm/balances/native', 'svm', ['balances'], `address=${SVM_ADDRESS_OWNER_EXAMPLE}`),
-    lookup('/v1/evm/holders', 'evm', ['balances', 'contracts'], (n) => `contract=${getEvmExamples(n).contract}`),
-    lookup('/v1/evm/holders/native', 'evm', ['balances', 'contracts']),
+    lookup('/v1/evm/holders', 'evm', ['balances-erc20', 'contracts'], (n) => `contract=${getEvmExamples(n).contract}`),
+    lookup('/v1/evm/holders/native', 'evm', ['balances-native', 'contracts']),
     lookup('/v1/svm/holders', 'svm', ['balances'], `mint=${SVM_MINT_WSOL_EXAMPLE}`),
     lookup('/v1/evm/dexes', 'evm', ['dex'], '', BUDGET.heavyLookup),
     lookup('/v1/svm/dexes', 'svm', ['dex']),

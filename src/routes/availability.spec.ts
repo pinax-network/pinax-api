@@ -12,6 +12,12 @@ const evm = {
     nfts: 'nfts',
     contracts: 'contracts',
 };
+const { balances: _, ...evmWithoutBalances } = evm;
+const evmSplit = {
+    ...evmWithoutBalances,
+    'balances-native': 'balances-native',
+    'balances-erc20': 'balances-erc20',
+};
 const svm = {
     type: 'svm',
     cluster: 'test',
@@ -33,6 +39,19 @@ describe('Configured route availability', () => {
             svm: 0,
         },
         { name: 'EVM without the default network', networks: { 'arbitrum-one': evm }, evm: 20, svm: 0 },
+        { name: 'split EVM balances', networks: { mainnet: evmSplit }, evm: 20, svm: 0 },
+        {
+            name: 'native balances only',
+            networks: { mainnet: { type: 'evm', cluster: 'test', 'balances-native': 'balances-native' } },
+            evm: 3,
+            svm: 0,
+        },
+        {
+            name: 'ERC-20 balances only',
+            networks: { mainnet: { type: 'evm', cluster: 'test', 'balances-erc20': 'balances-erc20' } },
+            evm: 2,
+            svm: 0,
+        },
         { name: 'SVM only', networks: { solana: svm }, evm: 0, svm: 13 },
         { name: 'no families', networks: {}, evm: 0, svm: 0 },
         {

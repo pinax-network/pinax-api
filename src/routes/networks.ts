@@ -141,9 +141,17 @@ interface IndexedToEntry {
 /** Collect all DB entries with category labels */
 function collectDbEntries(): DbEntry[] {
     const entries: DbEntry[] = [];
+    // A network with both split balances databases no longer reads its combined one.
+    const combinedBalances = Object.fromEntries(
+        Object.entries(config.balancesDatabases).filter(
+            ([network]) => !(config.balancesNativeDatabases[network] && config.balancesErc20Databases[network])
+        )
+    );
     const categories: [string, Record<string, { database: string; cluster: string }>][] = [
         ['transfers', config.transfersDatabases],
-        ['balances', config.balancesDatabases],
+        ['balances', combinedBalances],
+        ['balances-native', config.balancesNativeDatabases],
+        ['balances-erc20', config.balancesErc20Databases],
         ['dexes', config.dexesDatabases],
     ];
     for (const [category, databases] of categories) {
@@ -214,6 +222,8 @@ async function validateNetworks() {
     for (const network of config.networks) {
         const networkDb =
             config.balancesDatabases[network] ||
+            config.balancesNativeDatabases[network] ||
+            config.balancesErc20Databases[network] ||
             config.transfersDatabases[network] ||
             config.nftsDatabases[network] ||
             config.dexesDatabases[network] ||

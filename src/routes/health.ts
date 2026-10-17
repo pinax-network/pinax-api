@@ -62,6 +62,8 @@ route.get('/health', openapi, async (c) => {
     for (const network of config.networks) {
         const networkDb =
             config.balancesDatabases[network] ||
+            config.balancesNativeDatabases[network] ||
+            config.balancesErc20Databases[network] ||
             config.transfersDatabases[network] ||
             config.nftsDatabases[network] ||
             config.dexesDatabases[network] ||

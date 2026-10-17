@@ -1,6 +1,15 @@
 import type { config as Config } from './config.js';
 
-type DbCategory = 'balances' | 'transfers' | 'dex' | 'nft' | 'contracts' | 'accounts' | 'metadata';
+type DbCategory =
+    | 'balances'
+    | 'balances-native'
+    | 'balances-erc20'
+    | 'transfers'
+    | 'dex'
+    | 'nft'
+    | 'contracts'
+    | 'accounts'
+    | 'metadata';
 
 interface RouteDefinition {
     path: string;
@@ -31,16 +40,16 @@ export const ROUTE_DEFINITIONS: RouteDefinition[] = [
     { path: '/v1/svm/dexes', chain: 'svm', requires: ['dex'] },
     // EVM - Tokens
     { path: '/v1/evm/transfers', chain: 'evm', requires: ['transfers'] },
-    { path: '/v1/evm/balances', chain: 'evm', requires: ['balances'] },
-    { path: '/v1/evm/holders', chain: 'evm', requires: ['balances', 'contracts'] },
-    { path: '/v1/evm/tokens', chain: 'evm', requires: ['balances', 'transfers'] },
-    { path: '/v1/evm/balances/historical', chain: 'evm', requires: ['balances'] },
+    { path: '/v1/evm/balances', chain: 'evm', requires: ['balances-erc20'] },
+    { path: '/v1/evm/holders', chain: 'evm', requires: ['balances-erc20', 'contracts'] },
+    { path: '/v1/evm/tokens', chain: 'evm', requires: ['balances-erc20', 'transfers'] },
+    { path: '/v1/evm/balances/historical', chain: 'evm', requires: ['balances-erc20'] },
     // EVM - Tokens (Native)
     { path: '/v1/evm/transfers/native', chain: 'evm', requires: ['transfers'] },
-    { path: '/v1/evm/balances/native', chain: 'evm', requires: ['balances'] },
-    { path: '/v1/evm/holders/native', chain: 'evm', requires: ['balances', 'contracts'] },
-    { path: '/v1/evm/tokens/native', chain: 'evm', requires: ['balances'] },
-    { path: '/v1/evm/balances/historical/native', chain: 'evm', requires: ['balances'] },
+    { path: '/v1/evm/balances/native', chain: 'evm', requires: ['balances-native'] },
+    { path: '/v1/evm/holders/native', chain: 'evm', requires: ['balances-native', 'contracts'] },
+    { path: '/v1/evm/tokens/native', chain: 'evm', requires: ['balances-native'] },
+    { path: '/v1/evm/balances/historical/native', chain: 'evm', requires: ['balances-native'] },
     // EVM - DEXs
     { path: '/v1/evm/swaps', chain: 'evm', requires: ['dex'] },
     { path: '/v1/evm/pools', chain: 'evm', requires: ['dex'] },
@@ -61,6 +70,9 @@ const DB_CATEGORY_MAP: Record<DbCategory, (cfg: ConfigType) => Record<string, un
     accounts: (cfg) => cfg.accountsDatabases,
     metadata: (cfg) => cfg.metadataDatabases,
     balances: (cfg) => cfg.balancesDatabases,
+    // An EVM side is served by its split database or by the combined `balances` one.
+    'balances-native': (cfg) => ({ ...cfg.balancesDatabases, ...cfg.balancesNativeDatabases }),
+    'balances-erc20': (cfg) => ({ ...cfg.balancesDatabases, ...cfg.balancesErc20Databases }),
     transfers: (cfg) => cfg.transfersDatabases,
     dex: (cfg) => cfg.dexesDatabases,
     nft: (cfg) => cfg.nftsDatabases,

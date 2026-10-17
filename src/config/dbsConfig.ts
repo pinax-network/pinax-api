@@ -34,7 +34,8 @@ export interface NetworkDatabaseMapping {
 type DatabaseMap = Record<string, NetworkDatabaseMapping>;
 
 // Known database maps — add new entries here when onboarding new database types.
-// The generic parser populates all of these from YAML `${key}` → `${key}Databases`.
+// The generic parser populates all of these from YAML `${key}` → `${key}Databases`;
+// the split EVM balances keys map explicitly (`balances-native` → `balancesNativeDatabases`).
 // `networkClusters` is the canonical network → cluster lookup; it does not
 // depend on any specific database map, so cluster routing keeps working when
 // a new database type is added without touching the routing layer.
@@ -42,6 +43,10 @@ export interface ParsedDbsConfig {
     clusters: Record<string, ClusterConfig>;
     networkClusters: Record<string, string>;
     balancesDatabases: DatabaseMap;
+    /** EVM only: the native balances database (evm-balances-native), split from `balances`. */
+    balancesNativeDatabases: DatabaseMap;
+    /** EVM only: the ERC-20 balances database (evm-balances-erc20), split from `balances`. */
+    balancesErc20Databases: DatabaseMap;
     transfersDatabases: DatabaseMap;
     accountsDatabases: DatabaseMap;
     metadataDatabases: DatabaseMap;
@@ -58,6 +63,8 @@ function emptyConfig(): ParsedDbsConfig {
         clusters: {},
         networkClusters: {},
         balancesDatabases: {},
+        balancesNativeDatabases: {},
+        balancesErc20Databases: {},
         transfersDatabases: {},
         accountsDatabases: {},
         metadataDatabases: {},
@@ -68,6 +75,27 @@ function emptyConfig(): ParsedDbsConfig {
         scraperDatabases: {},
         hypercoreDatabases: {},
     };
+}
+
+/** Per-network keys of the split EVM balances databases, and their maps. */
+const SPLIT_BALANCES_KEYS: Record<string, keyof ParsedDbsConfig> = {
+    'balances-native': 'balancesNativeDatabases',
+    'balances-erc20': 'balancesErc20Databases',
+};
+const SPLIT_BALANCES_PROPS = new Set(Object.values(SPLIT_BALANCES_KEYS));
+
+/**
+ * The database an EVM balances route reads on `network`: the split database of
+ * its side (`balances-native` or `balances-erc20`) when configured, else the
+ * combined `balances` database, which holds both sides.
+ */
+export function evmBalancesDatabase(
+    cfg: Pick<ParsedDbsConfig, 'balancesDatabases' | 'balancesNativeDatabases' | 'balancesErc20Databases'>,
+    network: string,
+    side: 'native' | 'erc20'
+): NetworkDatabaseMapping | undefined {
+    const split = side === 'native' ? cfg.balancesNativeDatabases : cfg.balancesErc20Databases;
+    return split[network] ?? cfg.balancesDatabases[network];
 }
 
 export function loadDbsConfig(configPath?: string): ParsedDbsConfig {
@@ -99,7 +127,15 @@ export function loadDbsConfig(configPath?: string): ParsedDbsConfig {
         result.networkClusters[networkId] = cluster;
 
         for (const [key, dbName] of Object.entries(databases)) {
-            const prop = `${key}Databases` as keyof ParsedDbsConfig;
+            const split = Object.hasOwn(SPLIT_BALANCES_KEYS, key) ? SPLIT_BALANCES_KEYS[key] : undefined;
+            if (split && type !== 'evm') {
+                throw new Error(`Network ${networkId}: ${key} is only supported on EVM networks`);
+            }
+            const prop = split ?? (`${key}Databases` as keyof ParsedDbsConfig);
+            // Only the documented keys reach the split maps (`balancesNative` is an unknown key).
+            if (!split && SPLIT_BALANCES_PROPS.has(prop)) {
+                continue;
+            }
             const map = result[prop];
             if (map && typeof map === 'object' && !Array.isArray(map)) {
                 (map as DatabaseMap)[networkId] = { database: dbName, ...mapping };

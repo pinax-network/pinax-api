@@ -30,7 +30,8 @@ import {
 const DB_TESTS = !!process.env.DB_TESTS;
 
 let app: Hono;
-let hasEvmBalances: boolean;
+let hasEvmNativeBalances: boolean;
+let hasEvmErc20Balances: boolean;
 let hasEvmTransfers: boolean;
 let hasEvmDex: boolean;
 let hasEvmNft: boolean;
@@ -180,7 +181,8 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         app.route('/', routes.default);
 
         // Check which DB categories are connected for each network
-        hasEvmBalances = hasDatabase(config, config.defaultEvmNetwork, 'balances');
+        hasEvmNativeBalances = hasDatabase(config, config.defaultEvmNetwork, 'balances-native');
+        hasEvmErc20Balances = hasDatabase(config, config.defaultEvmNetwork, 'balances-erc20');
         hasEvmTransfers = hasDatabase(config, config.defaultEvmNetwork, 'transfers');
         hasEvmDex = hasDatabase(config, config.defaultEvmNetwork, 'dex');
         hasEvmNft = hasDatabase(config, config.defaultEvmNetwork, 'nft');
@@ -233,7 +235,7 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
 
     // --- EVM Tokens ---
     it('GET /v1/evm/tokens', async () => {
-        if (!hasEvmBalances || !hasEvmTransfers) return;
+        if (!hasEvmErc20Balances || !hasEvmTransfers) return;
         const { response, body } = await fetchRoute(
             `/v1/evm/tokens?network=${evmNetwork}&contract=${EVM_CONTRACT_USDT_EXAMPLE}`
         );
@@ -243,7 +245,7 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
     });
 
     it('GET /v1/evm/tokens/native', async () => {
-        if (!hasEvmBalances) return;
+        if (!hasEvmNativeBalances) return;
         const { response, body } = await fetchRoute(`/v1/evm/tokens/native?network=${evmNetwork}`);
         expect(response.status).toBe(200);
         expect(body.data).toBeArray();
@@ -263,7 +265,7 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
 
     // --- EVM Balances ---
     it('GET /v1/evm/balances', async () => {
-        if (!hasEvmBalances) return;
+        if (!hasEvmErc20Balances) return;
         const { response, body } = await fetchRoute(
             `/v1/evm/balances?network=${evmNetwork}&address=${EVM_ADDRESS_VITALIK_EXAMPLE}`
         );
@@ -273,7 +275,7 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
     });
 
     it('GET /v1/evm/balances/native', async () => {
-        if (!hasEvmBalances) return;
+        if (!hasEvmNativeBalances) return;
         const { response, body } = await fetchRoute(
             `/v1/evm/balances/native?network=${evmNetwork}&address=${EVM_ADDRESS_VITALIK_EXAMPLE}`
         );
@@ -283,7 +285,7 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
     });
 
     it('GET /v1/evm/balances/historical', async () => {
-        if (!hasEvmBalances) return;
+        if (!hasEvmErc20Balances) return;
         const { response, body } = await fetchRoute(
             `/v1/evm/balances/historical?network=${evmNetwork}&address=${EVM_ADDRESS_VITALIK_EXAMPLE}`
         );
@@ -293,7 +295,7 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
     });
 
     it('GET /v1/evm/balances/historical/native', async () => {
-        if (!hasEvmBalances) return;
+        if (!hasEvmNativeBalances) return;
         const { response, body } = await fetchRoute(
             `/v1/evm/balances/historical/native?network=${evmNetwork}&address=${EVM_ADDRESS_VITALIK_EXAMPLE}`
         );
@@ -351,7 +353,7 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
 
     // --- EVM Holders ---
     it('GET /v1/evm/holders', async () => {
-        if (!hasEvmBalances) return;
+        if (!hasEvmErc20Balances) return;
         const { response, body } = await fetchRoute(
             `/v1/evm/holders?network=${evmNetwork}&contract=${EVM_CONTRACT_USDT_EXAMPLE}`
         );
@@ -361,7 +363,7 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
     });
 
     it('GET /v1/evm/holders/native', async () => {
-        if (!hasEvmBalances) return;
+        if (!hasEvmNativeBalances) return;
         const { response, body } = await fetchRoute(`/v1/evm/holders/native?network=${evmNetwork}`);
         expect(response.status).toBe(200);
         expect(body.data).toBeArray();
@@ -381,7 +383,7 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
     });
 
     it('GET /v1/evm/holders is_contract is a boolean when contracts table is populated', async () => {
-        if (!hasEvmBalances || !hasEvmContracts) return;
+        if (!hasEvmErc20Balances || !hasEvmContracts) return;
         const { response, body } = await fetchRoute(
             `/v1/evm/holders?network=${evmNetwork}&contract=${EVM_CONTRACT_USDT_EXAMPLE}&limit=1`
         );
