@@ -989,6 +989,16 @@ export const hyperliquidUserSortBySchema = z.enum(hyperliquidUserSortFields).met
     default: 'total_volume',
 });
 
+// Sort direction for endpoints that expose `sort_direction` alongside `sort_by`.
+// Defaults to descending, which every sort_by endpoint has used until now.
+const sortDirectionValues = ['asc', 'desc'] as const;
+export const sortDirectionSchema = z.enum(sortDirectionValues).meta({
+    type: 'string',
+    enum: sortDirectionValues,
+    default: 'desc',
+    description: 'Sort direction applied to `sort_by`. Defaults to `desc`.',
+});
+
 // Outcome-user sort columns — narrower than the perp/spot set because HIP-4
 // outcomes don't have fees, funding, or liquidation flows.
 const hyperliquidOutcomeUserSortFields = ['total_volume', 'transactions', 'realized_pnl'] as const;

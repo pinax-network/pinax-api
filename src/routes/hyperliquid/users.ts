@@ -12,6 +12,7 @@ import {
     hyperliquidCoinSchema,
     hyperliquidDexIdSchema,
     hyperliquidUserSortBySchema,
+    sortDirectionSchema,
     userLookbackIntervalSchema,
 } from '../../types/zod.js';
 import { validatorHook, withErrorResponses } from '../../utils.js';
@@ -23,6 +24,7 @@ const querySchema = createQuerySchema({
     user: { schema: evmAddressSchema, batched: true, optional: true },
     interval: { schema: userLookbackIntervalSchema, optional: true },
     sort_by: { schema: hyperliquidUserSortBySchema, prefault: 'total_volume' },
+    sort_direction: { schema: sortDirectionSchema, prefault: 'desc' },
     coin: { schema: hyperliquidCoinSchema, batched: true, optional: true },
     dex: { schema: hyperliquidDexIdSchema, batched: true, optional: true },
 });
@@ -64,7 +66,7 @@ const openapi = describeRoute(
     withErrorResponses({
         summary: 'User Lookup',
         description:
-            'Returns trading aggregates per user: fill count, volume broken down by side, total fees (negative values represent net maker rebates), realized PnL, net funding paid or received, liquidation-fill count, distinct coins traded, and first/last trade timestamps.\n\nOmit `user` for leaderboard mode (a paginated list sorted by `sort_by`). Provide `user` for profile mode (a single row). Filters `coin` and `dex` compose additively; pass either or both to narrow the scope (`coin=BTC` for one market, `dex=xyz` for one venue, both together for redundancy). A mismatched combination (e.g. `coin=cash:TSLA&dex=xyz`) returns empty.\n\nAggregation windows are fixed via the `interval` parameter: `1h`, `1d`, `1w`, `30d`, or omit for all-time. Data is refreshed hourly, so `1h` lags up to 1h.\n\nVaults trade as normal accounts, so passing a vault address as `user` returns its trading performance. Pair with `/v1/hyperliquid/vaults` for depositor-side stats.',
+            'Returns trading aggregates per user: fill count, volume broken down by side, total fees (negative values represent net maker rebates), realized PnL, net funding paid or received, liquidation-fill count, distinct coins traded, and first/last trade timestamps.\n\nOmit `user` for leaderboard mode (a paginated list sorted by `sort_by`, descending by default — pass `sort_direction=asc` for the bottom of the board, e.g. worst PnL or net funding payers). Provide `user` for profile mode (a single row). Filters `coin` and `dex` compose additively; pass either or both to narrow the scope (`coin=BTC` for one market, `dex=xyz` for one venue, both together for redundancy). A mismatched combination (e.g. `coin=cash:TSLA&dex=xyz`) returns empty.\n\nAggregation windows are fixed via the `interval` parameter: `1h`, `1d`, `1w`, `30d`, or omit for all-time. Data is refreshed hourly, so `1h` lags up to 1h.\n\nVaults trade as normal accounts, so passing a vault address as `user` returns its trading performance. Pair with `/v1/hyperliquid/vaults` for depositor-side stats.',
         tags: ['Hyperliquid Users'],
         security: [{ bearerAuth: [] }],
         responses: {
@@ -145,12 +147,13 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
     }
 
     const sortColumn = SORT_COLUMN_MAP[params.sort_by] ?? 'total_volume';
+    const sortDirection = params.sort_direction === 'asc' ? 'ASC' : 'DESC';
     // state_user_leaderboard is pre-aggregated across coins/dexes and keyed by
     // (interval_min, user) — use it whenever the request doesn't scope to a
     // specific coin or dex. Falls back to state_user_by_coin FINAL otherwise.
     const usesLeaderboard = !params.coin.length && !params.dex.length;
     const baseSql = usesLeaderboard ? leaderboardQuery : byCoinQuery;
-    const sql = baseSql.replace('ORDER BY total_volume DESC', `ORDER BY ${sortColumn} DESC`);
+    const sql = baseSql.replace('ORDER BY total_volume DESC', `ORDER BY ${sortColumn} ${sortDirection}`);
 
     const response = await makeUsageQueryJson(c, [sql], {
         ...params,
