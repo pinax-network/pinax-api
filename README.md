@@ -111,6 +111,7 @@ The current Pinax API surface includes Token API data for EVM and SVM networks, 
        transfers: bsc:evm-transfers@v0.3.3
        balances-native: bsc:evm-balances-native@v0.7.2
        balances-erc20: bsc:evm-balances-erc20@v0.7.0
+       holders-native-cutoff: 400 # optional: /v1/evm/holders/native cutoff, in BNB
 
      # SVM Networks
      solana:
@@ -122,6 +123,8 @@ The current Pinax API surface includes Token API data for EVM and SVM networks, 
    ```
 
    On EVM networks, `balances` holds both native and ERC-20 balances. The split databases `balances-native` and `balances-erc20` take precedence for their routes (native routes and ERC-20 routes); a side without its split key reads `balances`. See [`dbs-config.yaml.example`](dbs-config.yaml.example).
+
+   `holders-native-cutoff` (EVM, optional) tunes `/v1/evm/holders/native`, which ranks only addresses that have ever held at least this many native tokens. A higher cutoff reads less but must leave enough addresses for the pages served; a network without the key uses its default in `src/config/dbsConfig.ts`.
 
    Then set the path to your config file:
 

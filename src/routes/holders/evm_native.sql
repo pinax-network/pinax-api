@@ -1,21 +1,7 @@
 
-/* 1) Get the cutoff for native token - 100 by default, pick optimal number by chain based token value and activity */
-/* With optimal cutoff number, distinct holders with that cutoff should be at least 1000, but reasonable for the query performance: */
-/* SELECT countDistinct(address) FROM native_balances WHERE balance > N * pow(10, 18); */
-WITH cutoff AS (
-    SELECT
-        multiIf(
-            {network:String} = 'unichain', toUInt256(1 * pow(10, 18)),
-            {network:String} = 'optimism', toUInt256(10 * pow(10, 18)),
-            {network:String} = 'base', toUInt256(10 * pow(10, 18)),
-            {network:String} = 'arbitrum-one', toUInt256(100 * pow(10, 18)),
-            {network:String} = 'bsc', toUInt256(100 * pow(10, 18)),
-            {network:String} = 'avalanche', toUInt256(1000 * pow(10, 18)),
-            {network:String} = 'mainnet', toUInt256(5000 * pow(10, 18)),
-            {network:String} = 'polygon', toUInt256(50000 * pow(10, 18)),
-            toUInt256(100 * pow(10, 18))
-        )
-),
+/* {cutoff:UInt256} is the network's native-token cutoff in wei: `holders-native-cutoff` in
+   dbs-config.yaml, or its default in src/config/dbsConfig.ts (holdersNativeCutoff()). */
+WITH
 /* Candidate holders: addresses that have ever been above the cutoff, capped to the slice
    the requested page can possibly need. Rank DISTINCT addresses by their peak balance —
    ranking raw rows instead would be dominated by whale balance-change history on busy chains
@@ -25,7 +11,7 @@ WITH cutoff AS (
    tiny via the balance min-max skip index; capping the candidates makes the argMax dedup cheap. */
 addresses AS (
     SELECT address FROM {db_balances:Identifier}.native_balances
-    WHERE balance >= (SELECT * FROM cutoff)
+    WHERE balance >= {cutoff:UInt256}
     GROUP BY address
     ORDER BY max(balance) DESC, address
     LIMIT {limit:UInt64} + {offset:UInt64} * 2 + 1000

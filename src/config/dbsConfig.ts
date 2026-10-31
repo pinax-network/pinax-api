@@ -13,6 +13,8 @@ const NetworkConfigSchema = z
     .object({
         type: z.enum(['evm', 'svm', 'polymarket', 'hyperliquid']),
         cluster: z.string(),
+        /** EVM only: the `/v1/evm/holders/native` cutoff, in whole native tokens. Not a database key. */
+        'holders-native-cutoff': z.number().positive().optional(),
     })
     .catchall(z.string());
 
@@ -56,6 +58,8 @@ export interface ParsedDbsConfig {
     polymarketDatabases: DatabaseMap;
     scraperDatabases: DatabaseMap;
     hypercoreDatabases: DatabaseMap;
+    /** EVM only: `holders-native-cutoff` per network, in whole native tokens. Not a database map. */
+    holdersNativeCutoffs: Record<string, number>;
 }
 
 function emptyConfig(): ParsedDbsConfig {
@@ -74,6 +78,7 @@ function emptyConfig(): ParsedDbsConfig {
         polymarketDatabases: {},
         scraperDatabases: {},
         hypercoreDatabases: {},
+        holdersNativeCutoffs: {},
     };
 }
 
@@ -96,6 +101,55 @@ export function evmBalancesDatabase(
 ): NetworkDatabaseMapping | undefined {
     const split = side === 'native' ? cfg.balancesNativeDatabases : cfg.balancesErc20Databases;
     return split[network] ?? cfg.balancesDatabases[network];
+}
+
+/**
+ * `/v1/evm/holders/native` ranks only addresses that have ever held at least a cutoff, which
+ * keeps its scan small through the balance min-max skip index. These defaults, in whole native
+ * tokens, apply to networks without `holders-native-cutoff`. The route ranks exactly as many
+ * holders as hold the cutoff now, so a good cutoff leaves more of them than the deepest page
+ * served (1,000 holders, plus margin), and is otherwise as high as possible: a higher cutoff
+ * scans less. Holders at or above N, now:
+ * SELECT count() FROM (SELECT argMax(balance, block_num) AS b FROM native_balances
+ *     WHERE address IN (SELECT address FROM native_balances WHERE balance >= toUInt256(N) * toUInt256(1e18))
+ *     GROUP BY address) WHERE b >= toUInt256(N) * toUInt256(1e18);
+ */
+export const DEFAULT_HOLDERS_NATIVE_CUTOFFS: Record<string, number> = {
+    unichain: 1,
+    optimism: 10,
+    base: 10,
+    'arbitrum-one': 100,
+    bsc: 100,
+    avalanche: 1000,
+    mainnet: 5000,
+    polygon: 50000,
+};
+export const DEFAULT_HOLDERS_NATIVE_CUTOFF = 100;
+
+/** The `/v1/evm/holders/native` cutoff of `network`, in whole native tokens. */
+export function holdersNativeCutoff(cfg: Pick<ParsedDbsConfig, 'holdersNativeCutoffs'>, network: string): number {
+    if (Object.hasOwn(cfg.holdersNativeCutoffs, network)) {
+        return cfg.holdersNativeCutoffs[network] as number;
+    }
+    if (Object.hasOwn(DEFAULT_HOLDERS_NATIVE_CUTOFFS, network)) {
+        return DEFAULT_HOLDERS_NATIVE_CUTOFFS[network] as number;
+    }
+    return DEFAULT_HOLDERS_NATIVE_CUTOFF;
+}
+
+const NATIVE_DECIMALS = 18;
+
+/**
+ * Whole native tokens to wei (18 decimals), exactly, as a decimal string for a UInt256 query
+ * parameter: `25` → `25000000000000000000`. Throws on more than 18 decimal places and on
+ * amounts that only have an exponent notation, such as `1e21`.
+ */
+export function nativeTokensToWei(amount: number): string {
+    const [whole = '', fraction = ''] = String(amount).split('.');
+    if (!/^\d+$/.test(whole) || !/^\d*$/.test(fraction) || fraction.length > NATIVE_DECIMALS) {
+        throw new Error(`Invalid native token amount: ${amount}`);
+    }
+    return (BigInt(whole) * 10n ** BigInt(NATIVE_DECIMALS) + BigInt(fraction.padEnd(NATIVE_DECIMALS, '0'))).toString();
 }
 
 export function loadDbsConfig(configPath?: string): ParsedDbsConfig {
@@ -122,9 +176,23 @@ export function loadDbsConfig(configPath?: string): ParsedDbsConfig {
         if (!config.clusters[networkConfig.cluster]) {
             throw new Error(`Cluster ${networkConfig.cluster} not found`);
         }
-        const { type, cluster, ...databases } = networkConfig;
+        const { type, cluster, 'holders-native-cutoff': holdersNativeCutoff, ...databases } = networkConfig;
         const mapping = { type, cluster };
         result.networkClusters[networkId] = cluster;
+
+        if (holdersNativeCutoff !== undefined) {
+            if (type !== 'evm') {
+                throw new Error(`Network ${networkId}: holders-native-cutoff is only supported on EVM networks`);
+            }
+            try {
+                nativeTokensToWei(holdersNativeCutoff);
+            } catch {
+                throw new Error(
+                    `Network ${networkId}: holders-native-cutoff ${holdersNativeCutoff} is not a whole-token amount with at most ${NATIVE_DECIMALS} decimals`
+                );
+            }
+            result.holdersNativeCutoffs[networkId] = holdersNativeCutoff;
+        }
 
         for (const [key, dbName] of Object.entries(databases)) {
             const split = Object.hasOwn(SPLIT_BALANCES_KEYS, key) ? SPLIT_BALANCES_KEYS[key] : undefined;

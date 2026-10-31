@@ -66,6 +66,12 @@ export function logServerInit() {
         }
     }
 
+    // Configured native holders cutoffs (other networks use the defaults)
+    const cutoffs = Object.entries(config.holdersNativeCutoffs);
+    if (cutoffs.length > 0) {
+        console.log(`Native holders cutoffs: ${cutoffs.map(([network, cutoff]) => `${network}=${cutoff}`).join(', ')}`);
+    }
+
     // Cache settings
     if (config.cacheDisable) {
         console.log('Cache: disabled');
