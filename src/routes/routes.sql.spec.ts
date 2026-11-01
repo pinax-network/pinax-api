@@ -170,6 +170,11 @@ function getValueAtPath(value: unknown, path: readonly string[]) {
     }, value);
 }
 
+/** Descending order for numbers and for `YYYY-MM-DD hh:mm:ss` or hex strings (byte order, as in ClickHouse). */
+function desc(a: number | string, b: number | string) {
+    return a < b ? 1 : a > b ? -1 : 0;
+}
+
 describe.skipIf(!DB_TESTS)('SQL queries', () => {
     beforeAll(async () => {
         // Lazy-load config and routes to avoid circular dependency issues
@@ -502,6 +507,8 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         expect(response.status).toBe(200);
         expect(body.data).toBeArray();
         expect(body.data.length).toBeGreaterThan(0);
+        const datetimes = body.data.map((row: { datetime: string }) => row.datetime);
+        expect(datetimes).toEqual([...datetimes].sort(desc));
     });
 
     // --- SVM OHLCV ---
@@ -562,6 +569,12 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         expect(response.status).toBe(200);
         expect(body.data).toBeArray();
         expect(body.data.length).toBeGreaterThan(0);
+        type Holder = { percentage: number; address: string };
+        expect(body.data).toEqual(
+            [...body.data].sort(
+                (a: Holder, b: Holder) => desc(a.percentage, b.percentage) || desc(b.address, a.address)
+            )
+        );
     });
 
     it('GET /v1/evm/nft/items', async () => {
@@ -757,13 +770,15 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
 
     it('GET /v1/polymarket/markets/activity (by user)', async () => {
         if (!hasPolymarket) return;
-        const { response, body } = await fetchRoute(`/v1/polymarket/markets/activity?user=${POLYMARKET_USER}&limit=3`);
+        const { response, body } = await fetchRoute(`/v1/polymarket/markets/activity?user=${POLYMARKET_USER}&limit=10`);
         expect(response.status).toBe(200);
         expect(body.data).toBeArray();
         expect(body.data.length).toBeGreaterThan(0);
         expect(body.data[0]).toHaveProperty('event_type');
         expect(body.data[0]).toHaveProperty('tx_hash');
         expect(body.data[0]).toHaveProperty('market');
+        const timestamps = body.data.map((row: { timestamp: number | string }) => row.timestamp);
+        expect(timestamps).toEqual([...timestamps].sort(desc));
     });
 
     it('GET /v1/polymarket/markets/activity (by token_id)', async () => {

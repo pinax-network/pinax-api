@@ -124,3 +124,5 @@ SELECT
     /* Network */
     {network: String} AS network
 FROM ohlc
+/* The JOINs in `ohlc` do not keep the order of `ohlc_raw`. */
+ORDER BY datetime DESC
