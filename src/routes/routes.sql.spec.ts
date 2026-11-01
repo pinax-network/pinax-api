@@ -373,6 +373,9 @@ describe.skipIf(!DB_TESTS)('SQL queries', () => {
         expect(response.status).toBe(200);
         expect(body.data).toBeArray();
         expect(body.data.length).toBeGreaterThan(0);
+        const amounts = body.data.map((row: { amount: string }) => BigInt(row.amount));
+        expect(amounts.every((amount: bigint) => amount > 0n)).toBe(true);
+        expect(amounts).toEqual([...amounts].sort((a: bigint, b: bigint) => (a < b ? 1 : a > b ? -1 : 0)));
     });
 
     it('GET /v1/evm/holders is_contract is null when contracts table is empty', async () => {

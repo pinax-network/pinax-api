@@ -15,9 +15,11 @@
 # either side falls back to `balances` when its split key is absent.
 #
 # `holders-native-cutoff` (EVM, optional) is not a database: it tunes
-# `/v1/evm/holders/native`, which ranks only addresses that have ever held at
-# least this many native tokens (whole tokens; decimals allowed). A network
-# without it uses its default in `src/config/dbsConfig.ts`.
+# `/v1/evm/holders/native`, which then ranks only holders of at least this many
+# native tokens (whole tokens; decimals allowed). Their ranks are exact and pages
+# end at the last of them; a higher cutoff reads less but serves fewer holders.
+# A network without it (or with 0) ranks every address, which reads its whole
+# balances table on each request: set it on large networks (README).
 clusters:
   a:
     url: http://127.0.0.1:8123
@@ -48,7 +50,7 @@ networks:
     balances-erc20: bsc:evm-balances-erc20@v0.7.0
     dexes: bsc:evm-dex@v0.5.0
     contracts: bsc:evm-contracts@v0.3.0
-    holders-native-cutoff: 400
+    holders-native-cutoff: 750
 
   # SVM Networks
   solana:

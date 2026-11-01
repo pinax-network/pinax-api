@@ -111,7 +111,7 @@ The current Pinax API surface includes Token API data for EVM and SVM networks, 
        transfers: bsc:evm-transfers@v0.3.3
        balances-native: bsc:evm-balances-native@v0.7.2
        balances-erc20: bsc:evm-balances-erc20@v0.7.0
-       holders-native-cutoff: 400 # optional: /v1/evm/holders/native cutoff, in BNB
+       holders-native-cutoff: 750 # optional: /v1/evm/holders/native cutoff, in BNB
 
      # SVM Networks
      solana:
@@ -124,7 +124,11 @@ The current Pinax API surface includes Token API data for EVM and SVM networks, 
 
    On EVM networks, `balances` holds both native and ERC-20 balances. The split databases `balances-native` and `balances-erc20` take precedence for their routes (native routes and ERC-20 routes); a side without its split key reads `balances`. See [`dbs-config.yaml.example`](dbs-config.yaml.example).
 
-   `holders-native-cutoff` (EVM, optional) tunes `/v1/evm/holders/native`, which ranks only addresses that have ever held at least this many native tokens. A higher cutoff reads less but must leave enough addresses for the pages served; a network without the key uses its default in `src/config/dbsConfig.ts`.
+   `holders-native-cutoff` (EVM, optional, in whole native tokens) tunes `/v1/evm/holders/native`:
+
+   - **With a cutoff**, the route ranks only holders of at least that many tokens. Their ranks are exact, and pages end at the last of them: a page past them comes back short or empty. Each request reads only the addresses with a stored balance at or above the cutoff, so a higher cutoff is cheaper but serves fewer holders.
+   - **Without one** (or with `0`), the route ranks every address with a positive balance, to any depth, but each request reads the whole balances table: seconds and hundreds of CPU-seconds on large networks. Set a cutoff there.
+   - **To keep the top N holders exact**, pick a cutoff at or below the N-th holder's balance, with a margin for holders who cross it later. The query in `src/config/dbsConfig.ts` counts the holders at or above a value.
 
    Then set the path to your config file:
 

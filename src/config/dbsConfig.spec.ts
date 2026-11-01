@@ -4,7 +4,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
     DEFAULT_HOLDERS_NATIVE_CUTOFF,
-    DEFAULT_HOLDERS_NATIVE_CUTOFFS,
     evmBalancesDatabase,
     holdersNativeCutoff,
     loadDbsConfig,
@@ -302,6 +301,11 @@ networks:
     cluster: c
     balances-native: unichain:evm-balances-native@v0.7.11
     holders-native-cutoff: 0.5
+  hyperevm:
+    type: evm
+    cluster: c
+    balances-native: hyperevm:evm-balances-native@v0.7.11
+    holders-native-cutoff: 0
   mainnet:
     type: evm
     cluster: c
@@ -309,7 +313,7 @@ networks:
 `);
         try {
             const result = loadDbsConfig(path);
-            expect(result.holdersNativeCutoffs).toEqual({ base: 25, unichain: 0.5 });
+            expect(result.holdersNativeCutoffs).toEqual({ base: 25, unichain: 0.5, hyperevm: 0 });
             expect(result.balancesNativeDatabases.base?.database).toBe('base:evm-balances-native@v0.7.11');
             expect(Object.keys(result).filter((key) => key.toLowerCase().includes('cutoff'))).toEqual([
                 'holdersNativeCutoffs',
@@ -365,8 +369,8 @@ networks:
         }
     });
 
-    it('should reject a cutoff that is not a positive amount with at most 18 decimals below 2^256 wei', () => {
-        for (const value of ['0', '-5', '"25"', '0.0000000000000000001', '2e59']) {
+    it('should reject a cutoff that is not an amount of at least 0 with at most 18 decimals below 2^256 wei', () => {
+        for (const value of ['-5', '"25"', '0.0000000000000000001', '2e59']) {
             const { path, cleanup } = writeYaml(`
 clusters:
   c:
@@ -395,17 +399,18 @@ describe('holdersNativeCutoff', () => {
         expect(holdersNativeCutoff(cfg, 'polygon')).toBe(100000);
     });
 
-    it('should fall back to the network default, then to the global default', () => {
-        expect(holdersNativeCutoff(cfg, 'bsc')).toBe(100);
-        expect(holdersNativeCutoff(cfg, 'mainnet')).toBe(5000);
-        expect(holdersNativeCutoff({ holdersNativeCutoffs: {} }, 'base')).toBe(10);
-        expect(holdersNativeCutoff(cfg, 'sonic')).toBe(DEFAULT_HOLDERS_NATIVE_CUTOFF);
-        expect(holdersNativeCutoff(cfg, 'constructor')).toBe(DEFAULT_HOLDERS_NATIVE_CUTOFF);
+    it('should default to 0, every address, on networks without the key', () => {
+        expect(DEFAULT_HOLDERS_NATIVE_CUTOFF).toBe(0);
+        expect(holdersNativeCutoff(cfg, 'bsc')).toBe(0);
+        expect(holdersNativeCutoff(cfg, 'mainnet')).toBe(0);
+        expect(holdersNativeCutoff({ holdersNativeCutoffs: {} }, 'base')).toBe(0);
+        expect(holdersNativeCutoff(cfg, 'constructor')).toBe(0);
     });
 });
 
 describe('nativeTokensToWei', () => {
     it('should convert whole and fractional amounts exactly', () => {
+        expect(nativeTokensToWei(0)).toBe('0');
         expect(nativeTokensToWei(25)).toBe('25000000000000000000');
         expect(nativeTokensToWei(0.5)).toBe('500000000000000000');
         expect(nativeTokensToWei(2.25)).toBe('2250000000000000000');
@@ -418,12 +423,6 @@ describe('nativeTokensToWei', () => {
         expect(nativeTokensToWei(0.000000000000000001)).toBe('1');
         expect(nativeTokensToWei(1e21)).toBe(`1${'0'.repeat(39)}`);
         expect(nativeTokensToWei(1e59)).toBe(`1${'0'.repeat(77)}`);
-    });
-
-    it('should give the cutoffs the SQL used before they became configurable', () => {
-        for (const cutoff of [...Object.values(DEFAULT_HOLDERS_NATIVE_CUTOFFS), DEFAULT_HOLDERS_NATIVE_CUTOFF]) {
-            expect(nativeTokensToWei(cutoff)).toBe(`${cutoff}${'0'.repeat(18)}`);
-        }
     });
 
     it('should reject amounts it cannot write exactly as a UInt256', () => {

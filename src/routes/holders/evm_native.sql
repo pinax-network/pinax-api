@@ -1,22 +1,13 @@
 
-/* {cutoff:UInt256} is the network's native-token cutoff in wei: `holders-native-cutoff` in
-   dbs-config.yaml, or its default in src/config/dbsConfig.ts (holdersNativeCutoff()). */
+/* {cutoff:UInt256} is the network's native-token cutoff in wei, from `holders-native-cutoff` in
+   dbs-config.yaml (holdersNativeCutoff()). A network without one runs evm_native_all.sql. */
 WITH
-/* Candidate holders: addresses that have ever been above the cutoff, capped to the slice
-   the requested page can possibly need. Rank DISTINCT addresses by their peak balance —
-   ranking raw rows instead would be dominated by whale balance-change history on busy chains
-   and silently under-fill the candidate set. The buffer (offset*2 + 1000) covers addresses
-   whose peak outranks their current balance; it scales with offset because that density grows
-   with depth, keeping deep pages correct while page 1 stays cheap. The cutoff keeps this read
-   tiny via the balance min-max skip index; capping the candidates makes the argMax dedup cheap. */
-addresses AS (
-    SELECT address FROM {db_balances:Identifier}.native_balances
-    WHERE balance >= {cutoff:UInt256}
-    GROUP BY address
-    ORDER BY max(balance) DESC, address
-    LIMIT {limit:UInt64} + {offset:UInt64} * 2 + 1000
-),
-/* Materialize top-N balances once into a row array, then expand via arrayJoin.
+/* Holders: every address with a stored balance at or above the cutoff, ranked by its latest row.
+   The table keeps an address's older rows until its parts merge, so a stored balance can be at or
+   above the cutoff while the latest is below it: HAVING drops those. Ranking every candidate, not a
+   capped slice, keeps every page exact down to the cutoff; the cutoff keeps the candidate read
+   small via the balance min-max skip index.
+   Materialize the page once into a row array, then expand via arrayJoin.
    The address-array is reused to pre-filter the contracts lookup via primary key,
    avoiding the full-table hash build a plain JOIN would trigger. */
 rows_arr AS (
@@ -28,8 +19,12 @@ rows_arr AS (
             max(b.timestamp) AS timestamp,
             max(block_num) AS block_num
         FROM {db_balances:Identifier}.native_balances b
-        WHERE address IN (SELECT address FROM addresses)
+        WHERE address IN (
+            SELECT address FROM {db_balances:Identifier}.native_balances
+            WHERE balance >= {cutoff:UInt256}
+        )
         GROUP BY address
+        HAVING balance >= {cutoff:UInt256}
         ORDER BY balance DESC, address
         LIMIT {limit:UInt64} OFFSET {offset:UInt64}
     )
