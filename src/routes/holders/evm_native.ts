@@ -106,7 +106,7 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
         return c.json({ error: `Network not found: ${params.network}` }, 400);
     }
 
-    // Without a cutoff, every address is ranked (evm_native_all.sql).
+    // At cutoff 0, every address is ranked (evm_native_all.sql).
     const cutoff = nativeTokensToWei(holdersNativeCutoff(config, params.network));
     const response = await makeUsageQueryJson(
         c,

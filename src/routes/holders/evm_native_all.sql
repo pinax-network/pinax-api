@@ -1,6 +1,6 @@
 
-/* A network without `holders-native-cutoff` (holdersNativeCutoff() is 0): rank every address with
-   a positive balance. FINAL keeps each address's latest row (highest block_num) and streams in
+/* Cutoff 0 (holdersNativeCutoff(), src/config/dbsConfig.ts): rank every address with a positive
+   balance. FINAL keeps each address's latest row (highest block_num) and streams in
    address order, so memory stays small, but every request reads the whole table. The SETTINGS
    below keep FINAL from skipping granules by balance, which would skip nothing at this cutoff
    and could hide an address's latest row behind an older, higher one. */

@@ -53,6 +53,10 @@ This document captures stable, tool-agnostic navigation knowledge for the `pinax
   - Edit YAML parsing + transformation in `src/config/dbsConfig.ts`.
   - Edit config defaults/derived lists in `src/config.ts`.
 
+- Tune the `/v1/evm/holders/native` cutoff:
+  - Per deployment: `holders-native-cutoff` in `dbs-config.yaml`.
+  - Defaults: `DEFAULT_HOLDERS_NATIVE_CUTOFFS` in `src/config/dbsConfig.ts`. Values, costs and how to pick one: `docs/holders-native-cutoff.md`.
+
 - Change cache behavior:
   - Header logic: `src/middleware/cacheControl.ts`.
   - Route-level cache policy assignment: `src/routes/index.ts`.

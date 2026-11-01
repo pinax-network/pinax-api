@@ -1,6 +1,7 @@
 
-/* {cutoff:UInt256} is the network's native-token cutoff in wei, from `holders-native-cutoff` in
-   dbs-config.yaml (holdersNativeCutoff()). A network without one runs evm_native_all.sql. */
+/* {cutoff:UInt256} is the network's native-token cutoff in wei: `holders-native-cutoff` in
+   dbs-config.yaml, or its default in src/config/dbsConfig.ts (holdersNativeCutoff()). At 0 the
+   route runs evm_native_all.sql instead. */
 WITH
 /* Holders: every address with a stored balance at or above the cutoff, ranked by its latest row.
    The table keeps an address's older rows until its parts merge, so a stored balance can be at or

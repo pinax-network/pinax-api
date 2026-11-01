@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
     DEFAULT_HOLDERS_NATIVE_CUTOFF,
+    DEFAULT_HOLDERS_NATIVE_CUTOFFS,
     evmBalancesDatabase,
     holdersNativeCutoff,
     loadDbsConfig,
@@ -399,11 +400,13 @@ describe('holdersNativeCutoff', () => {
         expect(holdersNativeCutoff(cfg, 'polygon')).toBe(100000);
     });
 
-    it('should default to 0, every address, on networks without the key', () => {
+    it('should fall back to the network default, then to 0, every address', () => {
+        expect(holdersNativeCutoff(cfg, 'bsc')).toBe(400);
+        expect(holdersNativeCutoff(cfg, 'mainnet')).toBe(7500);
+        expect(holdersNativeCutoff({ holdersNativeCutoffs: {} }, 'base')).toBe(20);
         expect(DEFAULT_HOLDERS_NATIVE_CUTOFF).toBe(0);
-        expect(holdersNativeCutoff(cfg, 'bsc')).toBe(0);
-        expect(holdersNativeCutoff(cfg, 'mainnet')).toBe(0);
-        expect(holdersNativeCutoff({ holdersNativeCutoffs: {} }, 'base')).toBe(0);
+        expect(holdersNativeCutoff(cfg, 'unichain')).toBe(0);
+        expect(holdersNativeCutoff(cfg, 'hyperevm')).toBe(0);
         expect(holdersNativeCutoff(cfg, 'constructor')).toBe(0);
     });
 });
@@ -423,6 +426,13 @@ describe('nativeTokensToWei', () => {
         expect(nativeTokensToWei(0.000000000000000001)).toBe('1');
         expect(nativeTokensToWei(1e21)).toBe(`1${'0'.repeat(39)}`);
         expect(nativeTokensToWei(1e59)).toBe(`1${'0'.repeat(77)}`);
+    });
+
+    it('should convert the default cutoffs exactly', () => {
+        for (const cutoff of Object.values(DEFAULT_HOLDERS_NATIVE_CUTOFFS)) {
+            expect(nativeTokensToWei(cutoff)).toBe(`${cutoff}${'0'.repeat(18)}`);
+        }
+        expect(nativeTokensToWei(DEFAULT_HOLDERS_NATIVE_CUTOFF)).toBe('0');
     });
 
     it('should reject amounts it cannot write exactly as a UInt256', () => {
