@@ -2,7 +2,14 @@ import { describe, expect, it } from 'bun:test';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { evmBalancesDatabase, loadDbsConfig } from './dbsConfig.js';
+import {
+    DEFAULT_HOLDERS_NATIVE_CUTOFF,
+    DEFAULT_HOLDERS_NATIVE_CUTOFFS,
+    evmBalancesDatabase,
+    holdersNativeCutoff,
+    loadDbsConfig,
+    nativeTokensToWei,
+} from './dbsConfig.js';
 
 function writeYaml(content: string): { path: string; cleanup: () => void } {
     const dir = mkdtempSync(join(tmpdir(), 'dbsconfig-test-'));
@@ -275,5 +282,156 @@ describe('evmBalancesDatabase', () => {
         expect(evmBalancesDatabase(cfg, 'arbitrum', 'native')).toBeUndefined();
         expect(evmBalancesDatabase(cfg, 'arbitrum', 'erc20')?.database).toBe('arbitrum:evm-balances-erc20@v0.7.0');
         expect(evmBalancesDatabase(cfg, 'unknown', 'erc20')).toBeUndefined();
+    });
+});
+
+describe('holders-native-cutoff', () => {
+    it('should parse the cutoff of each EVM network without creating a database map', () => {
+        const { path, cleanup } = writeYaml(`
+clusters:
+  c:
+    url: http://localhost:8123
+networks:
+  base:
+    type: evm
+    cluster: c
+    balances-native: base:evm-balances-native@v0.7.11
+    holders-native-cutoff: 25
+  unichain:
+    type: evm
+    cluster: c
+    balances-native: unichain:evm-balances-native@v0.7.11
+    holders-native-cutoff: 0.5
+  mainnet:
+    type: evm
+    cluster: c
+    balances-native: mainnet:evm-balances-native@v0.7.11
+`);
+        try {
+            const result = loadDbsConfig(path);
+            expect(result.holdersNativeCutoffs).toEqual({ base: 25, unichain: 0.5 });
+            expect(result.balancesNativeDatabases.base?.database).toBe('base:evm-balances-native@v0.7.11');
+            expect(Object.keys(result).filter((key) => key.toLowerCase().includes('cutoff'))).toEqual([
+                'holdersNativeCutoffs',
+            ]);
+        } finally {
+            cleanup();
+        }
+    });
+
+    it('should reject the cutoff on non-EVM networks', () => {
+        const { path, cleanup } = writeYaml(`
+clusters:
+  a:
+    url: http://localhost:8123
+networks:
+  solana:
+    type: svm
+    cluster: a
+    balances: solana:svm-balances@v0.3.2
+    holders-native-cutoff: 100
+`);
+        try {
+            expect(() => loadDbsConfig(path)).toThrow(
+                'Network solana: holders-native-cutoff is only supported on EVM networks'
+            );
+        } finally {
+            cleanup();
+        }
+    });
+
+    it('should parse cutoffs down to 1 wei, which JavaScript writes with an exponent', () => {
+        const { path, cleanup } = writeYaml(`
+clusters:
+  c:
+    url: http://localhost:8123
+networks:
+  base:
+    type: evm
+    cluster: c
+    holders-native-cutoff: 0.0000001
+  unichain:
+    type: evm
+    cluster: c
+    holders-native-cutoff: 0.000000000000000001
+`);
+        try {
+            const result = loadDbsConfig(path);
+            expect(result.holdersNativeCutoffs).toEqual({ base: 1e-7, unichain: 1e-18 });
+            expect(nativeTokensToWei(holdersNativeCutoff(result, 'base'))).toBe('100000000000');
+            expect(nativeTokensToWei(holdersNativeCutoff(result, 'unichain'))).toBe('1');
+        } finally {
+            cleanup();
+        }
+    });
+
+    it('should reject a cutoff that is not a positive amount with at most 18 decimals below 2^256 wei', () => {
+        for (const value of ['0', '-5', '"25"', '0.0000000000000000001', '2e59']) {
+            const { path, cleanup } = writeYaml(`
+clusters:
+  c:
+    url: http://localhost:8123
+networks:
+  base:
+    type: evm
+    cluster: c
+    balances-native: base:evm-balances-native@v0.7.11
+    holders-native-cutoff: ${value}
+`);
+            try {
+                expect(() => loadDbsConfig(path)).toThrow();
+            } finally {
+                cleanup();
+            }
+        }
+    });
+});
+
+describe('holdersNativeCutoff', () => {
+    const cfg = { holdersNativeCutoffs: { base: 25, polygon: 100000 } };
+
+    it('should use the configured cutoff of a network', () => {
+        expect(holdersNativeCutoff(cfg, 'base')).toBe(25);
+        expect(holdersNativeCutoff(cfg, 'polygon')).toBe(100000);
+    });
+
+    it('should fall back to the network default, then to the global default', () => {
+        expect(holdersNativeCutoff(cfg, 'bsc')).toBe(100);
+        expect(holdersNativeCutoff(cfg, 'mainnet')).toBe(5000);
+        expect(holdersNativeCutoff({ holdersNativeCutoffs: {} }, 'base')).toBe(10);
+        expect(holdersNativeCutoff(cfg, 'sonic')).toBe(DEFAULT_HOLDERS_NATIVE_CUTOFF);
+        expect(holdersNativeCutoff(cfg, 'constructor')).toBe(DEFAULT_HOLDERS_NATIVE_CUTOFF);
+    });
+});
+
+describe('nativeTokensToWei', () => {
+    it('should convert whole and fractional amounts exactly', () => {
+        expect(nativeTokensToWei(25)).toBe('25000000000000000000');
+        expect(nativeTokensToWei(0.5)).toBe('500000000000000000');
+        expect(nativeTokensToWei(2.25)).toBe('2250000000000000000');
+        expect(nativeTokensToWei(0.000001)).toBe('1000000000000');
+    });
+
+    it('should convert amounts that JavaScript writes with an exponent', () => {
+        expect(nativeTokensToWei(0.0000001)).toBe('100000000000');
+        expect(nativeTokensToWei(0.00000015)).toBe('150000000000');
+        expect(nativeTokensToWei(0.000000000000000001)).toBe('1');
+        expect(nativeTokensToWei(1e21)).toBe(`1${'0'.repeat(39)}`);
+        expect(nativeTokensToWei(1e59)).toBe(`1${'0'.repeat(77)}`);
+    });
+
+    it('should give the cutoffs the SQL used before they became configurable', () => {
+        for (const cutoff of [...Object.values(DEFAULT_HOLDERS_NATIVE_CUTOFFS), DEFAULT_HOLDERS_NATIVE_CUTOFF]) {
+            expect(nativeTokensToWei(cutoff)).toBe(`${cutoff}${'0'.repeat(18)}`);
+        }
+    });
+
+    it('should reject amounts it cannot write exactly as a UInt256', () => {
+        expect(() => nativeTokensToWei(1e-19)).toThrow();
+        expect(() => nativeTokensToWei(1.5e-18)).toThrow();
+        expect(() => nativeTokensToWei(2e59)).toThrow();
+        expect(() => nativeTokensToWei(-1)).toThrow();
+        expect(() => nativeTokensToWei(Number.NaN)).toThrow();
+        expect(() => nativeTokensToWei(Number.POSITIVE_INFINITY)).toThrow();
     });
 });

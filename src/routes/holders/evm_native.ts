@@ -2,7 +2,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
-import { evmBalancesDatabase } from '../../config/dbsConfig.js';
+import { evmBalancesDatabase, holdersNativeCutoff, nativeTokensToWei } from '../../config/dbsConfig.js';
 import { config } from '../../config.js';
 import { handleUsageQueryError, makeUsageQueryJson } from '../../handleQuery.js';
 import {
@@ -112,6 +112,7 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
             ...params,
             db_balances: dbBalances.database,
             db_contracts: dbContracts.database,
+            cutoff: nativeTokensToWei(holdersNativeCutoff(config, params.network)),
         },
         {
             clickhouse_settings: {
