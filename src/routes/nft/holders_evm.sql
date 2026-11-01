@@ -62,6 +62,7 @@ combined AS (
 )
 SELECT *
 FROM combined
-ORDER BY percentage DESC
+/* address breaks ties, so holders with equal shares page deterministically */
+ORDER BY percentage DESC, address
 LIMIT {limit:UInt64}
 OFFSET {offset:UInt64}

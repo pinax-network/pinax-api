@@ -153,3 +153,5 @@ LEFT JOIN {db_scraper:Identifier}.polymarket_markets_by_asset_id a
     ON p.event_type = 'trade' AND a.asset_id = p.token_asset_id
 LEFT JOIN {db_scraper:Identifier}.polymarket_markets m FINAL
     ON p.event_type != 'trade' AND m.condition_id = p.cond_id
+/* The JOINs do not keep the order of `paged`. */
+ORDER BY p.timestamp DESC
