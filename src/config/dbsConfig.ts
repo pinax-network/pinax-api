@@ -14,7 +14,7 @@ const NetworkConfigSchema = z
         type: z.enum(['evm', 'svm', 'polymarket', 'hyperliquid']),
         cluster: z.string(),
         /** EVM only: the `/v1/evm/holders/native` cutoff, in whole native tokens. Not a database key. */
-        'holders-native-cutoff': z.number().positive().optional(),
+        'holders-native-cutoff': z.number().nonnegative().optional(),
     })
     .catchall(z.string());
 
@@ -104,27 +104,31 @@ export function evmBalancesDatabase(
 }
 
 /**
- * `/v1/evm/holders/native` ranks only addresses that have ever held at least a cutoff, which
- * keeps its scan small through the balance min-max skip index. These defaults, in whole native
- * tokens, apply to networks without `holders-native-cutoff`. The route ranks exactly as many
- * holders as hold the cutoff now, so a good cutoff leaves more of them than the deepest page
- * served (1,000 holders, plus margin), and is otherwise as high as possible: a higher cutoff
- * scans less. Holders at or above N, now:
+ * `/v1/evm/holders/native` ranks only holders of at least a cutoff, in whole native tokens, and
+ * reads only the addresses with a stored balance at or above it, through the balance min-max skip
+ * index: pages end at the last holder at or above it, and a higher cutoff reads less. At 0 the
+ * route ranks every address with a positive balance, which reads the whole table on each request
+ * (seconds on large networks).
+ *
+ * These defaults, in whole native tokens, apply to networks without `holders-native-cutoff`. Each
+ * keeps the top 1,000 holders exact: it is the highest round value (1, 1.5, 2, 2.5, 3, 4, 5 or 7.5
+ * times a power of ten, or 125,000 on Polygon) at or below the 1,200th holder's balance on the
+ * staging databases on 2026-10-31. Other networks default to 0: on Unichain and HyperEVM, a cutoff
+ * saved under 0.1 s per request. Holders at or above N, now:
  * SELECT count() FROM (SELECT argMax(balance, block_num) AS b FROM native_balances
  *     WHERE address IN (SELECT address FROM native_balances WHERE balance >= toUInt256(N) * toUInt256(1e18))
  *     GROUP BY address) WHERE b >= toUInt256(N) * toUInt256(1e18);
  */
 export const DEFAULT_HOLDERS_NATIVE_CUTOFFS: Record<string, number> = {
-    unichain: 1,
-    optimism: 10,
-    base: 10,
-    'arbitrum-one': 100,
-    bsc: 100,
-    avalanche: 1000,
-    mainnet: 5000,
-    polygon: 50000,
+    optimism: 4,
+    base: 20,
+    'arbitrum-one': 20,
+    bsc: 400,
+    avalanche: 5000,
+    mainnet: 7500,
+    polygon: 125000,
 };
-export const DEFAULT_HOLDERS_NATIVE_CUTOFF = 100;
+export const DEFAULT_HOLDERS_NATIVE_CUTOFF = 0;
 
 /** The `/v1/evm/holders/native` cutoff of `network`, in whole native tokens. */
 export function holdersNativeCutoff(cfg: Pick<ParsedDbsConfig, 'holdersNativeCutoffs'>, network: string): number {

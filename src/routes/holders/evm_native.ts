@@ -15,6 +15,7 @@ import {
 import { validatorHook, withErrorResponses } from '../../utils.js';
 
 import query from './evm_native.sql' with { type: 'text' };
+import queryAll from './evm_native_all.sql' with { type: 'text' };
 
 const querySchema = createQuerySchema({
     network: { schema: evmNetworkIdSchema },
@@ -105,14 +106,16 @@ route.get('/', openapi, zValidator('query', querySchema, validatorHook), validat
         return c.json({ error: `Network not found: ${params.network}` }, 400);
     }
 
+    // At cutoff 0, every address is ranked (evm_native_all.sql).
+    const cutoff = nativeTokensToWei(holdersNativeCutoff(config, params.network));
     const response = await makeUsageQueryJson(
         c,
-        [query],
+        [cutoff === '0' ? queryAll : query],
         {
             ...params,
             db_balances: dbBalances.database,
             db_contracts: dbContracts.database,
-            cutoff: nativeTokensToWei(holdersNativeCutoff(config, params.network)),
+            cutoff,
         },
         {
             clickhouse_settings: {
