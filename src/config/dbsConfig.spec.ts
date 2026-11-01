@@ -340,8 +340,33 @@ networks:
         }
     });
 
-    it('should reject a cutoff that is not a positive amount with at most 18 decimals', () => {
-        for (const value of ['0', '-5', '"25"', '0.0000000000000000001']) {
+    it('should parse cutoffs down to 1 wei, which JavaScript writes with an exponent', () => {
+        const { path, cleanup } = writeYaml(`
+clusters:
+  c:
+    url: http://localhost:8123
+networks:
+  base:
+    type: evm
+    cluster: c
+    holders-native-cutoff: 0.0000001
+  unichain:
+    type: evm
+    cluster: c
+    holders-native-cutoff: 0.000000000000000001
+`);
+        try {
+            const result = loadDbsConfig(path);
+            expect(result.holdersNativeCutoffs).toEqual({ base: 1e-7, unichain: 1e-18 });
+            expect(nativeTokensToWei(holdersNativeCutoff(result, 'base'))).toBe('100000000000');
+            expect(nativeTokensToWei(holdersNativeCutoff(result, 'unichain'))).toBe('1');
+        } finally {
+            cleanup();
+        }
+    });
+
+    it('should reject a cutoff that is not a positive amount with at most 18 decimals below 2^256 wei', () => {
+        for (const value of ['0', '-5', '"25"', '0.0000000000000000001', '2e59']) {
             const { path, cleanup } = writeYaml(`
 clusters:
   c:
@@ -387,16 +412,26 @@ describe('nativeTokensToWei', () => {
         expect(nativeTokensToWei(0.000001)).toBe('1000000000000');
     });
 
+    it('should convert amounts that JavaScript writes with an exponent', () => {
+        expect(nativeTokensToWei(0.0000001)).toBe('100000000000');
+        expect(nativeTokensToWei(0.00000015)).toBe('150000000000');
+        expect(nativeTokensToWei(0.000000000000000001)).toBe('1');
+        expect(nativeTokensToWei(1e21)).toBe(`1${'0'.repeat(39)}`);
+        expect(nativeTokensToWei(1e59)).toBe(`1${'0'.repeat(77)}`);
+    });
+
     it('should give the cutoffs the SQL used before they became configurable', () => {
         for (const cutoff of [...Object.values(DEFAULT_HOLDERS_NATIVE_CUTOFFS), DEFAULT_HOLDERS_NATIVE_CUTOFF]) {
             expect(nativeTokensToWei(cutoff)).toBe(`${cutoff}${'0'.repeat(18)}`);
         }
     });
 
-    it('should reject amounts it cannot write exactly', () => {
-        expect(() => nativeTokensToWei(1e21)).toThrow();
+    it('should reject amounts it cannot write exactly as a UInt256', () => {
         expect(() => nativeTokensToWei(1e-19)).toThrow();
+        expect(() => nativeTokensToWei(1.5e-18)).toThrow();
+        expect(() => nativeTokensToWei(2e59)).toThrow();
         expect(() => nativeTokensToWei(-1)).toThrow();
         expect(() => nativeTokensToWei(Number.NaN)).toThrow();
+        expect(() => nativeTokensToWei(Number.POSITIVE_INFINITY)).toThrow();
     });
 });

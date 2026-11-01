@@ -138,18 +138,24 @@ export function holdersNativeCutoff(cfg: Pick<ParsedDbsConfig, 'holdersNativeCut
 }
 
 const NATIVE_DECIMALS = 18;
+const UINT256_MAX = 2n ** 256n - 1n;
 
 /**
  * Whole native tokens to wei (18 decimals), exactly, as a decimal string for a UInt256 query
- * parameter: `25` → `25000000000000000000`. Throws on more than 18 decimal places and on
- * amounts that only have an exponent notation, such as `1e21`.
+ * parameter: `25` → `25000000000000000000`, `0.0000001` → `100000000000`. It converts the
+ * shortest decimal that reads back as `amount`, which is the YAML text whenever that has at most
+ * 15 significant digits. Throws on more than 18 decimal places and on amounts beyond UInt256.
  */
 export function nativeTokensToWei(amount: number): string {
-    const [whole = '', fraction = ''] = String(amount).split('.');
-    if (!/^\d+$/.test(whole) || !/^\d*$/.test(fraction) || fraction.length > NATIVE_DECIMALS) {
+    // `String` writes that decimal with an exponent below 1e-6 and from 1e21: `1e-7`, `1.5e+21`.
+    const match = /^(\d+)(?:\.(\d+))?(?:e([+-]\d+))?$/.exec(String(amount));
+    const [, whole = '', fraction = '', exponent = '0'] = match ?? [];
+    const scale = NATIVE_DECIMALS + Number(exponent) - fraction.length;
+    const wei = match && scale >= 0 ? BigInt(whole + fraction) * 10n ** BigInt(scale) : undefined;
+    if (wei === undefined || wei > UINT256_MAX) {
         throw new Error(`Invalid native token amount: ${amount}`);
     }
-    return (BigInt(whole) * 10n ** BigInt(NATIVE_DECIMALS) + BigInt(fraction.padEnd(NATIVE_DECIMALS, '0'))).toString();
+    return wei.toString();
 }
 
 export function loadDbsConfig(configPath?: string): ParsedDbsConfig {
@@ -188,7 +194,7 @@ export function loadDbsConfig(configPath?: string): ParsedDbsConfig {
                 nativeTokensToWei(holdersNativeCutoff);
             } catch {
                 throw new Error(
-                    `Network ${networkId}: holders-native-cutoff ${holdersNativeCutoff} is not a whole-token amount with at most ${NATIVE_DECIMALS} decimals`
+                    `Network ${networkId}: holders-native-cutoff ${holdersNativeCutoff} is not a whole-token amount with at most ${NATIVE_DECIMALS} decimals and below 2^256 wei`
                 );
             }
             result.holdersNativeCutoffs[networkId] = holdersNativeCutoff;
