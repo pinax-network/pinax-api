@@ -97,8 +97,9 @@ SELECT * FROM (
       /* funding_deltas holds a row per user, coin and hour. Its bloom filter on `user` is scanned over
          the whole window, and the user's rows sit in one granule per hour, so a long window reads
          gigabytes for a page of 10. The (dex, user, minute) projection gives the user's newest minutes
-         instead; every minute there holds at least one of the user's rows, so the newest
-         `limit + offset` minutes always hold this branch's share of the page. */
+         instead. Every minute there holds at least one of the user's rows, and only the window's end
+         minute can hold rows that `timestamp < end_ts` excludes, so the newest `limit + offset + 1`
+         minutes always hold this branch's share of the page. */
       AND toRelativeMinuteNum(timestamp) IN (
           SELECT minute
           FROM {db_hypercore:Identifier}.funding_deltas
@@ -107,7 +108,7 @@ SELECT * FROM (
             AND minute <= toRelativeMinuteNum((SELECT t FROM end_ts))
           GROUP BY minute
           ORDER BY minute DESC
-          LIMIT toUInt64({limit:UInt64}) + toUInt64({offset:UInt64}))
+          LIMIT toUInt64({limit:UInt64}) + toUInt64({offset:UInt64}) + 1)
 )
 WHERE (empty({event_types:Array(String)}) OR has({event_types:Array(String)}, event_type))
 /* timestamp first: it leads every table's sorting key, so each branch is read backwards and stops

@@ -135,6 +135,14 @@ describe.skipIf(!clickhouse)('Hyperliquid user activity on local tables', () => 
         ]);
     });
 
+    it('keeps the funding page full when the end minute holds only rows at the end time', () => {
+        // end_time 2026-01-03 00:00:00 is the minute of hour 48, which `timestamp < end_time` excludes:
+        // that minute must not use up the only candidate minute, or the page would skip hour 47
+        // and show the liquidation as the newest event.
+        expect(hashes(run({ event_types: "['funding']", limit: '1', end_time: '1767398400' }))).toEqual(['f-u1-47-1']);
+        expect(hashes(run({ limit: '1', end_time: '1767398400' }))).toEqual(['f-u1-47-1']);
+    });
+
     it('defaults to the last 30 days', () => {
         expect(hashes(run({ user: 'u3', start_time: '\\N' }))).toEqual(['recent-in']);
         expect(run({ start_time: '\\N' })).toEqual([]);

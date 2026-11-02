@@ -66,8 +66,9 @@ FROM (
       AND (empty({user:Array(String)})      OR user      IN {user:Array(String)})
       /* fills has no index on `user`, so a user filter scans the window (25 s for ten months). The
          (user, minute) projection gives the user's minutes instead, and the primary key selects their
-         granules. When `user` is the only filter, every one of those minutes holds a matching row, so
-         the newest `limit + offset` minutes are enough; with other filters, all of them are needed. */
+         granules. When `user` is the only filter, every one of those minutes holds a matching row, and
+         only the window's end minute can hold rows that `timestamp < end_ts` excludes, so the newest
+         `limit + offset + 1` minutes are enough; with other filters, all of them are needed. */
       AND (empty({user:Array(String)}) OR toRelativeMinuteNum(timestamp) IN (
           SELECT minute
           FROM {db_hypercore:Identifier}.fills
@@ -77,7 +78,7 @@ FROM (
           GROUP BY minute
           ORDER BY minute DESC
           LIMIT if(empty({coin:Array(String)}) AND empty({dex:Array(String)}) AND empty({direction:Array(String)}),
-                   toUInt64({limit:UInt64}) + toUInt64({offset:UInt64}),
+                   toUInt64({limit:UInt64}) + toUInt64({offset:UInt64}) + 1,
                    toUInt64(18446744073709551615))))
       AND (empty({coin:Array(String)})      OR coin      IN {coin:Array(String)})
       AND (empty({dex:Array(String)})       OR dex       IN {dex:Array(String)})

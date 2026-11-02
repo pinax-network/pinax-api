@@ -103,6 +103,13 @@ describe.skipIf(!clickhouse)('Hyperliquid market activity on local tables', () =
         ]);
     });
 
+    it('keeps the page full when the end minute holds only fills at or after the end time', () => {
+        // end_time 2026-01-02 10:20:00 is the minute of u1-6, which `timestamp < end_time` excludes:
+        // that minute must not use up one of the candidate minutes.
+        expect(hashes(run({ user: "['u1']", limit: '2', end_time: '1767349200' }))).toEqual(['u1-5', 'u1-4']);
+        expect(hashes(run({ user: "['u1']", limit: '1', offset: '1', end_time: '1767349200' }))).toEqual(['u1-4']);
+    });
+
     it('pages the newest fills of a coin', () => {
         expect(hashes(run({ coin: "['BTC']", limit: '3' }))).toEqual(['bot-17278', 'bot-17276', 'bot-17274']);
         expect(hashes(run({ coin: "['ETH']", limit: '2', offset: '1' }))).toEqual(['bot-17277', 'bot-17275']);
