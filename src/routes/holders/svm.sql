@@ -5,29 +5,24 @@ WITH metadata AS (
     ORDER BY timestamp DESC
     LIMIT 1
 ),
-balances AS (
-    SELECT account, block_num, timestamp, program_id, mint, amount, decimals
-    FROM {db_balances:Identifier}.balances_holders
-    WHERE mint = {mint:String}
-    LIMIT 1000
-),
-close_accounts AS (
-    SELECT account, closed
-    FROM {db_accounts:Identifier}.close_account_view
-    WHERE account IN (SELECT account FROM balances)
-),
-/* Resolve the page (closed-account filter + ORDER/LIMIT) BEFORE looking up owners,
-   and bind it as a cached scalar array so the close_account_view aggregation runs
-   exactly once. `owner` is a display-only column (never filtered or ordered on), so
-   the owner_view lookup — which aggregates the 7.5B-row owner_state — then only needs
-   the ~{limit} returned accounts instead of all 1000 holder candidates. */
+/* The page is the holders view's top rows, nothing else. balances_holders holds the top 10,000
+   holders per mint from `balances FINAL WHERE amount > 0`, refreshed hourly. Since svm-balances
+   v0.3.5 (pinax-network/substreams-svm#241) the sink writes a zero balance when a token account
+   is closed, and the accounts closed before that release were migrated to zero on 2026-11-02, so
+   the view no longer lists closed accounts and the per-request close_account_view lookup that
+   this query used to make (1,000 point lookups into a 9 B-row table, about 2 s) is gone. An
+   account closed since the last refresh stays in the view until the next one, like any balance
+   that changed since.
+
+   The page is bound as a cached scalar array so that the owner lookup below, which aggregates
+   the 7.5 B-row owner_state, runs for the ~{limit} returned accounts only. `owner` is a
+   display-only column, never filtered or ordered on. */
 (
     SELECT groupArray((account, block_num, timestamp, program_id, amount, decimals)) FROM (
-        SELECT b.account, b.block_num, b.timestamp, b.program_id, b.amount, b.decimals
-        FROM balances AS b
-        LEFT JOIN close_accounts AS c USING (account)
-        WHERE c.closed IS NULL OR c.closed = false
-        ORDER BY b.amount DESC, b.account
+        SELECT account, block_num, timestamp, program_id, amount, decimals
+        FROM {db_balances:Identifier}.balances_holders
+        WHERE mint = {mint:String}
+        ORDER BY amount DESC, account
         LIMIT {limit:UInt64}
         OFFSET {offset:UInt64}
     )
