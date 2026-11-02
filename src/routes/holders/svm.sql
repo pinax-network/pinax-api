@@ -9,7 +9,15 @@ balances AS (
     SELECT account, block_num, timestamp, program_id, mint, amount, decimals
     FROM {db_balances:Identifier}.balances_holders
     WHERE mint = {mint:String}
-    LIMIT 1000
+    /* balances_holders keeps a mint's top 10,000 holders by amount, closed accounts included: an
+       account closed in the transaction that emptied it has no post-balance, so `balances` keeps
+       its last positive amount. Each candidate therefore costs a point lookup in close_account_state
+       (about 3 ms). The candidates scale with the page: ten per requested row, at least 100 and at
+       most the former 1,000, so a page of 10 looks up 100 accounts instead of 1,000. The page is
+       exact while fewer than 90% of the candidates are closed (USDC: 39%, wSOL: 88% of the top
+       1,000 on 2026-11-02). The ORDER BY matches the view's key, so the read stops at the LIMIT. */
+    ORDER BY amount DESC
+    LIMIT least(1000, greatest(100, 10 * (toUInt64({limit:UInt64}) + toUInt64({offset:UInt64}))))
 ),
 close_accounts AS (
     SELECT account, closed
