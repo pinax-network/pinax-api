@@ -8,18 +8,16 @@ const clickhouse = process.env.CLICKHOUSE_LOCAL_BIN;
 
 /** Holder i of mint M1 holds 2,000,000 - i base units, so a lower i is a larger holder. */
 const acct = (i: number) => `acct${String(i).padStart(4, '0')}`;
-/** Seven of every eight M1 holders are closed, like wSOL's top holders in production; acct0025 was
- *  closed and then re-created, so its latest close state is open. */
-const isOpen = (i: number) => i % 8 === 0 || i === 25;
-/** M4's open holders by rank: every twentieth account is open. */
-const m4 = (fromRank: number, toRank: number) =>
-    Array.from({ length: toRank - fromRank + 1 }, (_, k) => `m4acct${String(20 * (fromRank + k)).padStart(4, '0')}`);
+/** M1 holders from..to in rank order. */
+const m1 = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, k) => acct(from + k));
 /** M3 holders from..to, all with the same amount. */
 const m3 = (from: number, to: number) =>
     Array.from({ length: to - from + 1 }, (_, k) => `m3acct${String(from + k).padStart(3, '0')}`);
 
-// The holders view is a plain table here with the view's reverse key. close_account_state and
-// owner_state get several versions per account, as the ReplacingMergeTree keeps them between merges.
+// The holders view is a plain table here with the view's reverse key. It holds open accounts only:
+// the sink writes a zero balance when an account is closed (svm-balances v0.3.5), and the view is
+// built from `balances FINAL WHERE amount > 0`. owner_state gets several versions per account, as
+// the ReplacingMergeTree keeps them between merges.
 const fixture = `
 CREATE DATABASE balances;
 CREATE DATABASE accounts;
@@ -28,13 +26,6 @@ CREATE TABLE balances.balances_holders (
     block_num UInt32, timestamp DateTime('UTC'), program_id LowCardinality(String), mint LowCardinality(String),
     account String, amount UInt64, decimals UInt8
 ) ENGINE = MergeTree ORDER BY (program_id, mint, amount DESC, account) SETTINGS allow_experimental_reverse_key = 1;
-CREATE TABLE accounts.close_account_state (
-    account String, program_id LowCardinality(String), version UInt64, is_deleted UInt8, block_num UInt32, timestamp DateTime('UTC'), closed UInt8
-) ENGINE = ReplacingMergeTree(version, is_deleted) ORDER BY account;
-CREATE VIEW accounts.close_account_view AS
-    SELECT account, any(program_id) AS program_id, max(version) AS version, max(block_num) AS block_num, max(timestamp) AS timestamp,
-           argMax(a.closed, a.version) AS closed
-    FROM accounts.close_account_state AS a GROUP BY account;
 CREATE TABLE accounts.owner_state (
     account String, program_id LowCardinality(String), version UInt64, is_deleted UInt8, block_num UInt32, timestamp DateTime('UTC'), owner String
 ) ENGINE = ReplacingMergeTree(version, is_deleted) ORDER BY account;
@@ -45,8 +36,7 @@ CREATE VIEW accounts.owner_view AS
 CREATE TABLE metadata.metadata (mint String, name String, symbol String, uri String, timestamp DateTime('UTC'))
     ENGINE = MergeTree ORDER BY mint;
 
--- M1: 1,500 holders, descending amounts. M2: 50 holders, none ever closed. M3: 300 holders of one amount.
--- M4: 1,200 holders, 19 of 20 closed, so the first candidate round cannot fill a page of 10.
+-- M1: 1,500 holders, descending amounts. M2: 50 holders, no metadata. M3: 300 holders of one amount.
 INSERT INTO balances.balances_holders
     SELECT 1000 + n, toDateTime('2026-01-01 00:00:00', 'UTC') + n, 'Tokenkeg', 'M1', concat('acct', leftPad(toString(n), 4, '0')), 2000000 - n, 6
     FROM (SELECT number + 1 AS n FROM numbers(1500));
@@ -56,20 +46,6 @@ INSERT INTO balances.balances_holders
 INSERT INTO balances.balances_holders
     SELECT 5000 + n, toDateTime('2026-01-03 00:00:00', 'UTC') + n, 'Tokenkeg', 'M3', concat('m3acct', leftPad(toString(n), 3, '0')), 1000, 0
     FROM (SELECT number + 1 AS n FROM numbers(300));
-INSERT INTO balances.balances_holders
-    SELECT 7000 + n, toDateTime('2026-01-04 00:00:00', 'UTC') + n, 'Tokenkeg', 'M4', concat('m4acct', leftPad(toString(n), 4, '0')), 3000000 - n, 6
-    FROM (SELECT number + 1 AS n FROM numbers(1200));
-INSERT INTO accounts.close_account_state
-    SELECT concat('m4acct', leftPad(toString(n), 4, '0')), 'Tokenkeg', 2, 0, 5000, toDateTime('2026-02-01 00:00:00', 'UTC'), 1
-    FROM (SELECT number + 1 AS n FROM numbers(1200)) WHERE n % 20 != 0;
--- Every M1 account has an open row; seven of eight were closed later; acct0025 was re-created after its close.
-INSERT INTO accounts.close_account_state
-    SELECT concat('acct', leftPad(toString(n), 4, '0')), 'Tokenkeg', 1, 0, 1, toDateTime('2025-12-01 00:00:00', 'UTC'), 0
-    FROM (SELECT number + 1 AS n FROM numbers(1500));
-INSERT INTO accounts.close_account_state
-    SELECT concat('acct', leftPad(toString(n), 4, '0')), 'Tokenkeg', 2, 0, 5000, toDateTime('2026-02-01 00:00:00', 'UTC'), 1
-    FROM (SELECT number + 1 AS n FROM numbers(1500)) WHERE n % 8 != 0;
-INSERT INTO accounts.close_account_state VALUES ('acct0025', 'Tokenkeg', 3, 0, 6000, '2026-03-01 00:00:00', 0);
 -- Owners: 'owner-<i>'; acct0008 changed owner once, and the newest version wins.
 INSERT INTO accounts.owner_state
     SELECT concat('acct', leftPad(toString(n), 4, '0')), 'Tokenkeg', 1, 0, 1, toDateTime('2025-12-01 00:00:00', 'UTC'), concat('owner-', toString(n))
@@ -119,62 +95,45 @@ function run(params: Record<string, string> = {}): Holder[] {
 }
 
 const accounts = (rows: Holder[]) => rows.map((r) => r.token_account);
-/** The open M1 holders in amount order, largest first. */
-const openHolders = Array.from({ length: 1500 }, (_, k) => k + 1)
-    .filter(isOpen)
-    .map(acct);
 
 describe.skipIf(!clickhouse)('Solana token holders on local tables', () => {
-    it('returns the largest open holders, skipping closed accounts', () => {
+    it('returns the largest holders of the view with their owner and metadata', () => {
         const rows = run();
-        expect(accounts(rows)).toEqual(openHolders.slice(0, 10));
-        expect(accounts(rows)).toContain('acct0025'); // closed, then re-created: its newest close state is open
+        expect(accounts(rows)).toEqual(m1(1, 10));
         expect(rows[0]).toMatchObject({
-            token_account: 'acct0008',
-            owner: 'owner-8-new',
-            amount: '1999992',
-            value: 1.999992,
+            token_account: 'acct0001',
+            owner: 'owner-1',
+            amount: '1999999',
+            value: 1.999999,
             decimals: 6,
             mint: 'M1',
             name: 'Token One',
             symbol: 'ONE',
-            last_update_block_num: 1008,
+            last_update_block_num: 1001,
             network: 'solana',
         });
-        expect(rows[1]).toMatchObject({ token_account: 'acct0016', owner: 'owner-16' });
+        expect(rows[7]).toMatchObject({ token_account: 'acct0008', owner: 'owner-8-new' }); // newest owner version wins
     });
 
     it('pages with an offset', () => {
-        expect(accounts(run({ limit: '3', offset: '5' }))).toEqual(openHolders.slice(5, 8));
-        expect(accounts(run({ limit: '4', offset: '11' }))).toEqual(openHolders.slice(11, 15));
+        expect(accounts(run({ limit: '3', offset: '5' }))).toEqual(m1(6, 8));
+        expect(accounts(run({ limit: '4', offset: '11' }))).toEqual(m1(12, 15));
+        expect(accounts(run({ limit: '100', offset: '1450' }))).toEqual(m1(1451, 1500)); // the view ends
     });
 
-    it('fills a page of 100 from the full candidate set', () => {
+    it('fills a page of 100', () => {
         const rows = run({ limit: '100' });
         expect(rows).toHaveLength(100);
-        expect(accounts(rows)).toEqual(openHolders.slice(0, 100));
-        expect(rows[99]?.token_account).toBe('acct0792'); // 99 multiples of 8 and acct0025
+        expect(accounts(rows)).toEqual(m1(1, 100));
     });
 
-    it('pages holders of equal amounts in account order, whatever the candidate budget', () => {
-        // The candidate cutoff must break ties the way the page does, or pages with different budgets
-        // (100 candidates for the first, 200 for the second) would repeat or skip holders.
+    it('pages holders of equal amounts in account order', () => {
         expect(accounts(run({ mint: 'M3', limit: '10' }))).toEqual(m3(1, 10));
         expect(accounts(run({ mint: 'M3', limit: '10', offset: '10' }))).toEqual(m3(11, 20));
         expect(accounts(run({ mint: 'M3', limit: '5', offset: '150' }))).toEqual(m3(151, 155));
     });
 
-    it('reads a second round of candidates when the first cannot fill the page', () => {
-        // 95 of M4's top 100 are closed: a page of 10 needs the former 1,000 candidates, of which 50 are open.
-        expect(accounts(run({ mint: 'M4' }))).toEqual(m4(1, 10));
-        expect(accounts(run({ mint: 'M4', limit: '10', offset: '40' }))).toEqual(m4(41, 50));
-        // Past the 50 open accounts among the 1,000 candidates the page ends, as it did before.
-        expect(accounts(run({ mint: 'M4', limit: '10', offset: '45' }))).toEqual(m4(46, 50));
-        // A page of 100 starts with 1,000 candidates, so the second round does not apply.
-        expect(accounts(run({ mint: 'M4', limit: '100' }))).toEqual(m4(1, 50));
-    });
-
-    it('serves a mint without closed accounts or metadata', () => {
+    it('serves a mint without metadata', () => {
         const rows = run({ mint: 'M2', limit: '5' });
         expect(accounts(rows)).toEqual(['m2acct01', 'm2acct02', 'm2acct03', 'm2acct04', 'm2acct05']);
         expect(rows[0]).toMatchObject({
@@ -185,5 +144,9 @@ describe.skipIf(!clickhouse)('Solana token holders on local tables', () => {
             name: null,
             symbol: null,
         });
+    });
+
+    it('returns nothing for a mint the view does not hold', () => {
+        expect(run({ mint: 'M9' })).toEqual([]);
     });
 });
