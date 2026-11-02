@@ -59,8 +59,14 @@ networks:
     type: svm
     cluster: a
     transfers: solana:svm-transfers@v0.3.1
-    balances: solana:svm-balances@v0.3.2
-    accounts: solana:svm-accounts@v0.3.0
+    # `balances` must be written by svm-balances v0.3.5 or later, which writes a
+    # zero balance when a token account is closed: `/v1/svm/holders` serves the
+    # sink's `balances_holders` view as is, with no closed-account filter. A
+    # database written by an earlier version lists closed accounts as holders
+    # until the one-time migration in substreams-svm
+    # (`svm-balances/clickhouse/examples/migrate-v0.3.5-*`) has run on it.
+    balances: solana:svm-balances@v0.3.3
+    accounts: solana:svm-accounts@v0.3.1
     metadata: solana:svm-metadata@v0.3.1
     dexes: solana:svm-dex@v0.5.2
 

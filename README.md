@@ -297,6 +297,8 @@ The API relies on Substreams data pipelines to populate the ClickHouse database.
 - **EVM Tokens**: [substreams-evm-tokens](https://github.com/pinax-network/substreams-evm-tokens) - ERC-20 token data, transfers, and NFT information
 - **Solana Tokens**: [substreams-solana](https://github.com/pinax-network/substreams-solana) - SPL token data, transfers, and DEX swap events
 
+**Solana balances:** `/v1/svm/holders` serves the sink's `balances_holders` view as is, with no closed-account filter, so the `balances` database must be written by [svm-balances v0.3.5](https://github.com/pinax-network/substreams-svm/releases/tag/svm-balances-v0.3.5) or later, which writes a zero balance when a token account is closed. A database written by an earlier version lists closed accounts as holders until the one-time migration in substreams-svm ([`svm-balances/clickhouse/examples/migrate-v0.3.5-*`](https://github.com/pinax-network/substreams-svm/tree/main/svm-balances/clickhouse/examples)) has run on it.
+
 ## Authentication
 
 The API uses Bearer token authentication. For the live endpoint (`https://api.pinax.network`), you can get your API token at [The Graph Market](https://thegraph.market).
