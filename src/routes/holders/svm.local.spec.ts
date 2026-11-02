@@ -11,6 +11,9 @@ const acct = (i: number) => `acct${String(i).padStart(4, '0')}`;
 /** Seven of every eight M1 holders are closed, like wSOL's top holders in production; acct0025 was
  *  closed and then re-created, so its latest close state is open. */
 const isOpen = (i: number) => i % 8 === 0 || i === 25;
+/** M4's open holders by rank: every twentieth account is open. */
+const m4 = (fromRank: number, toRank: number) =>
+    Array.from({ length: toRank - fromRank + 1 }, (_, k) => `m4acct${String(20 * (fromRank + k)).padStart(4, '0')}`);
 /** M3 holders from..to, all with the same amount. */
 const m3 = (from: number, to: number) =>
     Array.from({ length: to - from + 1 }, (_, k) => `m3acct${String(from + k).padStart(3, '0')}`);
@@ -43,6 +46,7 @@ CREATE TABLE metadata.metadata (mint String, name String, symbol String, uri Str
     ENGINE = MergeTree ORDER BY mint;
 
 -- M1: 1,500 holders, descending amounts. M2: 50 holders, none ever closed. M3: 300 holders of one amount.
+-- M4: 1,200 holders, 19 of 20 closed, so the first candidate round cannot fill a page of 10.
 INSERT INTO balances.balances_holders
     SELECT 1000 + n, toDateTime('2026-01-01 00:00:00', 'UTC') + n, 'Tokenkeg', 'M1', concat('acct', leftPad(toString(n), 4, '0')), 2000000 - n, 6
     FROM (SELECT number + 1 AS n FROM numbers(1500));
@@ -52,6 +56,12 @@ INSERT INTO balances.balances_holders
 INSERT INTO balances.balances_holders
     SELECT 5000 + n, toDateTime('2026-01-03 00:00:00', 'UTC') + n, 'Tokenkeg', 'M3', concat('m3acct', leftPad(toString(n), 3, '0')), 1000, 0
     FROM (SELECT number + 1 AS n FROM numbers(300));
+INSERT INTO balances.balances_holders
+    SELECT 7000 + n, toDateTime('2026-01-04 00:00:00', 'UTC') + n, 'Tokenkeg', 'M4', concat('m4acct', leftPad(toString(n), 4, '0')), 3000000 - n, 6
+    FROM (SELECT number + 1 AS n FROM numbers(1200));
+INSERT INTO accounts.close_account_state
+    SELECT concat('m4acct', leftPad(toString(n), 4, '0')), 'Tokenkeg', 2, 0, 5000, toDateTime('2026-02-01 00:00:00', 'UTC'), 1
+    FROM (SELECT number + 1 AS n FROM numbers(1200)) WHERE n % 20 != 0;
 -- Every M1 account has an open row; seven of eight were closed later; acct0025 was re-created after its close.
 INSERT INTO accounts.close_account_state
     SELECT concat('acct', leftPad(toString(n), 4, '0')), 'Tokenkeg', 1, 0, 1, toDateTime('2025-12-01 00:00:00', 'UTC'), 0
@@ -152,6 +162,16 @@ describe.skipIf(!clickhouse)('Solana token holders on local tables', () => {
         expect(accounts(run({ mint: 'M3', limit: '10' }))).toEqual(m3(1, 10));
         expect(accounts(run({ mint: 'M3', limit: '10', offset: '10' }))).toEqual(m3(11, 20));
         expect(accounts(run({ mint: 'M3', limit: '5', offset: '150' }))).toEqual(m3(151, 155));
+    });
+
+    it('reads a second round of candidates when the first cannot fill the page', () => {
+        // 95 of M4's top 100 are closed: a page of 10 needs the former 1,000 candidates, of which 50 are open.
+        expect(accounts(run({ mint: 'M4' }))).toEqual(m4(1, 10));
+        expect(accounts(run({ mint: 'M4', limit: '10', offset: '40' }))).toEqual(m4(41, 50));
+        // Past the 50 open accounts among the 1,000 candidates the page ends, as it did before.
+        expect(accounts(run({ mint: 'M4', limit: '10', offset: '45' }))).toEqual(m4(46, 50));
+        // A page of 100 starts with 1,000 candidates, so the second round does not apply.
+        expect(accounts(run({ mint: 'M4', limit: '100' }))).toEqual(m4(1, 50));
     });
 
     it('serves a mint without closed accounts or metadata', () => {
