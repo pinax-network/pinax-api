@@ -89,7 +89,7 @@ From `package.json` scripts:
 CI anchors:
 
 - `.github/workflows/bun-test.yml`: install, lint, test.
-- `.github/workflows/release.yml`: version bump/changelog automation on release.
+- `.github/workflows/release.yml`: bumps `package.json` to a published release's tag (the procedure is under "Releasing" in `AGENTS.md`).
 - `.github/workflows/docker-develop.yml` and `docker-release.yml`: image publishing.
 
 ## 5) Source vs generated/artifact directories
