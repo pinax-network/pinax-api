@@ -94,8 +94,28 @@ SELECT * FROM (
     FROM {db_hypercore:Identifier}.funding_deltas
     WHERE user = {user:String}
       AND timestamp >= (SELECT t FROM start_ts) AND timestamp < (SELECT t FROM end_ts)
+      /* funding_deltas holds a row per user, coin and hour. Its bloom filter on `user` is scanned over
+         the whole window, and the user's rows sit in one granule per hour, so a long window reads
+         gigabytes for a page of 10. The (dex, user, minute) projection gives the user's newest minutes
+         instead. Every minute there holds at least one of the user's rows, and only the window's end
+         minute can hold rows that `timestamp < end_ts` excludes, so the newest `limit + offset + 1`
+         minutes always hold this branch's share of the page. */
+      AND toRelativeMinuteNum(timestamp) IN (
+          SELECT minute
+          FROM {db_hypercore:Identifier}.funding_deltas
+          WHERE user = {user:String}
+            AND minute >= toRelativeMinuteNum((SELECT t FROM start_ts))
+            AND minute <= toRelativeMinuteNum((SELECT t FROM end_ts))
+          GROUP BY minute
+          ORDER BY minute DESC
+          LIMIT toUInt64({limit:UInt64}) + toUInt64({offset:UInt64}) + 1)
 )
 WHERE (empty({event_types:Array(String)}) OR has({event_types:Array(String)}, event_type))
-ORDER BY block_num DESC, timestamp DESC, event_index DESC
+/* timestamp first: it leads every table's sorting key, so each branch is read backwards and stops
+   at the LIMIT. block_num rises with timestamp, so the order is the same as before. */
+ORDER BY timestamp DESC, block_num DESC, event_index DESC
 LIMIT {limit:UInt64}
 OFFSET {offset:UInt64}
+/* The page is read backwards along the sorting key and stops at the LIMIT; the read-ahead
+   buffering of in-order reads would read far past it. */
+SETTINGS read_in_order_use_buffering = 0

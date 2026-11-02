@@ -40,6 +40,29 @@ WITH
           AND (empty({coin:Array(String)})        OR coin       IN {coin:Array(String)})
           AND (empty({outcome_id:Array(String)})  OR outcome_id IN (SELECT toUInt64(arrayJoin({outcome_id:Array(String)}))))
           AND (empty({question_id:Array(String)}) OR outcome_id IN (SELECT outcome_id FROM question_outcome_ids))
+          /* outcome_fills has no index on `user` or `outcome_id`; its (user, minute) and
+             (outcome_id, minute) projections give the minutes to read instead of scanning the window. */
+          AND (empty({user:Array(String)}) OR toRelativeMinuteNum(timestamp) IN (
+              SELECT minute
+              FROM {db_hypercore:Identifier}.outcome_fills
+              WHERE user IN {user:Array(String)}
+                AND minute >= toRelativeMinuteNum((SELECT t FROM start_ts))
+                AND minute <= toRelativeMinuteNum((SELECT t FROM end_ts))
+              GROUP BY minute))
+          AND (empty({outcome_id:Array(String)}) OR toRelativeMinuteNum(timestamp) IN (
+              SELECT minute
+              FROM {db_hypercore:Identifier}.outcome_fills
+              WHERE outcome_id IN (SELECT toUInt64(arrayJoin({outcome_id:Array(String)})))
+                AND minute >= toRelativeMinuteNum((SELECT t FROM start_ts))
+                AND minute <= toRelativeMinuteNum((SELECT t FROM end_ts))
+              GROUP BY minute))
+          AND (empty({question_id:Array(String)}) OR toRelativeMinuteNum(timestamp) IN (
+              SELECT minute
+              FROM {db_hypercore:Identifier}.outcome_fills
+              WHERE outcome_id IN (SELECT outcome_id FROM question_outcome_ids)
+                AND minute >= toRelativeMinuteNum((SELECT t FROM start_ts))
+                AND minute <= toRelativeMinuteNum((SELECT t FROM end_ts))
+              GROUP BY minute))
         ORDER BY timestamp DESC, block_num DESC, event_index DESC
         LIMIT {limit:UInt64}
         OFFSET {offset:UInt64}
@@ -91,3 +114,6 @@ LEFT JOIN (
     WHERE question_id IN (SELECT question_id FROM meta WHERE question_id IS NOT NULL)
 ) AS q ON q.question_id = m.question_id
 ORDER BY page.timestamp DESC, page.block_num DESC, page.event_index DESC
+/* The page is read backwards along the sorting key and stops at the LIMIT; the read-ahead
+   buffering of in-order reads would read far past it. */
+SETTINGS read_in_order_use_buffering = 0

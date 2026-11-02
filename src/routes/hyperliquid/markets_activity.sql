@@ -64,6 +64,22 @@ FROM (
     WHERE timestamp >= (SELECT t FROM start_ts)
       AND timestamp <  (SELECT t FROM end_ts)
       AND (empty({user:Array(String)})      OR user      IN {user:Array(String)})
+      /* fills has no index on `user`, so a user filter scans the window (25 s for ten months). The
+         (user, minute) projection gives the user's minutes instead, and the primary key selects their
+         granules. When `user` is the only filter, every one of those minutes holds a matching row, and
+         only the window's end minute can hold rows that `timestamp < end_ts` excludes, so the newest
+         `limit + offset + 1` minutes are enough; with other filters, all of them are needed. */
+      AND (empty({user:Array(String)}) OR toRelativeMinuteNum(timestamp) IN (
+          SELECT minute
+          FROM {db_hypercore:Identifier}.fills
+          WHERE user IN {user:Array(String)}
+            AND minute >= toRelativeMinuteNum((SELECT t FROM start_ts))
+            AND minute <= toRelativeMinuteNum((SELECT t FROM end_ts))
+          GROUP BY minute
+          ORDER BY minute DESC
+          LIMIT if(empty({coin:Array(String)}) AND empty({dex:Array(String)}) AND empty({direction:Array(String)}),
+                   toUInt64({limit:UInt64}) + toUInt64({offset:UInt64}) + 1,
+                   toUInt64(18446744073709551615))))
       AND (empty({coin:Array(String)})      OR coin      IN {coin:Array(String)})
       AND (empty({dex:Array(String)})       OR dex       IN {dex:Array(String)})
       AND (empty({direction:Array(String)}) OR direction IN {direction:Array(String)})
@@ -73,3 +89,6 @@ FROM (
 ) AS page
 LEFT JOIN {db_hypercore:Identifier}.state_spot_pair_names AS n FINAL ON n.coin = page.coin
 ORDER BY page.timestamp DESC, page.block_num DESC, page.event_index DESC
+/* The page is read backwards along the sorting key and stops at the LIMIT; the read-ahead
+   buffering of in-order reads would read far past it. */
+SETTINGS read_in_order_use_buffering = 0
